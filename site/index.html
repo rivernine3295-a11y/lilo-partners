@@ -42,6 +42,8 @@
   }
   a,button{font-family:inherit;}
 
+  body{word-break:keep-all; overflow-wrap:break-word;}
+
   .nav{
     position:fixed; top:env(safe-area-inset-top,0px); left:0; right:0; z-index:40;
     display:flex; align-items:center; justify-content:space-between;
@@ -646,8 +648,28 @@
   }
   .dx-store::placeholder{color:var(--fg-muted);}
   .dx-store:focus{outline:none; border-color:var(--accent-2);}
-  .dx-actions{display:flex; flex-direction:column; gap:10px;}
-  .dx-actions .btn{width:100%;}
+  .lead-box, .lead-done{
+    display:flex; flex-direction:column; gap:10px;
+    padding:18px; border-radius:18px;
+    border:1px solid var(--accent-2);
+    background:color-mix(in srgb, var(--accent-2) 7%, var(--bg));
+  }
+  .lead-box[hidden], .lead-done[hidden]{display:none !important;}
+  .lead-box .dx-store{margin:0;}
+  .lead-title{font-size:15.5px; font-weight:800; line-height:1.5; margin:0;}
+  .lead-list{list-style:none; margin:0 0 4px; padding:0; display:flex; flex-direction:column; gap:6px;}
+  .lead-list li{display:flex; gap:8px; font-size:13px; line-height:1.55; color:var(--fg-muted);}
+  .lead-list li::before{content:'✓'; color:var(--accent-2); font-weight:800; flex:none;}
+  .lead-micro{font-size:12px; color:var(--fg-muted); text-align:center; margin:0;}
+  .pop-panel{max-width:420px;}
+  .pop-eyebrow{font-family:var(--font-display); font-size:11px; font-weight:700; letter-spacing:.14em; color:var(--accent-2); margin:0 0 10px;}
+  .pop-title{font-size:22px; font-weight:800; line-height:1.4; margin:0 0 10px; text-wrap:balance;}
+  .pop-text{font-size:14px; color:var(--fg-muted); line-height:1.7; margin:0 0 18px;}
+  .pop-or{display:flex; align-items:center; gap:10px; margin:18px 0 12px; font-size:12px; color:var(--fg-muted);}
+  .pop-or::before,.pop-or::after{content:''; flex:1; height:1px; background:var(--line);}
+  .pop-form{display:flex; flex-direction:column; gap:10px;}
+  .pop-form .dx-store{margin:0;}
+  .pop-skip{display:block; margin:14px auto 0; background:none; border:none; color:var(--fg-muted); font-family:var(--font-kr); font-size:12.5px; text-decoration:underline; cursor:pointer;}
   .share-panel{max-width:440px; text-align:center;}
   .share-panel h3{font-size:20px; font-weight:800; margin:0 0 14px;}
   .share-img{
@@ -799,11 +821,27 @@
       <div class="dx-bars" id="dxBars"></div>
       <p class="dx-fix-title">지금 먼저 고치면 좋은 것</p>
       <ol class="dx-fixes" id="dxFixes"></ol>
-      <input type="text" class="dx-store" id="dxStore" placeholder="매장명 (결과 이미지에 들어가요 · 선택)" maxlength="24">
-      <div class="dx-actions">
-        <button type="button" class="btn btn-primary" id="dxSend">이 결과로 무료 상담 받기</button>
-        <button type="button" class="btn btn-ghost" id="dxShare">결과 이미지 만들기 · 카톡 공유</button>
+      <form class="lead-box" id="dxLead" name="lilo-quick" method="POST" data-netlify="true">
+        <input type="hidden" name="form-name" value="lilo-quick">
+        <input type="hidden" name="source" value="자가진단">
+        <input type="hidden" name="bizType" id="dxLeadBiz" value="">
+        <input type="hidden" name="diagnosis" id="dxLeadDx" value="">
+        <p class="lead-title">점수 다음 단계, 실제 순위 리포트를 무료로 보내드려요</p>
+        <ul class="lead-list">
+          <li>주요 검색어별로 우리 매장이 지금 몇 위인지</li>
+          <li>같은 동네 상위 매장 3곳과 무엇이 다른지</li>
+          <li>위 체크 결과 기준으로 먼저 손볼 순서</li>
+        </ul>
+        <input type="text" class="dx-store" id="dxStore" name="storeName" placeholder="매장명" maxlength="24" required>
+        <input type="tel" class="dx-store" id="dxPhone" name="contact" placeholder="연락처 (휴대폰 번호)" required>
+        <button type="submit" class="btn btn-primary" style="width:100%">무료 리포트 신청하기</button>
+        <p class="lead-micro">결제 요청 없이 리포트부터 보내드려요 · 영업일 1~2일 내</p>
+      </form>
+      <div class="lead-done" id="dxLeadDone" hidden>
+        <p class="lead-title">신청이 접수됐어요</p>
+        <p class="lead-micro">영업일 기준 1~2일 안에 리포트와 함께 연락드릴게요.</p>
       </div>
+      <button type="button" class="btn btn-ghost" id="dxShare" style="width:100%;margin-top:10px">결과 이미지로 저장</button>
       <p class="dx-note">점수는 네이버 공개 기준을 바탕으로 릴로가 정한 참고용 점검표예요. 네이버의 실제 순위 산식은 공개되지 않으며, 이 점수가 순위를 뜻하지는 않아요.</p>
     </aside>
   </div>
@@ -955,8 +993,8 @@
       <input type="text" id="cfContact" name="contact" placeholder="연락처 (전화 또는 카카오톡 ID)" required>
     </div>
     <div class="field-row">
-      <select id="cfBizType" name="bizType" required>
-        <option value="" disabled selected>업종 선택</option>
+      <select id="cfBizType" name="bizType">
+        <option value="" selected>업종 (선택)</option>
         <option>미용실</option>
         <option>음식점</option>
         <option>병원</option>
@@ -989,6 +1027,27 @@
   <span>무료 진단 신청</span>
   <span class="fc-arrow">→</span>
 </button>
+
+<div class="detail-overlay" id="leadPop" role="dialog" aria-modal="true" aria-labelledby="popTitle">
+  <div class="detail-panel pop-panel">
+    <button class="detail-close" id="popClose" aria-label="닫기">✕</button>
+    <p class="pop-eyebrow">FREE CHECK</p>
+    <h3 class="pop-title" id="popTitle">가시기 전에, 우리 매장 점수만 확인해보세요</h3>
+    <p class="pop-text">네이버가 공개한 기준으로 13개 항목만 체크하면 돼요. 연락처 없이 1분이면 결과가 나와요.</p>
+    <button type="button" class="btn btn-primary" id="popDx" style="width:100%">1분 자가진단 하기</button>
+    <p class="pop-or">또는 연락처만 남기면 먼저 연락드려요</p>
+    <form class="pop-form" id="popForm" name="lilo-quick" method="POST" data-netlify="true">
+      <input type="hidden" name="form-name" value="lilo-quick">
+      <input type="hidden" name="source" value="이탈 팝업">
+      <input type="hidden" name="bizType" value="">
+      <input type="hidden" name="diagnosis" value="">
+      <input type="text" class="dx-store" id="popStore" name="storeName" placeholder="매장명" maxlength="24" required>
+      <input type="tel" class="dx-store" id="popPhone" name="contact" placeholder="연락처 (휴대폰 번호)" required>
+      <button type="submit" class="btn btn-ghost" style="width:100%">전화 상담 요청하기</button>
+    </form>
+    <button type="button" class="pop-skip" id="popSkip">괜찮아요, 그냥 둘러볼게요</button>
+  </div>
+</div>
 
 <div class="detail-overlay" id="shareOverlay" role="dialog" aria-modal="true" aria-labelledby="shareTitle">
   <div class="detail-panel share-panel">
@@ -1304,29 +1363,88 @@
     });
   }
 
+  var LEAD_DONE='lilo-lead-done';
+  function markLeadDone(){ try{ localStorage.setItem(LEAD_DONE,'1'); }catch(e){} }
+  function leadDone(){ try{ return localStorage.getItem(LEAD_DONE)==='1'; }catch(e){ return false; } }
+
+  function submitLead(form, onOk){
+    var params=new URLSearchParams();
+    new FormData(form).forEach(function(v,k){ params.append(k,v); });
+    var btn=form.querySelector('[type="submit"]'); if(btn) btn.disabled=true;
+    fetch('/', {method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'}, body:params.toString()})
+      .then(function(res){
+        if(res && res.ok){
+          markLeadDone();
+          showToast('신청이 접수됐어요. 1~2일 안에 연락드릴게요.');
+          if(onOk) onOk();
+        }else{
+          showToast('프로토타입이에요. 실제 배포 후에는 신청이 정상 접수돼요.');
+        }
+      })
+      .catch(function(){ showToast('프로토타입이에요. 실제 배포 후에는 신청이 정상 접수돼요.'); })
+      .then(function(){ if(btn) btn.disabled=false; });
+  }
+
+  /* 이탈 방지 팝업: 방문자당 1번만, 이미 신청했으면 안 띄움 */
+  function initLeadPopup(){
+    var pop=document.getElementById('leadPop');
+    if(!pop) return;
+    var SHOWN='lilo-pop-shown', armed=false, shown=false, start=Date.now();
+    function wasShown(){ try{ return localStorage.getItem(SHOWN)==='1'; }catch(e){ return false; } }
+    if(wasShown() || leadDone()) return;
+    setTimeout(function(){ armed=true; }, 8000);
+
+    function inView(id){
+      var el=document.getElementById(id); if(!el) return false;
+      var r=el.getBoundingClientRect(); return r.top<window.innerHeight*0.6 && r.bottom>window.innerHeight*0.4;
+    }
+    function busy(){
+      return document.querySelector('.detail-overlay.show') || inView('diagnose') || inView('contact') ||
+        (document.activeElement && document.activeElement.matches('input[type="text"],input[type="tel"],select,textarea'));
+    }
+    function open(){
+      if(shown || !armed || leadDone() || busy()) return;
+      shown=true;
+      try{ localStorage.setItem(SHOWN,'1'); }catch(e){}
+      pop.classList.add('show');
+      document.body.style.overflow='hidden';
+    }
+    function close(){ pop.classList.remove('show'); document.body.style.overflow=''; }
+
+    // 데스크톱: 마우스가 브라우저 위쪽(탭·주소창)으로 나갈 때
+    document.addEventListener('mouseout', function(e){
+      if(!e.relatedTarget && e.clientY<=0) open();
+    });
+    // 모바일: 40초 이상 머물고 절반 넘게 내려본 뒤, 위로 빠르게 올릴 때(뒤로가기 직전 패턴)
+    var lastY=window.scrollY, maxPct=0;
+    window.addEventListener('scroll', function(){
+      var doc=document.documentElement, y=window.scrollY;
+      var max=doc.scrollHeight-doc.clientHeight; if(max>0) maxPct=Math.max(maxPct, y/max);
+      if(Date.now()-start>40000 && maxPct>0.5 && lastY-y>140) open();
+      lastY=y;
+    }, {passive:true});
+
+    document.getElementById('popClose').addEventListener('click', close);
+    document.getElementById('popSkip').addEventListener('click', close);
+    pop.addEventListener('click', function(e){ if(e.target===pop) close(); });
+    window.addEventListener('keydown', function(e){ if(e.key==='Escape' && pop.classList.contains('show')) close(); });
+    document.getElementById('popDx').addEventListener('click', function(){
+      close();
+      var t=document.getElementById('diagnose'); if(t) t.scrollIntoView({behavior:'smooth', block:'start'});
+    });
+    var pf=document.getElementById('popForm');
+    pf.addEventListener('submit', function(e){ e.preventDefault(); submitLead(pf, function(){ pf.reset(); close(); }); });
+  }
+
   function initContactForm(){
     var form=document.getElementById('contactForm');
     if(!form) return;
     form.addEventListener('submit', function(e){
       e.preventDefault();
-      var data=new FormData(form);
-      var params=new URLSearchParams();
-      data.forEach(function(value, key){ params.append(key, value); });
-      fetch('/', {
-        method:'POST',
-        headers:{'Content-Type':'application/x-www-form-urlencoded'},
-        body:params.toString()
-      }).then(function(res){
-        if(res && res.ok){
-          showToast('신청이 접수됐어요 — 1~2일 안에 연락드릴게요.');
-          form.reset();
-          document.getElementById('cfDiagnosis').value='';
-          document.getElementById('dxAttached').classList.remove('show');
-        }else{
-          showToast('프로토타입이에요 — 실제 배포 후에는 신청이 정상 접수돼요.');
-        }
-      }).catch(function(){
-        showToast('프로토타입이에요 — 실제 배포 후에는 신청이 정상 접수돼요.');
+      submitLead(form, function(){
+        form.reset();
+        document.getElementById('cfDiagnosis').value='';
+        document.getElementById('dxAttached').classList.remove('show');
       });
     });
   }
@@ -1495,20 +1613,18 @@
       btn.addEventListener('click', function(){ state.biz=btn.getAttribute('data-biz'); save(); render(); });
     });
 
-    document.getElementById('dxSend').addEventListener('click', function(){
+    var leadForm=document.getElementById('dxLead');
+    leadForm.addEventListener('submit', function(e){
+      e.preventDefault();
       var r=compute();
-      var summary='[자가진단] 업종 '+state.biz+' · 총점 '+r.total+'/100 · '+
+      document.getElementById('dxLeadBiz').value=state.biz;
+      document.getElementById('dxLeadDx').value='[자가진단] 업종 '+state.biz+' · 총점 '+r.total+'/100 · '+
         r.groups.map(function(g){ return g.name+' '+g.got+'/'+g.max; }).join(', ')+
         (r.missing.length ? ' · 미충족: '+r.missing.map(function(m){ return m.text; }).join(' / ') : ' · 전 항목 충족');
-      document.getElementById('cfDiagnosis').value=summary;
-      var sel=document.getElementById('cfBizType'); if(sel) sel.value=state.biz;
-      var stn=(document.getElementById('dxStore').value||'').trim(); var sf=document.getElementById('cfStoreName'); if(stn && sf && !sf.value) sf.value=stn;
-      var note=document.getElementById('dxAttached');
-      note.textContent='자가진단 결과('+r.total+'점)가 신청서에 함께 전달돼요. 빠진 항목 기준으로 더 구체적으로 안내드릴게요.';
-      note.classList.add('show');
-      var target=document.getElementById('contact');
-      if(target) target.scrollIntoView({behavior:'smooth', block:'start'});
-      setTimeout(function(){ var f=document.getElementById('cfStoreName'); if(f) f.focus({preventScroll:true}); }, 700);
+      submitLead(leadForm, function(){
+        leadForm.hidden=true;
+        document.getElementById('dxLeadDone').hidden=false;
+      });
     });
 
     document.getElementById('dxShare').addEventListener('click', function(){
@@ -1727,6 +1843,7 @@
     initScrollButtons();
     initContactForm();
     initFloatingCta();
+    initLeadPopup();
   }
 
   if(document.readyState==='loading'){
