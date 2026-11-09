@@ -639,6 +639,25 @@
     padding:10px 14px; border-radius:12px; border:1px solid var(--accent-2);
   }
   .dx-attached.show{display:block;}
+  .dx-store{
+    width:100%; padding:12px 14px; margin:0 0 12px; border-radius:12px;
+    background:var(--bg); border:1px solid var(--line); color:var(--fg);
+    font-family:var(--font-kr); font-size:14px;
+  }
+  .dx-store::placeholder{color:var(--fg-muted);}
+  .dx-store:focus{outline:none; border-color:var(--accent-2);}
+  .dx-actions{display:flex; flex-direction:column; gap:10px;}
+  .dx-actions .btn{width:100%;}
+  .share-panel{max-width:440px; text-align:center;}
+  .share-panel h3{font-size:20px; font-weight:800; margin:0 0 14px;}
+  .share-img{
+    display:block; width:100%; max-width:100%; max-height:58vh; object-fit:contain;
+    margin:0 auto 16px; border-radius:14px; border:1px solid var(--line);
+    -webkit-touch-callout:default; user-select:auto;
+  }
+  .share-btns{display:flex; flex-direction:column; gap:10px;}
+  .share-btns .btn{width:100%;}
+  .share-hint{font-size:12.5px; color:var(--fg-muted); line-height:1.6; margin:12px 0 0;}
 </style>
 </head>
 <body>
@@ -780,7 +799,11 @@
       <div class="dx-bars" id="dxBars"></div>
       <p class="dx-fix-title">지금 먼저 고치면 좋은 것</p>
       <ol class="dx-fixes" id="dxFixes"></ol>
-      <button type="button" class="btn btn-primary" id="dxSend" style="width:100%">이 결과로 무료 상담 받기</button>
+      <input type="text" class="dx-store" id="dxStore" placeholder="매장명 (결과 이미지에 들어가요 · 선택)" maxlength="24">
+      <div class="dx-actions">
+        <button type="button" class="btn btn-primary" id="dxSend">이 결과로 무료 상담 받기</button>
+        <button type="button" class="btn btn-ghost" id="dxShare">결과 이미지 만들기 · 카톡 공유</button>
+      </div>
       <p class="dx-note">점수는 네이버 공개 기준을 바탕으로 릴로가 정한 참고용 점검표예요. 네이버의 실제 순위 산식은 공개되지 않으며, 이 점수가 순위를 뜻하지는 않아요.</p>
     </aside>
   </div>
@@ -966,6 +989,19 @@
   <span>무료 진단 신청</span>
   <span class="fc-arrow">→</span>
 </button>
+
+<div class="detail-overlay" id="shareOverlay" role="dialog" aria-modal="true" aria-labelledby="shareTitle">
+  <div class="detail-panel share-panel">
+    <button class="detail-close" id="shareClose" aria-label="닫기">✕</button>
+    <h3 id="shareTitle">진단 결과 이미지</h3>
+    <img class="share-img" id="shareImg" alt="플레이스 자가진단 결과 이미지">
+    <div class="share-btns">
+      <button type="button" class="btn btn-primary" id="shareKakao">카카오톡으로 보내기</button>
+      <button type="button" class="btn btn-ghost" id="shareSave">이미지 저장</button>
+    </div>
+    <p class="share-hint" id="shareHint">휴대폰에서는 이미지를 길게 눌러 저장할 수도 있어요.</p>
+  </div>
+</div>
 
 <div id="toast"></div>
 
@@ -1466,6 +1502,7 @@
         (r.missing.length ? ' · 미충족: '+r.missing.map(function(m){ return m.text; }).join(' / ') : ' · 전 항목 충족');
       document.getElementById('cfDiagnosis').value=summary;
       var sel=document.getElementById('cfBizType'); if(sel) sel.value=state.biz;
+      var stn=(document.getElementById('dxStore').value||'').trim(); var sf=document.getElementById('cfStoreName'); if(stn && sf && !sf.value) sf.value=stn;
       var note=document.getElementById('dxAttached');
       note.textContent='자가진단 결과('+r.total+'점)가 신청서에 함께 전달돼요. 빠진 항목 기준으로 더 구체적으로 안내드릴게요.';
       note.classList.add('show');
@@ -1474,11 +1511,212 @@
       setTimeout(function(){ var f=document.getElementById('cfStoreName'); if(f) f.focus({preventScroll:true}); }, 700);
     });
 
+    document.getElementById('dxShare').addEventListener('click', function(){
+      openShare(compute(), state.biz, (document.getElementById('dxStore').value||'').trim());
+    });
+    try{ var st=localStorage.getItem(STORE+'-store'); if(st) document.getElementById('dxStore').value=st; }catch(e){}
+    document.getElementById('dxStore').addEventListener('input', function(e){
+      try{ localStorage.setItem(STORE+'-store', e.target.value); }catch(err){}
+    });
+
     render();
+  }
+
+  /* ---------- 결과 이미지 (카톡 공유용 1080x1350) ---------- */
+  var IMG={w:1080, h:1350, pad:84,
+    bg:'#0b0a09', card:'#17140f', fg:'#f5f1ea', muted:'#a89a86', line:'rgba(245,241,234,.16)',
+    a1:'#ff6a39', a2:'#ffb703'};
+  var KR="'Gothic A1', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif";
+  var EN="'Space Grotesk', Arial, sans-serif";
+
+  function wrapLines(ctx, text, maxW, maxLines){
+    var words=String(text).split(' '), lines=[], cur='';
+    function push(l){ lines.push(l); }
+    words.forEach(function(w){
+      var test=cur?cur+' '+w:w;
+      if(ctx.measureText(test).width<=maxW){ cur=test; return; }
+      if(cur) push(cur);
+      cur='';
+      while(ctx.measureText(w).width>maxW){
+        var i=w.length; while(i>1 && ctx.measureText(w.slice(0,i)).width>maxW) i--;
+        push(w.slice(0,i)); w=w.slice(i);
+      }
+      cur=w;
+    });
+    if(cur) push(cur);
+    if(maxLines && lines.length>maxLines){
+      lines=lines.slice(0,maxLines);
+      var last=lines[maxLines-1];
+      while(last.length>1 && ctx.measureText(last+'…').width>maxW) last=last.slice(0,-1);
+      lines[maxLines-1]=last+'…';
+    }
+    return lines;
+  }
+
+  function fmtDate(d){ function z(n){return (n<10?'0':'')+n;} return d.getFullYear()+'.'+z(d.getMonth()+1)+'.'+z(d.getDate()); }
+
+  function gradeFor(total, any){
+    if(!any) return ['아직 체크한 항목이 없어요','이미 하고 있는 것부터 하나씩 확인해보세요.'];
+    if(total>=80) return ['기본기가 탄탄해요','이제 키워드 경쟁 상황을 보고 세밀하게 다듬을 단계예요.'];
+    if(total>=50) return ['올라갈 여지가 커요','빠진 항목 몇 개만 채워도 검색 노출에 차이가 생길 수 있어요.'];
+    return ['기본 정보부터 정비가 필요해요','손님이 검색해도 매장 정보가 충분히 전달되지 않고 있을 수 있어요.'];
+  }
+
+  function drawResult(r, biz, store){
+    var c=document.createElement('canvas'); c.width=IMG.w; c.height=2000;
+    var ctx=c.getContext('2d'), P=IMG.pad, W=IMG.w-P*2;
+    var any=r.total>0;
+    var g=gradeFor(r.total, any);
+
+    ctx.fillStyle=IMG.bg; ctx.fillRect(0,0,IMG.w,c.height);
+    var glow=ctx.createRadialGradient(IMG.w*0.82, 120, 20, IMG.w*0.82, 120, 620);
+    glow.addColorStop(0,'rgba(255,106,57,.30)'); glow.addColorStop(1,'rgba(255,106,57,0)');
+    ctx.fillStyle=glow; ctx.fillRect(0,0,IMG.w,IMG.h);
+    ctx.textBaseline='alphabetic';
+
+    // 헤더
+    ctx.font='700 44px '+EN; ctx.fillStyle=IMG.fg; ctx.fillText('릴로', P, P+36);
+    var lw=ctx.measureText('릴로').width; ctx.fillStyle=IMG.a1; ctx.fillText('.', P+lw+2, P+36);
+    ctx.font='500 26px '+EN; ctx.fillStyle=IMG.muted; ctx.textAlign='right';
+    ctx.fillText(fmtDate(new Date()), IMG.w-P, P+32); ctx.textAlign='left';
+
+    var y=P+130;
+    ctx.font='700 24px '+EN; ctx.fillStyle=IMG.a2;
+    ctx.fillText('NAVER PLACE SELF CHECK', P, y);
+    y+=70;
+    ctx.font='800 56px '+KR; ctx.fillStyle=IMG.fg;
+    var title=(store?store:'우리 매장')+' 플레이스 자가진단';
+    wrapLines(ctx, title, W, 2).forEach(function(l){ ctx.fillText(l, P, y); y+=70; });
+
+    // 업종 칩
+    ctx.font='700 26px '+KR;
+    var cw=ctx.measureText(biz).width+44;
+    ctx.strokeStyle=IMG.line; ctx.lineWidth=2;
+    roundRect(ctx, P, y-22, cw, 50, 25); ctx.stroke();
+    ctx.fillStyle=IMG.muted; ctx.fillText(biz, P+22, y+12);
+    y+=78;
+
+    // 점수 카드
+    var cardH=290;
+    ctx.fillStyle=IMG.card; roundRect(ctx, P, y, W, cardH, 32); ctx.fill();
+    ctx.strokeStyle=IMG.line; ctx.lineWidth=2; roundRect(ctx, P, y, W, cardH, 32); ctx.stroke();
+    var cx=P+44+105, cy=y+cardH/2, rr=105;
+    ctx.lineWidth=20; ctx.lineCap='round';
+    ctx.strokeStyle=IMG.line; ctx.beginPath(); ctx.arc(cx,cy,rr,0,Math.PI*2); ctx.stroke();
+    if(r.total>0){
+      var grad=ctx.createLinearGradient(cx-rr,cy,cx+rr,cy); grad.addColorStop(0,IMG.a1); grad.addColorStop(1,IMG.a2);
+      ctx.strokeStyle=grad; ctx.beginPath(); ctx.arc(cx,cy,rr,-Math.PI/2,-Math.PI/2+Math.PI*2*r.total/100); ctx.stroke();
+    }
+    ctx.lineCap='butt';
+    ctx.textAlign='center'; ctx.fillStyle=IMG.fg; ctx.font='700 84px '+EN;
+    ctx.fillText(String(r.total), cx, cy+20);
+    ctx.font='500 24px '+EN; ctx.fillStyle=IMG.muted; ctx.fillText('/ 100', cx, cy+56);
+    ctx.textAlign='left';
+    var tx=cx+rr+52, tw=P+W-40-tx, ty=y+108;
+    ctx.font='800 38px '+KR; ctx.fillStyle=IMG.fg;
+    wrapLines(ctx, g[0], tw, 2).forEach(function(l){ ctx.fillText(l, tx, ty); ty+=50; });
+    ty+=6; ctx.font='500 26px '+KR; ctx.fillStyle=IMG.muted;
+    wrapLines(ctx, g[1], tw, 3).forEach(function(l){ ctx.fillText(l, tx, ty); ty+=38; });
+    y+=cardH+58;
+
+    // 기준별 막대
+    var labW=170, numW=160, barX=P+labW, barW=W-labW-numW;
+    r.groups.concat([{name:'거리', na:true}]).forEach(function(gr){
+      ctx.font='700 28px '+KR; ctx.fillStyle=gr.na?IMG.muted:IMG.fg; ctx.fillText(gr.name, P, y+10);
+      ctx.fillStyle=IMG.line; roundRect(ctx, barX, y-6, barW, 14, 7); ctx.fill();
+      if(!gr.na && gr.got>0){
+        var bg=ctx.createLinearGradient(barX,0,barX+barW,0); bg.addColorStop(0,IMG.a1); bg.addColorStop(1,IMG.a2);
+        ctx.fillStyle=bg; roundRect(ctx, barX, y-6, Math.max(14, barW*gr.got/gr.max), 14, 7); ctx.fill();
+      }
+      ctx.textAlign='right'; ctx.font='500 26px '+(gr.na?KR:EN); ctx.fillStyle=IMG.muted;
+      ctx.fillText(gr.na?'점수 제외':gr.got+' / '+gr.max, P+W, y+10); ctx.textAlign='left';
+      y+=56;
+    });
+    y+=30;
+
+    // 개선 우선순위
+    ctx.font='700 24px '+EN; ctx.fillStyle=IMG.a2; ctx.fillText('먼저 고치면 좋은 것', P, y);
+    y+=52;
+    var fixes=r.missing.slice(0,3);
+    if(!fixes.length) fixes=[{fix:'체크리스트를 모두 채웠어요. 다음은 키워드별 실제 순위를 비교해볼 차례예요.'}];
+    fixes.forEach(function(m, i){
+      ctx.font='700 26px '+EN; ctx.fillStyle=IMG.a2; ctx.fillText(String(i+1).padStart(2,'0'), P, y);
+      ctx.font='500 28px '+KR; ctx.fillStyle=IMG.fg;
+      wrapLines(ctx, m.fix, W-60, 2).forEach(function(l){ ctx.fillText(l, P+60, y); y+=40; });
+      y+=16;
+    });
+
+    // 푸터
+    var fy=Math.max(y+24, IMG.h-P-100);
+    ctx.strokeStyle=IMG.line; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(P,fy); ctx.lineTo(P+W,fy); ctx.stroke();
+    ctx.font='800 30px '+KR; ctx.fillStyle=IMG.fg; ctx.fillText('릴로 무료 상담  010-9000-5600', P, fy+50);
+    ctx.font='500 20px '+KR; ctx.fillStyle=IMG.muted;
+    ctx.fillText('네이버 공개 기준을 바탕으로 한 참고용 점검이며, 실제 순위를 뜻하지 않아요.', P, fy+84);
+    var outH=fy+84+P;
+    var out=document.createElement('canvas'); out.width=IMG.w; out.height=outH;
+    out.getContext('2d').drawImage(c,0,0);
+    return out;
+  }
+
+  function roundRect(ctx,x,y,w,h,r){
+    ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r);
+    ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath();
+  }
+
+  function loadFonts(text){
+    if(!document.fonts || !document.fonts.load) return Promise.resolve();
+    var specs=['500 28px "Gothic A1"','700 28px "Gothic A1"','800 28px "Gothic A1"','500 26px "Space Grotesk"','700 26px "Space Grotesk"'];
+    var t=Promise.all(specs.map(function(f){ return document.fonts.load(f, text).catch(function(){}); }));
+    return Promise.race([t, new Promise(function(res){ setTimeout(res, 2500); })]);
+  }
+
+  var shareBlob=null, shareName='lilo-place-check.png';
+  function openShare(r, biz, store){
+    var overlay=document.getElementById('shareOverlay');
+    var text='릴로0123456789./ NAVERPLACESELFCHECK'+biz+store+r.missing.map(function(m){return m.fix;}).join('')+
+      '우리 매장 플레이스 자가진단 유사도 정보 충실도 인기도 거리 점수 제외 먼저 고치면 좋은 것 무료 상담 네이버 공개 기준을 바탕으로 한 참고용 점검이며, 실제 순위를 뜻하지 않아요. 아직 체크한 항목이 없어요 기본기가 탄탄해요 올라갈 여지가 커요 기본 정보부터 정비가 필요해요'+
+      gradeFor(r.total,true)[1]+gradeFor(r.total,false)[1]+'체크리스트를 모두 채웠어요. 다음은 키워드별 실제 순위를 비교해볼 차례예요.…';
+    loadFonts(text).then(function(){
+      var c=drawResult(r, biz, store);
+      document.getElementById('shareImg').src=c.toDataURL('image/png');
+      shareBlob=null;
+      if(c.toBlob) c.toBlob(function(b){ shareBlob=b; }, 'image/png');
+      var canFiles=false;
+      try{ canFiles=!!(navigator.canShare && navigator.canShare({files:[new File([new Blob(['x'],{type:'image/png'})], 'x.png', {type:'image/png'})]})); }catch(e){}
+      document.getElementById('shareKakao').hidden=!canFiles;
+      document.getElementById('shareHint').textContent=canFiles
+        ? '공유 창에서 카카오톡을 고르면 바로 보낼 수 있어요. 이미지를 길게 눌러 저장할 수도 있어요.'
+        : '이미지를 저장한 뒤 카카오톡에서 보내주세요. 휴대폰에서는 이미지를 길게 눌러 저장할 수 있어요.';
+      overlay.classList.add('show');
+      document.body.style.overflow='hidden';
+    });
+  }
+
+  function initShare(){
+    var overlay=document.getElementById('shareOverlay');
+    if(!overlay) return;
+    function close(){ overlay.classList.remove('show'); document.body.style.overflow=''; }
+    document.getElementById('shareClose').addEventListener('click', close);
+    overlay.addEventListener('click', function(e){ if(e.target===overlay) close(); });
+    window.addEventListener('keydown', function(e){ if(e.key==='Escape') close(); });
+
+    document.getElementById('shareKakao').addEventListener('click', function(){
+      if(!shareBlob){ showToast('이미지를 준비하고 있어요. 잠시 후 다시 눌러주세요.'); return; }
+      var file=new File([shareBlob], shareName, {type:'image/png'});
+      navigator.share({files:[file], title:'플레이스 자가진단 결과', text:'릴로 네이버 플레이스 자가진단 결과예요.'})
+        .catch(function(err){ if(err && err.name!=='AbortError') showToast('공유를 열지 못했어요. 이미지 저장 후 카톡으로 보내주세요.'); });
+    });
+    document.getElementById('shareSave').addEventListener('click', function(){
+      var a=document.createElement('a');
+      a.href=document.getElementById('shareImg').src; a.download=shareName;
+      document.body.appendChild(a); a.click(); a.remove();
+      showToast('저장이 안 되면 이미지를 길게 누르거나 우클릭해서 저장해주세요.');
+    });
   }
 
   function boot(){
     initDiagnosis();
+    initShare();
     try{ initScene(); }catch(e){ document.getElementById('sceneWrap').classList.add('scene-fallback'); }
     initEntrance();
     initAccentSync();
