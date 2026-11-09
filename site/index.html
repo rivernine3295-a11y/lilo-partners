@@ -1685,8 +1685,8 @@
       try{ canFiles=!!(navigator.canShare && navigator.canShare({files:[new File([new Blob(['x'],{type:'image/png'})], 'x.png', {type:'image/png'})]})); }catch(e){}
       document.getElementById('shareKakao').hidden=!canFiles;
       document.getElementById('shareHint').textContent=canFiles
-        ? '공유 창에서 카카오톡을 고르면 바로 보낼 수 있어요. 이미지를 길게 눌러 저장할 수도 있어요.'
-        : '이미지를 저장한 뒤 카카오톡에서 보내주세요. 휴대폰에서는 이미지를 길게 눌러 저장할 수 있어요.';
+        ? '이미지를 길게 눌러 저장할 수도 있어요.'
+        : '휴대폰에서는 이미지를 길게 눌러 저장할 수 있어요.';
       overlay.classList.add('show');
       document.body.style.overflow='hidden';
     });
