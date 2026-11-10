@@ -1,195 +1,342 @@
 <title>릴로 경쟁사 시장조사</title>
 <meta name="claude:viewport-fit-sides" content="cover">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gothic+A1:wght@400;500;700;800&family=Space+Grotesk:wght@500;700&display=swap">
 <style>
-  /* layout: single reading column; price tiers as a ladder (cheap → premium) with Lilo's draft marked on it, then tables per segment, then meeting agenda */
+  /* layout: one reading column. Summary and corrections first, then evidence tables (competitors, sales channels, operating tools, complaints, price map), then gap scoring, strategy, meeting decisions. Font is Malgun Gothic everywhere by request. */
   :root{
-    --bg:#faf8f5; --surface:#ffffff; --fg:#1d1a16; --muted:#6b6257; --line:#e6dfd5;
-    --accent:#d9531e; --accent-soft:#fbe6dc; --warn:#a15c00; --warn-soft:#fdf0d9;
-    --font-kr:'Gothic A1',-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo',sans-serif;
-    --font-num:'Space Grotesk','Gothic A1',Arial,sans-serif;
+    --bg:#f7f6f3; --surface:#ffffff; --fg:#1c1b19; --muted:#66625b; --line:#e3e0d8;
+    --accent:#c4491c; --accent-soft:#fbe9e0;
+    --ok:#1d7a4b; --ok-soft:#e1f2e8; --part:#8f5a00; --part-soft:#fcefd3; --hyp:#555d6b; --hyp-soft:#e8eaee;
+    --font:'Malgun Gothic','맑은 고딕','Apple SD Gothic Neo','Noto Sans KR',sans-serif;
   }
   @media (prefers-color-scheme:dark){ :root:not([data-theme="light"]){
-    --bg:#13110f; --surface:#1c1915; --fg:#f2ede6; --muted:#a39888; --line:#332d26;
-    --accent:#ff7a45; --accent-soft:#3a2219; --warn:#f2b45a; --warn-soft:#33270f; color-scheme:dark; } }
+    --bg:#141311; --surface:#1d1b18; --fg:#f1ede6; --muted:#a59d90; --line:#34302a;
+    --accent:#ff8a5b; --accent-soft:#3b2318;
+    --ok:#6fd49b; --ok-soft:#173223; --part:#f0b95a; --part-soft:#35280e; --hyp:#aab2c0; --hyp-soft:#272b33; color-scheme:dark; } }
   :root[data-theme="dark"]{
-    --bg:#13110f; --surface:#1c1915; --fg:#f2ede6; --muted:#a39888; --line:#332d26;
-    --accent:#ff7a45; --accent-soft:#3a2219; --warn:#f2b45a; --warn-soft:#33270f; color-scheme:dark; }
+    --bg:#141311; --surface:#1d1b18; --fg:#f1ede6; --muted:#a59d90; --line:#34302a;
+    --accent:#ff8a5b; --accent-soft:#3b2318;
+    --ok:#6fd49b; --ok-soft:#173223; --part:#f0b95a; --part-soft:#35280e; --hyp:#aab2c0; --hyp-soft:#272b33; color-scheme:dark; }
   *{box-sizing:border-box}
-  body{background:var(--bg); color:var(--fg); font-family:var(--font-kr); font-size:15.5px; line-height:1.75;
-    word-break:keep-all; overflow-wrap:break-word;
+  body{background:var(--bg); color:var(--fg); font-family:var(--font); font-size:15px; line-height:1.75;
+    word-break:keep-all; overflow-wrap:break-word; margin:0;
     padding-left:max(16px,env(safe-area-inset-left,0px)); padding-right:max(16px,env(safe-area-inset-right,0px));}
-  main{max-width:860px; margin:0 auto; padding-block:48px 80px;}
-  .eyebrow{font-family:var(--font-num); font-size:12px; font-weight:700; letter-spacing:.14em; color:var(--accent); margin:0 0 10px;}
-  h1{font-size:clamp(28px,4.6vw,40px); font-weight:800; line-height:1.25; margin:0 0 14px; text-wrap:balance;}
-  .lede{color:var(--muted); margin:0 0 8px; max-width:65ch;}
+  button,input,table{font-family:var(--font)}
+  main{max-width:900px; margin:0 auto; padding-block:44px 90px;}
+  .eyebrow{font-size:12px; font-weight:700; letter-spacing:.12em; color:var(--accent); margin:0 0 10px;}
+  h1{font-size:clamp(26px,4.4vw,38px); font-weight:700; line-height:1.3; margin:0 0 14px; text-wrap:balance;}
+  .lede{color:var(--muted); margin:0 0 8px; max-width:66ch;}
   .meta{font-size:13px; color:var(--muted); margin:0;}
-  h2{font-size:22px; font-weight:800; margin:56px 0 6px; text-wrap:balance;}
-  h2 .n{font-family:var(--font-num); color:var(--accent); margin-right:8px;}
-  .sub{color:var(--muted); margin:0 0 20px; font-size:14.5px;}
-  h3{font-size:17px; font-weight:800; margin:28px 0 8px;}
-  p{margin:0 0 12px;}
-  ul{margin:0 0 12px; padding-left:20px;} li{margin:4px 0;}
-  b{font-weight:800;}
-  .note{background:var(--warn-soft); border-radius:12px; padding:14px 18px; font-size:14px; margin:20px 0;}
-  .note b{color:var(--warn);}
-  .key{display:grid; gap:10px; margin:24px 0 0; padding:0; list-style:none;}
-  .key li{background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:14px 18px; margin:0;}
-
-  .ladder{display:flex; flex-direction:column; gap:8px; margin:8px 0 0;}
-  .rung{display:grid; grid-template-columns:150px minmax(0,1fr); gap:14px; align-items:center;}
-  .rung .price{font-family:var(--font-num); font-weight:700; font-size:15px; text-align:right; font-variant-numeric:tabular-nums;}
-  .rung .bar{background:var(--surface); border:1px solid var(--line); border-radius:10px; padding:10px 14px; font-size:14px; min-width:0;}
-  .rung .bar small{display:block; color:var(--muted); font-size:12.5px;}
-  .rung.lilo .bar{background:var(--accent-soft); border-color:var(--accent);}
-  .rung.lilo .price{color:var(--accent);}
-  @media (max-width:560px){ .rung{grid-template-columns:1fr; gap:4px;} .rung .price{text-align:left;} }
-
-  .tbl{overflow-x:auto; margin:8px 0 12px; border:1px solid var(--line); border-radius:12px; background:var(--surface);}
-  table{border-collapse:collapse; width:100%; min-width:600px; font-size:14px;}
-  th,td{text-align:left; vertical-align:top; padding:11px 14px; border-bottom:1px solid var(--line);}
-  th{font-size:12.5px; color:var(--muted); font-weight:700; background:var(--bg);}
-  tr:last-child td{border-bottom:none;}
-  td.num{font-family:var(--font-num); font-variant-numeric:tabular-nums; white-space:nowrap; font-weight:700;}
-  .tag{display:inline-block; font-size:11.5px; font-weight:700; padding:1px 8px; border-radius:999px; background:var(--warn-soft); color:var(--warn); white-space:nowrap;}
-
-  .agenda{counter-reset:a; list-style:none; padding:0; margin:0; display:grid; gap:12px;}
-  .agenda li{counter-increment:a; position:relative; background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:16px 18px 16px 58px; margin:0;}
-  .agenda li::before{content:counter(a); position:absolute; left:18px; top:16px; width:26px; height:26px; border-radius:50%;
-    background:var(--accent); color:var(--surface); font-family:var(--font-num); font-weight:700; font-size:13px; display:flex; align-items:center; justify-content:center;}
-  .agenda h4{margin:0 0 4px; font-size:16px; font-weight:800;}
-  .agenda p{margin:0; font-size:14.5px; color:var(--muted);}
-  .src{font-size:13px; color:var(--muted);} .src a{color:var(--muted);} .src li{margin:2px 0;}
+  h2{font-size:22px; font-weight:700; margin:60px 0 6px; text-wrap:balance; scroll-margin-top:16px;}
+  h3{font-size:16.5px; font-weight:700; margin:28px 0 8px;}
+  .sub{color:var(--muted); margin:0 0 18px; font-size:14px; max-width:68ch;}
+  p{margin:0 0 12px;} ul,ol{margin:0 0 12px; padding-left:20px;} li{margin:4px 0;}
+  b,strong{font-weight:700;}
   a{color:var(--accent);}
+  .toc{display:flex; flex-wrap:wrap; gap:8px; margin:22px 0 0; padding:0; list-style:none;}
+  .toc a{display:block; font-size:13px; text-decoration:none; color:var(--fg); background:var(--surface); border:1px solid var(--line); border-radius:999px; padding:4px 12px;}
+  .box{background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:16px 20px; margin:18px 0;}
+  .box h3{margin:0 0 8px;}
+  .box.warn{background:var(--part-soft); border-color:transparent;}
+  .box.accent{background:var(--accent-soft); border-color:transparent;}
+  .tbl{overflow-x:auto; margin:8px 0 14px; border:1px solid var(--line); border-radius:12px; background:var(--surface);}
+  table{border-collapse:collapse; width:100%; min-width:760px; font-size:13.5px; line-height:1.65;}
+  th,td{text-align:left; vertical-align:top; padding:10px 13px; border-bottom:1px solid var(--line);}
+  th{font-size:12.5px; color:var(--muted); font-weight:700; background:var(--bg); white-space:nowrap;}
+  tr:last-child td{border-bottom:none;}
+  td.n{white-space:nowrap; font-variant-numeric:tabular-nums; font-weight:700;}
+  .tag{display:inline-block; font-size:11.5px; font-weight:700; padding:1px 8px; border-radius:999px; white-space:nowrap;}
+  .t-ok{background:var(--ok-soft); color:var(--ok);} .t-part{background:var(--part-soft); color:var(--part);} .t-hyp{background:var(--hyp-soft); color:var(--hyp);}
+  .read{display:grid; gap:10px; margin:14px 0; padding:0; list-style:none;}
+  .read li{background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:12px 16px; margin:0;}
+  .ladder{display:flex; flex-direction:column; gap:8px; margin:8px 0 0;}
+  .rung{display:grid; grid-template-columns:140px minmax(0,1fr); gap:14px; align-items:center;}
+  .rung .price{font-weight:700; font-size:14px; text-align:right; font-variant-numeric:tabular-nums;}
+  .rung .bar{background:var(--surface); border:1px solid var(--line); border-radius:10px; padding:9px 14px; font-size:13.5px; min-width:0;}
+  .rung .bar small{display:block; color:var(--muted); font-size:12.5px;}
+  .rung.lilo .bar{background:var(--accent-soft); border-color:var(--accent);} .rung.lilo .price{color:var(--accent);}
+  .rung.gap .bar{background:transparent; border-style:dashed; color:var(--muted);}
+  @media (max-width:560px){ .rung{grid-template-columns:1fr; gap:4px;} .rung .price{text-align:left;} }
+  .agenda{counter-reset:a; list-style:none; padding:0; margin:0; display:grid; gap:12px;}
+  .agenda li{counter-increment:a; position:relative; background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:14px 18px 14px 56px; margin:0;}
+  .agenda li::before{content:counter(a); position:absolute; left:18px; top:14px; width:26px; height:26px; border-radius:50%; background:var(--accent); color:var(--surface); font-weight:700; font-size:13px; display:flex; align-items:center; justify-content:center;}
+  .agenda h4{margin:0 0 4px; font-size:15.5px; font-weight:700;} .agenda p{margin:0; font-size:14px; color:var(--muted);}
+  .src{font-size:13px; color:var(--muted);} .src li{margin:2px 0;} .src a{color:var(--muted);}
+  .legend{display:flex; flex-wrap:wrap; gap:8px 14px; font-size:12.5px; color:var(--muted); margin:6px 0 12px;}
 </style>
 
 <main>
-  <p class="eyebrow">MARKET RESEARCH · 줌 회의 자료</p>
-  <h1>플레이스 마케팅 대행 시장,<br>누가 얼마에 무엇을 파나</h1>
-  <p class="lede">네이버 검색광고(파워링크)와 검색 상위에 노출되는 대행사들의 공개 가격·상품 구성을 모았습니다. 릴로 가격 초안이 시장 어디쯤에 있는지 보고, 회의에서 정할 것을 끝에 정리했습니다.</p>
-  <p class="meta">조사일 2026년 11월 10일 · 각 업체 홈페이지와 판매 페이지에 공개된 정보 기준</p>
-
-  <div class="note"><b>조사 한계</b> · 파워링크 광고 목록 화면 자체는 이번 조사 환경에서 열리지 않아, 광고를 집행하는 업체들의 공개 가격 페이지로 대신했습니다. 회의 전에 휴대폰으로 "플레이스마케팅", "미용실마케팅", "병원마케팅"을 검색해 파워링크 화면을 캡처해 오시면 업체 목록을 보완할 수 있어요. 공개가는 실제 견적과 다를 수 있고, VAT 포함 여부도 업체마다 다릅니다.</div>
-
-  <ul class="key">
-    <li><b>플레이스 관리만 하는 상품은 월 10만~30만 원대</b>가 시작점이고, 리뷰·블로그를 더하면 월 60만~130만 원대로 올라갑니다.</li>
-    <li><b>"순위 보장·성과형"은 키워드 검색량에 따라 60만~150만 원</b> 구간이며, 대부분 선금 30~50%를 받습니다. 진짜 100% 후불은 일부뿐입니다.</li>
-    <li><b>병원은 시장이 따로 있습니다.</b> 블로그만 월 50만~150만 원, 종합 패키지는 월 330만~1,000만 원입니다.</li>
-    <li><b>릴로 초안(월 260만 원 이상)은 미용실·음식점 시장 기준으로 최상단</b>이고, 병원 종합 패키지 가격대와 겹칩니다. 회의의 핵심 논점입니다.</li>
-    <li>고가 병원 패키지에는 이미 <b>"AI 검색 노출 세팅"</b>이 상품 항목으로 들어가 있습니다.</li>
+  <p class="eyebrow">MARKET RESEARCH · 2차 · 줌 회의 자료</p>
+  <h1>레드오션에서 비어 있는 자리 찾기</h1>
+  <p class="lede">플레이스 마케팅 대행사들이 무엇을 얼마에 팔고, 어떻게 영업하고, 어떤 프로그램으로 운영하는지 정리했습니다. 그 위에서 릴로가 파고들 틈과 첫 6개월 전략안을 제시합니다.</p>
+  <p class="meta">조사일 2026년 11월 10일 · 업체 홈페이지, 언론 보도, 업계 글의 공개 정보 기준</p>
+  <ul class="toc">
+    <li><a href="#summary">결론</a></li><li><a href="#compare">경쟁사 비교</a></li><li><a href="#sales">영업 방식</a></li>
+    <li><a href="#tools">운영 프로그램</a></li><li><a href="#pain">사장님 불만</a></li><li><a href="#price">가격 지도</a></li>
+    <li><a href="#gaps">틈새 평가</a></li><li><a href="#plan">추천 전략</a></li><li><a href="#decide">회의 안건</a></li><li><a href="#limits">조사 한계</a></li>
   </ul>
 
-  <h2><span class="n">01</span>가격 사다리</h2>
-  <p class="sub">월 기준, 업체 공개가. 릴로 초안이 어디에 걸리는지 보세요.</p>
-  <div class="ladder">
-    <div class="rung"><span class="price">월 3만~6만</span><div class="bar">전화 영업형 플레이스 관리<small>신규 등록 직후 전화로 1~3년 약정 권유. 피해 사례가 커뮤니티에 꾸준히 올라옴</small></div></div>
-    <div class="rung"><span class="price">월 10만~</span><div class="bar">저가 플레이스 관리 대행<small>홈피온 등. "순위 상승 100% 보장" 같은 문구를 함께 씀</small></div></div>
-    <div class="rung"><span class="price">월 30만~130만</span><div class="bar">플레이스 관리 패키지 (3단계)<small>트리플III, 리얼플랜제주 30/60/130만. 상위 단계일수록 블로그·리뷰 관리 추가</small></div></div>
-    <div class="rung"><span class="price">60만~150만</span><div class="bar">순위 보장·성과형<small>키워드 검색량 구간별 가격, 25일 노출 기준, 선금 30~50%</small></div></div>
-    <div class="rung lilo"><span class="price">월 260만~</span><div class="bar"><b>릴로 초안 (일반 상권)</b><small>후불제, 최소 3개월. 대형 상권은 별도 협의</small></div></div>
-    <div class="rung"><span class="price">월 330만~1,000만</span><div class="bar">병원 종합 패키지<small>플레이스·구글·블로그·숏폼·리뷰 모니터링·AI 노출 세팅·홈페이지까지. 광고비는 별도</small></div></div>
+  <h2 id="summary">결론 먼저</h2>
+  <ul class="read">
+    <li><b>"후불", "순위 안 나오면 0원", "100% 보장", "AI 노출"은 이미 시장에 널린 문구입니다.</b> 이것만으로는 릴로가 눈에 띄지 않습니다.</li>
+    <li><b>비어 있는 자리는 세 곳입니다.</b> ① 계약 구조(월 단위 해지, 위약금 0, 광고비는 사장님 계정에서 직접 결제), ② 증명 방식(사장님 본인 화면의 숫자와 한 일 내역), ③ 가격대(월 3만 원 예약 앱과 월 30만 원 대행 사이, 월 150만~330만 원 사이).</li>
+    <li><b>순위 확인 툴이 무료로 널려 있어서 "순위 캡처 리포트"는 증명력이 낮습니다.</b> 사장님이 같은 툴로 직접 확인할 수 있는 기준으로 성과를 정의하면 그것이 투명성이 됩니다.</li>
+    <li><b>영업은 전화 콜드콜의 반대편이 비어 있습니다.</b> 사장님들이 전화 영업과 장기 약정에 지쳐 있어서, 홈페이지 자가진단, 계약 전 체크리스트, 방문, 소개로 이어지는 신뢰 경로가 유리합니다.</li>
+    <li><b>추천:</b> 미용실 한 업종에 집중하고, 계약·증명 구조 자체를 상품으로 만듭니다. 병원은 소형 의원용을 2차로 둡니다. 근거와 실행안은 아래에 있습니다.</li>
+  </ul>
+  <div class="box warn">
+    <h3>지난번 자료와 말씀드린 내용 정정</h3>
+    <ul>
+      <li><b>후불제를 가장 강한 차별점이라고 했던 것은 과했습니다.</b> "순위 안 나오면 0원", "100% 후불제", "순위가 잡히기 전엔 비용 없음"을 내세우는 업체가 여럿 확인됩니다. 후불 자체보다 성과 기준을 서면으로 정하는 방식과 해지 조건이 차별점입니다.</li>
+      <li><b>AI 노출(GEO)이 미용실·음식점 쪽에서 드물다고 했던 것은 확인된 사실이 아니었습니다.</b> 이번 조사에서 리얼플랜제주, 메디컬랜드마크가 이미 항목으로 쓰고 있었습니다. 단독 차별점으로 보기는 어렵습니다.</li>
+      <li><b>더플레이스의 월 44만 원(정가 55만 원)은 어느 패키지 가격인지 원문에서 불분명합니다.</b> 이번 표에서는 그렇게 표기했습니다.</li>
+    </ul>
+  </div>
+  <div class="legend">
+    <span><span class="tag t-ok">확인됨</span> 언론 보도·분쟁조정 사례·업체 공개 페이지</span>
+    <span><span class="tag t-part">일부 확인</span> 업계 글·단일 출처</span>
+    <span><span class="tag t-hyp">가설</span> 근거 약함, 검증 필요</span>
   </div>
 
-  <h2><span class="n">02</span>유형별 상세</h2>
-  <p class="sub">같은 "플레이스 마케팅"이라도 파는 방식이 크게 다섯 갈래입니다.</p>
-
-  <h3>A. 플레이스 관리 월정액형</h3>
+  <h2 id="compare">경쟁사 상세 비교</h2>
+  <p class="sub">공개 페이지에서 확인되는 항목만 적었고, 확인되지 않은 칸은 "공개 안 됨"으로 뒀습니다. 이번 조사 범위에서 해지·위약금 조건과 월간 리포트 양식을 공개한 업체는 한 곳도 없었습니다.</p>
   <div class="tbl"><table>
-    <thead><tr><th>업체</th><th>가격</th><th>포함 내용</th><th>특이사항</th></tr></thead>
+    <thead><tr><th>업체</th><th>유형</th><th>공개 가격</th><th>결제·해지 구조</th><th>보장 문구</th><th>포함 범위·특이점</th></tr></thead>
     <tbody>
-      <tr><td>트리플III</td><td class="num">30만 / 60만 / 130만</td><td>Standard: 플레이스 SEO 관리<br>Pro: + 검색광고 운영, 블로그 기자단 리뷰<br>Premium: + 리뷰 댓글 관리</td><td>3단계 구성이 가장 명확함</td></tr>
-      <tr><td>리얼플랜제주</td><td class="num">30만 / 60만 / 130만~</td><td>플레이스 관리 3단계, 블로그 대행 별도 (월 8건 40만, 12건 60만, 16건 80만)</td><td>월정액에 광고비 미포함 명시, AI 검색 최적화 항목 있음</td></tr>
-      <tr><td>더바른컨설팅</td><td class="num">30만~</td><td>플레이스 상위노출 관리</td><td>선금 50% + 성과 후 잔금 50%</td></tr>
-      <tr><td>더플레이스</td><td class="num">44만 (정가 55만)</td><td>플레이스·블로그 패키지</td><td>할인가 전면 노출</td></tr>
-      <tr><td>홈피온</td><td class="num">10만~</td><td>기본 관리 대행 (VAT 별도)</td><td><span class="tag">"100% 보장" 문구</span></td></tr>
+      <tr><td><b>트리플III</b></td><td>플레이스 월정액</td><td class="n">30만 / 60만 / 130만</td><td>공개 안 됨</td><td>확인 안 됨</td><td>Standard: 플레이스 SEO 관리. Pro: 검색광고 운영, 블로그 기자단 리뷰 추가. Premium: 리뷰 댓글 관리 추가.</td></tr>
+      <tr><td><b>리얼플랜제주</b></td><td>월정액·블로그 (도메인상 제주 기반)</td><td class="n">플레이스 30만 / 60만 / 130만~<br>블로그 8건 40만 · 12건 60만 · 16건 80만 (VAT 별도)</td><td>공개 안 됨</td><td>확인 안 됨</td><td>월정액에 광고비 미포함을 명시. 페이지 제목에 AI 검색 최적화를 표기. 지역 기반 업체도 이 시장에 있다는 증거.</td></tr>
+      <tr><td><b>홈피온</b></td><td>저가 월정액</td><td class="n">10만~ (VAT 별도)</td><td>공개 안 됨</td><td>"순위 상승 100% 보장"</td><td>기본 관리 대행.</td></tr>
+      <tr><td><b>더바른컨설팅</b></td><td>성과형</td><td class="n">30만~</td><td>선수금 50%, 성과 달성 후 잔금 50%</td><td>상위노출</td><td>공개 정보가 적음.</td></tr>
+      <tr><td><b>더플레이스</b></td><td>통합 에이전시</td><td class="n">월 55만 → 44만 할인가 표기</td><td>공개 안 됨</td><td>확인 안 됨</td><td>플레이스·블로그 패키지. 어느 패키지 가격인지 원문에서 불분명.</td></tr>
+      <tr><td><b>실행사닷컴</b></td><td>성과형</td><td class="n">검색량 구간별 60만~150만</td><td>선금 30%, 1페이지 노출 후 잔금</td><td>노출 후 잔금</td><td>검색량 5천 이하 60만, 3만~5만 구간 150만.</td></tr>
+      <tr><td><b>GPA KOREA</b></td><td>성과형</td><td class="n">문의 (검색량 클수록 단가 상승)</td><td>25일 보장</td><td>"월보장"</td><td>방문·리뷰·트래픽 증가 묶음 상품.</td></tr>
+      <tr><td><b>다인기획</b></td><td>성과형</td><td class="n">문의</td><td>25일 노출 유지 확인 후 2차 결제</td><td>확인 안 됨</td><td>유지 기간을 결제 조건으로 연결.</td></tr>
+      <tr><td><b>에즈마케팅</b></td><td>성과형</td><td class="n">문의</td><td>순위가 잡히기 전에는 비용 없음</td><td>상위노출</td><td>완전 후불을 내세움.</td></tr>
+      <tr><td><b>포블로그</b></td><td>체험단·광고 대행</td><td class="n">체험단 월 8만~ (월 5~10팀)<br>6개월 36만 · 12개월 59.9만~<br>플레이스 광고 대행 6개월 120만~<br>방문자리뷰 100건 44만~</td><td>기간 단위 가격 표기</td><td>확인 안 됨</td><td>당근 로컬 프로필로 영업. 기간이 길수록 월 단가가 내려가는 구조.</td></tr>
+      <tr><td><b>공식 인증 광고대행사</b><br>(네오클립 등)</td><td>검색광고</td><td class="n">별도 대행료 없음이라고 안내</td><td>광고비만 부담, 수수료는 네이버가 지급한다는 업체 설명</td><td>"공식 인증"</td><td>"신규 광고주 최대 26만 원 혜택" 같은 문구는 검증되지 않음. 공식 대행사 사칭 사기도 보고됨.</td></tr>
+      <tr><td><b>메디컬랜드마크</b></td><td>병원 종합</td><td class="n">330만 (VAT 포함)</td><td>광고비는 별도</td><td>확인 안 됨</td><td>플레이스·구글 프로필 세팅, 리뷰 모니터링, 숏츠·릴스 월 4편, 브랜드 블로그, 검색·AI 노출 세팅, 홈페이지 제작.</td></tr>
+      <tr><td><b>미담기획</b></td><td>병원 종합</td><td class="n">500만 / 1,000만</td><td>공개 안 됨</td><td>확인 안 됨</td><td>종합 광고대행사의 병원 패키지.</td></tr>
     </tbody>
   </table></div>
-
-  <h3>B. 순위 보장·성과형</h3>
-  <div class="tbl"><table>
-    <thead><tr><th>업체</th><th>가격</th><th>결제 방식</th><th>특이사항</th></tr></thead>
-    <tbody>
-      <tr><td>실행사닷컴</td><td class="num">60만~150만</td><td>선금 30%, 1페이지 노출 후 잔금</td><td>검색량 5천 이하 60만 ~ 3만~5만 구간 150만</td></tr>
-      <tr><td>GPA KOREA</td><td class="num">문의</td><td>25일 노출 보장</td><td>검색량 큰 키워드일수록 보장 단가 상승</td></tr>
-      <tr><td>다인기획</td><td class="num">문의</td><td>25일 노출 유지 확인 후 2차 결제</td><td></td></tr>
-      <tr><td>에즈마케팅</td><td class="num">문의</td><td>순위가 잡히기 전엔 비용 없음</td><td>완전 후불을 내세우는 몇 안 되는 곳</td></tr>
-      <tr><td>구인구직 게시판 광고</td><td class="num">문의</td><td>"100% 후불제"</td><td><span class="tag">"5등 이내 보장" 문구</span></td></tr>
-    </tbody>
-  </table></div>
-  <p>이 유형은 <b>"후불"이라고 해도 대부분 선금이 있고</b>, "성과"의 기준을 "25일 동안 몇 위 이내 유지"처럼 좁게 정의합니다. 릴로가 진짜 후불을 하려면 성과 기준부터 정확히 정해야 비교 우위가 생깁니다.</p>
-
-  <h3>C. 체험단·리뷰 건당형</h3>
-  <div class="tbl"><table>
-    <thead><tr><th>업체</th><th>가격</th><th>내용</th></tr></thead>
-    <tbody>
-      <tr><td>크몽 판매자 A</td><td class="num">5천 / 1만 / 2만 (건당)</td><td>배송형 / 방문형 / 기자단. 20팀 패키지 10만</td></tr>
-      <tr><td>크몽 판매자 B</td><td class="num">1만~1.5만 (건당)</td><td>방문 체험단, 리뷰 요청 포함 시 1.5만</td></tr>
-      <tr><td>포블로그</td><td class="num">8만~ (1개월)</td><td>월 5~10팀 모집. 6개월 36만, 12개월 59.9만. 플레이스 광고 대행 6개월 120만~</td></tr>
-      <tr><td>리뷰노트 등 플랫폼</td><td class="num">모집 무료~</td><td>광고주 무료 모집 가능. 유료 옵션은 공개 안 됨</td></tr>
-    </tbody>
-  </table></div>
-  <p>일부 업체는 "네이버 방문자리뷰 100건 44만 원" 같은 상품도 팝니다. 실제 방문 없이 리뷰를 만드는 상품이라면 네이버 정책 위반이라, 릴로가 차별화할 지점이기도 합니다.</p>
-
-  <h3>D. 블로그 운영 대행</h3>
-  <div class="tbl"><table>
-    <thead><tr><th>구분</th><th>월 8건</th><th>월 12건</th><th>비고</th></tr></thead>
-    <tbody>
-      <tr><td>일반 업종 (리얼플랜제주)</td><td class="num">40만</td><td class="num">60만</td><td>16건 80만, VAT 별도</td></tr>
-      <tr><td>병원 (업계 평균 안내)</td><td class="num">50만~80만</td><td class="num">80만~150만</td><td>의료광고 표현 검수 포함 여부가 가격 차이</td></tr>
-      <tr><td>초저가</td><td class="num" colspan="2">20만~30만</td><td>AI 자동생성 글 위주라는 지적, 저품질 위험</td></tr>
-    </tbody>
-  </table></div>
-
-  <h3>E. 병원 종합 패키지</h3>
-  <div class="tbl"><table>
-    <thead><tr><th>업체</th><th>가격</th><th>포함 내용</th></tr></thead>
-    <tbody>
-      <tr><td>메디컬랜드마크</td><td class="num">330만 (VAT 포함)</td><td>플레이스·구글 비즈니스 프로필 세팅, 리뷰 모니터링, 숏츠·릴스 월 4편, 브랜드 블로그, 검색·AI 노출 세팅, 홈페이지 제작. 광고비 별도</td></tr>
-      <tr><td>미담기획</td><td class="num">500만 / 1,000만</td><td>종합 패키지 2단계</td></tr>
-      <tr><td>업계 안내 기준</td><td class="num">100만~500만</td><td>개원 초기 월 300만~500만, 안정기 월 100만~250만. 의료광고 심의비 별도인 곳 많음</td></tr>
-    </tbody>
-  </table></div>
-
-  <h2><span class="n">03</span>경쟁사들의 공통 약점</h2>
-  <p class="sub">사장님들이 이미 데인 경험이 있는 부분이고, 릴로 홈페이지·영업 멘트로 뒤집을 수 있는 지점입니다.</p>
-  <ul>
-    <li><b>보장 문구 남발.</b> "100% 보장", "5등 이내 보장"이 흔합니다. 네이버 광고주센터도 상위노출 보장, 과도한 위약금 요구를 광고 사기 신호로 안내합니다.</li>
-    <li><b>무늬만 후불.</b> 대부분 선금 30~50%를 받고, 성과 기준이 좁습니다.</li>
-    <li><b>장기 약정.</b> 월 몇만 원에 1~3년 약정을 거는 전화 영업 피해가 반복됩니다.</li>
-    <li><b>대행료와 광고비 혼합.</b> 패키지 안에 광고비가 섞여 있으면 실제 집행 규모를 알 수 없다는 지적이 많습니다.</li>
-    <li><b>저품질 블로그.</b> 초저가 블로그 대행은 AI 생성 글 위주라 오히려 블로그 지수를 떨어뜨릴 위험이 있습니다.</li>
+  <ul class="read">
+    <li><b>가격 표시 방식:</b> 월 30만 / 60만 / 130만의 3단 구성이 표준이고, 상위 단계일수록 블로그와 리뷰 관리가 붙습니다.</li>
+    <li><b>후불 구조:</b> 선금 30~50%를 받는 곳이 많고, 성과는 "25일 유지"처럼 좁게 정의합니다. 완전 후불은 일부입니다.</li>
+    <li><b>비어 있는 정보:</b> 해지 조건, 위약금, 리포트 양식, 작업 내역 공개 범위. 사장님이 계약 전에 가장 알고 싶은 항목이 공개돼 있지 않습니다.</li>
   </ul>
 
-  <h2><span class="n">04</span>오늘 회의에서 정할 것</h2>
-  <ol class="agenda">
-    <li><h4>월 260만 원의 근거와 포지션</h4><p>미용실·음식점 시장의 성과형 상품은 60만~150만 원입니다. 260만 원이면 병원 종합 패키지와 비교됩니다. 이 가격에 무엇이 들어가는지(플레이스만? 블로그·리뷰·리포트까지?)를 정해야 영업에서 설명할 수 있습니다.</p></li>
-    <li><h4>입문 상품을 둘지</h4><p>경쟁사 대부분이 30만 / 60만 / 130만 같은 3단계를 씁니다. 자가진단으로 들어온 사장님이 처음 결제하기 쉬운 입문 상품(플레이스 정비 1회 + 월 관리)이 있으면 전환이 빨라집니다.</p></li>
-    <li><h4>"후불"의 성과 기준</h4><p>어떤 키워드로, 몇 위 이내를, 며칠 유지하면 성과로 볼지. 선금을 정말 0원으로 할지. 이게 경쟁사 대비 가장 강한 차별점이 될 수 있습니다.</p></li>
-    <li><h4>병원 상품 분리</h4><p>병원 시장은 가격대와 규제가 따로입니다. 의료광고 검수를 누가 할지, 병원은 블로그 중심 패키지로 갈지 정해야 합니다.</p></li>
-    <li><h4>체험단·블로그를 직접 할지, 외부를 쓸지</h4><p>체험단은 건당 5천~2만 원, 블로그는 월 8건 40만 원 선에서 외주가 가능합니다. 원가를 알면 패키지 가격과 마진을 계산할 수 있습니다.</p></li>
-    <li><h4>AI 검색(GEO) 항목을 넣을지</h4><p>고가 병원 패키지에는 이미 "AI 노출 세팅"이 들어가 있습니다. 미용실·음식점 대행사 중에는 아직 드뭅니다.</p></li>
+  <h2 id="sales">영업은 어떻게 전개되나</h2>
+  <p class="sub">업체들의 영업 접점을 채널별로 정리했습니다. 채널별 전환율이나 매출 비중은 어느 자료에서도 확인되지 않았고, 아래는 공개된 문구와 사례에서 읽은 패턴입니다.</p>
+  <div class="tbl"><table>
+    <thead><tr><th>채널</th><th>전개 방식</th><th>근거</th><th>한계·반응</th><th>릴로 시사점</th></tr></thead>
+    <tbody>
+      <tr><td><b>신규 등록 직후 전화·문자·톡톡</b></td><td>플레이스 등록 직후 연락해 월 3만~6만 원, 1~3년 약정을 제안합니다. 키워드 노출과 홈페이지 제작을 묶고, 순위 보장 문구를 씁니다.</td><td><span class="tag t-part">일부 확인</span> 업계 커뮤니티 글, 대행사 가이드</td><td>싼 가격에 계약한 사장님들이 위약금 분쟁의 출발점으로 호소합니다. 전화 영업 피로가 커진 상태입니다.</td><td>이 방식을 쓰지 않는 것 자체가 포지션입니다.</td></tr>
+      <tr><td><b>검색 파워링크 → 문자·카톡 상담</b></td><td>"플레이스 마케팅" 같은 키워드에 광고를 걸고, 전화가 몰리니 문자나 카카오톡으로 남기라고 안내합니다.</td><td><span class="tag t-part">일부 확인</span> 대행사 자체 홍보 글. 광고 화면은 직접 캡처하지 못함</td><td>광고비가 계속 들고, 광고 문구가 서로 비슷해 차별이 안 됩니다.</td><td>회의 전에 실제 파워링크 화면을 캡처해 문구를 비교할 가치가 있습니다.</td></tr>
+      <tr><td><b>마켓플레이스 (크몽·숨고)</b></td><td>건당·패키지 상품으로 판매합니다. 체험단은 건당 5천~3.5만 원, 월 10만 원대 뷰티샵 외주도 있습니다. 숨고는 견적 요청형이고, 블로그 마케팅은 건당 평균 30만 원(25,000~1,200,000원)으로 표시됩니다.</td><td><span class="tag t-ok">확인됨</span> 판매 페이지</td><td>가격 비교가 쉬워 저가 경쟁이 됩니다. 후기와 포트폴리오로 선택됩니다.</td><td>가격 경쟁 채널은 아닙니다. 후기를 쌓는 신뢰 창구로는 쓸 수 있습니다.</td></tr>
+      <tr><td><b>커뮤니티 "서비스 홍보" 게시판</b></td><td>아이보스 같은 마케터 커뮤니티에 "순위 안 나오면 0원", "대한민국 1등 실행사", "투명하고 확실한 결과로 증명" 같은 훅 글을 반복 게시합니다.</td><td><span class="tag t-ok">확인됨</span> 게시글 제목</td><td>같은 훅이 반복돼 포화 상태입니다. 주 독자가 사장님보다 마케터·대행사입니다.</td><td>같은 훅을 쓰면 묻힙니다.</td></tr>
+      <tr><td><b>자체 사이트 콘텐츠</b></td><td>"대행사 고르는 방법", "음식점 플레이스 마케팅 대행사 선택법", "행안면 신규 매장 오픈 로드맵"처럼 지역·업종 롱테일 글을 올려 검색 유입을 받습니다. 자기에게 유리한 선택 기준을 글에 심어 둡니다.</td><td><span class="tag t-ok">확인됨</span> 업체 매거진·블로그</td><td>글이 비슷비슷하고 광고성이 강합니다.</td><td>"계약 전 체크리스트"를 중립적으로 쓰면 신뢰와 검색 유입을 함께 얻습니다.</td></tr>
+      <tr><td><b>로컬 채널 (당근 프로필)</b></td><td>당근 로컬 프로필에 체험단·리뷰 상품을 올립니다.</td><td><span class="tag t-ok">확인됨</span> 포블로그 프로필</td><td>지역 밀착이지만 규모는 작습니다.</td><td>동네 단위 신뢰에 맞습니다. 파일럿 이후 후보입니다.</td></tr>
+      <tr><td><b>인증·수상 배지</b></td><td>"네이버 공식·프리미어 파트너", "3년 연속 브랜드 대상", "15년 데이터와 기술"을 전면에 내세웁니다.</td><td><span class="tag t-ok">확인됨</span> 업체 페이지·보도</td><td>공식 대행사 명단과 대조해야 하고, 사칭 사례도 보고됩니다. 사장님은 배지를 구분하기 어렵습니다.</td><td>배지 경쟁은 불리합니다. 서면 계약 조건과 사례로 대응합니다.</td></tr>
+      <tr><td><b>가격 훅</b></td><td>정가 옆에 할인가를 병기하고(55만 → 44만), 기간이 길수록 월 단가를 낮춥니다(1·6·12개월). 신규 광고주 혜택을 표기합니다.</td><td><span class="tag t-ok">확인됨</span> 판매 페이지</td><td>장기 선결제로 유도하는 구조라 해지 분쟁과 연결됩니다.</td><td>릴로는 월 단위로 가격을 단순하게 두는 쪽이 대비됩니다.</td></tr>
+      <tr><td><b>무료·유료 진단</b></td><td>"무료 견적"은 흔하지만 진단을 유료로 판매하는 곳도 있습니다(AI 노출 진단 15만 원, 네이버 리뷰 분석 리포트 30만 원).</td><td><span class="tag t-part">일부 확인</span> 업체 페이지, 가격 검증 안 됨</td><td>네이버 공식 무료 진단 도구는 확인되지 않았습니다.</td><td>릴로의 연락처 없는 즉시 무료 자가진단은 시장 대비 차별입니다.</td></tr>
+      <tr><td><b>대행사 전환 영업</b></td><td>"대행사는 바꿨는데 작업은 그대로? 꼭 확인해보세요"처럼 기존 대행사에 불만이 있는 사장님을 겨냥합니다.</td><td><span class="tag t-ok">확인됨</span> 게시글 제목</td><td>기존 계약의 해지·위약금이 걸려 있으면 전환이 막힙니다.</td><td>"현재 대행사 점검" 진단은 자가진단의 확장으로 가능합니다.</td></tr>
+      <tr><td><b>오프라인 방문</b></td><td>플레이스 대행사의 방문 영업 사례는 찾지 못했습니다. 일반 방문 영업 글은 1장짜리 제안서와 한산한 시간대 방문을 권합니다.</td><td><span class="tag t-hyp">가설</span> 일반 영업 블로그 글</td><td>점심시간 방문은 효과가 낮다는 조언이 있습니다.</td><td>경쟁이 비어 있는 채널일 수 있어서 파일럿으로 직접 검증할 가치가 있습니다.</td></tr>
+    </tbody>
+  </table></div>
+  <div class="box accent">
+    <h3>영업 패턴에서 읽히는 것</h3>
+    <ul>
+      <li><b>업계는 "싸게 먼저 묶고, 나중에 푸는" 구조에 의존합니다.</b> 신규 등록 직후 저가 장기 약정, 기간이 길수록 낮아지는 월 단가, 할인가 병기가 모두 같은 방향입니다. 해지 분쟁 사례가 반복되는 이유입니다.</li>
+      <li><b>훅은 포화됐고 신뢰 장치는 비어 있습니다.</b> 사장님이 계약 전에 확인할 수 있는 것은 업체의 자기 주장뿐입니다.</li>
+      <li><b>자가진단처럼 사장님이 먼저 가치를 얻고 나서 연락하게 하는 입구</b>는 조사 범위에서 거의 보이지 않았습니다.</li>
+    </ul>
+  </div>
+
+  <h2 id="tools">운영 프로그램과 도구</h2>
+  <p class="sub">대행사가 실제로 쓸 수 있는 프로그램을 용도별로 모았습니다. 가격은 공개 표기 기준입니다.</p>
+  <div class="tbl"><table>
+    <thead><tr><th>용도</th><th>도구</th><th>가격·방식</th><th>릴로 활용</th></tr></thead>
+    <tbody>
+      <tr><td rowspan="4"><b>순위 확인 (무료)</b></td><td>써치(Xearch)</td><td>가게 이름만 넣으면 대표키워드 순위를 광고 제외 300위까지 표시. 가입하면 하루 한 번 자동 기록.</td><td rowspan="4">무료 툴이 여러 개라서 사장님도 직접 확인할 수 있습니다. 성과 기준을 이 툴들로 재확인 가능하게 정의하면 투명해집니다.</td></tr>
+      <tr><td>N체커</td><td>키워드별 순위 1~300위, 경쟁 업체의 리뷰·저장 수 비교.</td></tr>
+      <tr><td>키워드 마스터</td><td>비회원은 블로그·플레이스 조회 합산 3회 무료.</td></tr>
+      <tr><td>홍보통</td><td>크롬 확장 프로그램, 브라우저에서 직접 검색 수행.</td></tr>
+      <tr><td rowspan="4"><b>순위 자동 추적 (유료)</b></td><td>셀러랭크</td><td>플레이스·여러 채널 순위를 매일 자동 추적.</td><td rowspan="4">거래처 5곳 이상부터 유료 1개 도입을 검토합니다. 처음에는 무료 툴과 수기 기록 시트로 충분합니다.</td></tr>
+      <tr><td>몇등</td><td>설치형 프로그램, 설정 시간에 자동 체크 후 엑셀 내보내기. 플레이스 순위체크는 55,000원부터.</td></tr>
+      <tr><td>플레이스 바로미터</td><td>키워드 하나로 노출 업체 점수·리뷰 지표를 보여주고 상위 업체와 비교.</td></tr>
+      <tr><td>Apify Naver Place Rank Tracker</td><td>로그인 없이 300위까지, 50개 조회당 약 1.6달러부터.</td></tr>
+      <tr><td rowspan="2"><b>광고 집행</b></td><td>네이버 광고주센터 (플레이스 유형 캠페인)</td><td>입찰가 50~5,000원, 하루 예산 설정, 같은 지역·업종 평균 입찰가 제공. 사장님이 직접 집행할 수도 있습니다.</td><td rowspan="2">광고비는 사장님 계정에서 직접 결제하고, 릴로는 권한 위임으로 운영하는 구조가 가능합니다.</td></tr>
+      <tr><td>검색광고 API 권한 위임</td><td>대행사는 고객사 계정에서 권한 위임을 설정해 접근합니다. 로그인 정보를 받지 않아도 됩니다. 스마트플레이스의 같은 방식은 이번에 확인하지 못함.</td></tr>
+      <tr><td rowspan="4"><b>리포트 자동화</b></td><td>매직테이블</td><td>광고 채널 API로 리포트를 자동 추출하고 계산식을 적용해 취합. 채널별 API 지원 여부는 확인이 필요합니다.</td><td rowspan="4">처음에는 월간 리포트 템플릿(스마트플레이스 통계 화면, 한 일 내역, 다음 달 계획)을 수기로 만듭니다. 광고 집행이 늘면 API 자동화를 검토합니다.</td></tr>
+      <tr><td>통합 대시보드 외주 (크몽)</td><td>메타·구글·네이버·카카오 광고 데이터를 합친 대시보드를 제작. 네이버는 엑셀 업로드 방식 포함.</td></tr>
+      <tr><td>네이버 검색광고 API</td><td>심사 없이 약관 동의로 발급. 인증이 HMAC 서명 방식이고, 성과 데이터에 캠페인 이름이 없어 별도 조인이 필요하며, ROAS가 배수가 아닌 퍼센트입니다.</td></tr>
+      <tr><td>조회 전용 오픈소스 MCP 서버</td><td>캠페인·광고그룹·키워드·성과 지표를 AI 도구에서 조회. 생성·수정·삭제는 미지원.</td></tr>
+      <tr><td rowspan="2"><b>체험단·리뷰</b></td><td>크몽 체험단 외주</td><td>배송형 1건 35,000원 · 5건 15만 원 · 10건 29만 원. 다른 업체는 1건 1만 원 · 10건 9.9만 원 · 30건 29.7만 원. 방문자 수 기준 3만 / 5만 / 8만 원.</td><td rowspan="2">체험 없는 리뷰 작성은 법규 위반이라고 업체 스스로 명시합니다. 협찬 표시 준수 여부를 계약에서 확인합니다.</td></tr>
+      <tr><td>리뷰노트 등 체험단 플랫폼</td><td>광고주는 무료 모집 가능. 유료 옵션과 요금은 공개 정보로 확인하지 못함.</td></tr>
+      <tr><td><b>예약·고객관리 (미용실)</b></td><td>팅커뷰, 공비서, 뷰티인프라, 핸드SOS, 뷰카, 노쇼 없는 미용실, HANDSUB</td><td>월 9,900원(팅커뷰, 네이버 예약 공식 파트너 소개) ~ 22,500원, 뷰카 기본 0원·상위 28,000원, 노쇼 없는 미용실 19,000원, HANDSUB은 구축비 + 월 9만 원부터.</td><td>CRM 가격 천장이 월 3만 원 안팎입니다. 릴로가 구독을 만든다면 CRM이 아니라 신규 유입 쪽이어야 합니다.</td></tr>
+      <tr><td><b>진단</b></td><td>민간 유료 진단</td><td>AI 노출 진단 15만 원, 네이버 리뷰 분석 리포트 30만 원 (가격 검증 안 됨). 네이버 공식 무료 진단 도구는 확인되지 않음.</td><td>유료로 파는 진단을 릴로는 무료로 제공하고 있습니다.</td></tr>
+      <tr><td><b>키워드 분석</b></td><td>블랙키위, 아이템스카우트 등</td><td>이번 조사에서 확인하지 못함.</td><td>필요하면 별도 조사합니다.</td></tr>
+    </tbody>
+  </table></div>
+  <ul class="read">
+    <li><b>순위 캡처는 증명이 아닙니다.</b> 누구나 무료로 확인하는 숫자라서 리포트 가치가 낮습니다. 사장님 화면의 유입·전화·예약·길찾기 같은 전환 지표와 한 일 내역이 증명의 중심이 되어야 합니다.</li>
+    <li><b>"로그인 정보 요구 안 함"은 실제로 가능한 약속입니다.</b> 검색광고는 권한 위임 구조가 있습니다. 스마트플레이스에서 같은 방식으로 일할 수 있는지는 계약 전에 직접 확인해 주세요.</li>
+    <li><b>리포트 자동화는 광고 집행이 늘어난 뒤의 일입니다.</b> 처음에는 수기 템플릿 하나로 충분하고, 그 템플릿 자체가 차별 요소가 됩니다.</li>
+  </ul>
+
+  <h2 id="pain">사장님이 실제로 겪는 문제</h2>
+  <div class="tbl"><table>
+    <thead><tr><th>문제</th><th>근거</th><th>신뢰도</th><th>뒤집는 방법</th></tr></thead>
+    <tbody>
+      <tr><td><b>해지·위약금</b></td><td>전자거래분쟁조정위 사례: 1년 계약을 15일 만에 해지, 위약금 10%는 인정됐지만 대행사가 청구한 기집행비용 129만 원 중 71만 원만 인정돼 166만 6천 원 환급 결정. 해지를 요구하자 소통을 끊었다는 호소도 보도됨. 위약금이 훨씬 높았던 사례가 지적된 적 있으나 원문 확인이 필요합니다.</td><td><span class="tag t-ok">확인됨</span></td><td>월 단위 계약, 위약금 0원을 계약서 앞장에 명시.</td></tr>
+      <tr><td><b>보장 불이행</b></td><td>"100% 노출 보장" 문구를 믿고 비용을 낸 매장들이 오히려 순위가 떨어진 사례가 보도됨. 네이버는 상위 노출을 100% 보장할 방법이 없다고 안내.</td><td><span class="tag t-ok">확인됨</span></td><td>순위 보장을 하지 않고, 성과 기준을 서면으로 정의.</td></tr>
+      <tr><td><b>리스크가 사장님에게 넘어감</b></td><td>네이버 2026년 1월 공지 정리: 조작한 영수증 리뷰가 1회만 적발돼도 업체 단위 제재, 대행사 작업이어도 책임은 업체에 적용. 리뷰 1건 7천 원 수준의 허위 리뷰 시장이 보도됨. 업체 단위 제재 세부 기준은 커뮤니티 정리 글이라 공지 원문 확인이 필요합니다.</td><td><span class="tag t-part">일부 확인</span></td><td>월 단위로 한 일을 전부 공개하고, 사장님이 확인 가능한 작업만 합니다.</td></tr>
+      <tr><td><b>계정정보 요구</b></td><td>환불 조건으로 네이버 ID·비밀번호를 요구한 사례가 보도됐고, 네이버는 해지에 ID·PW가 필요하지 않다고 밝힘.</td><td><span class="tag t-ok">확인됨</span> (보도 1건)</td><td>로그인 정보 요구 안 함. 광고비는 사장님 계정에서 직접 결제.</td></tr>
+      <tr><td><b>리포트 불신</b></td><td>업계 글: 매주 같은 그래프에 문구만 바뀌는 복붙 리포트, 성과 나열에서 그치고 "얼마를 벌었는지"에 답하지 못함. 사장님 직접 증언은 아님.</td><td><span class="tag t-part">일부 확인</span></td><td>사장님 스마트플레이스 통계 기준 리포트와 다음 달 할 일.</td></tr>
+      <tr><td><b>미용실: 예약 앱 수수료·가격 경쟁·재방문</b></td><td>예약 앱 수수료에 대한 원장 불만 기사(몇 년 전 자료), 마케팅 블로그의 재방문 유도 조언.</td><td><span class="tag t-hyp">가설</span></td><td>원장 인터뷰로 먼저 검증. 보류했던 인터뷰 항목을 다시 살릴 필요가 있습니다.</td></tr>
+      <tr><td><b>병원: 책임이 병원에 귀속</b></td><td>의료광고 책임 주체는 의료기관·의료인이고 대행사는 포함되지 않는다는 업체 글. 치료경험담은 금지 대상. 법령 원문(의료법 제56조) 확인이 필요합니다.</td><td><span class="tag t-part">일부 확인</span></td><td>의료광고 표현 검수를 절차에 넣은 소형 의원용 상품.</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>사장님이 대행사 말고 선택할 수 있는 대안</h3>
+  <div class="tbl"><table>
+    <thead><tr><th>대안</th><th>비용</th><th>한계</th></tr></thead>
+    <tbody>
+      <tr><td>네이버 광고 직접 집행</td><td>입찰 50~5,000원, 하루 예산 설정, 위약금 없음</td><td>세팅과 키워드 선정에 시간이 듭니다.</td></tr>
+      <tr><td>네이버 무료 도구·교육</td><td>스마트플레이스 기능 무료. 2024년 헤어숍 대상 AI 뷰티 마케팅 스쿨은 수료 시 비즈머니 30만 원 지급(현재 운영 여부 미확인)</td><td>꾸준히 운영할 시간이 필요합니다.</td></tr>
+      <tr><td>예약·CRM 앱</td><td>월 0~3만 원</td><td>신규 유입 기능이 약합니다.</td></tr>
+      <tr><td>체험단 플랫폼·외주</td><td>플랫폼 무료 모집 또는 건당 5천~3.5만 원</td><td>한 식당 운영자는 비용 대비 매출 효과를 체감하지 못했다고 밝혔습니다(개인 사례).</td></tr>
+      <tr><td>대행사</td><td>월 10만~130만 원, 성과형 60만~150만 원, 병원 330만 원~</td><td>위약금, 보장 불이행, 리포트 문제.</td></tr>
+    </tbody>
+  </table></div>
+  <p>대행이 필요한 사람은 <b>시간이 없고, 직접 해 볼 자신이 없는 원장</b>입니다. 이 사람에게 필요한 것은 "맡겨도 안전하다"는 확신입니다.</p>
+
+  <h2 id="price">가격 지도와 공백</h2>
+  <p class="sub">월 기준 공개가. 점선 칸은 이번 조사 표본에서 상품이 보이지 않은 구간입니다.</p>
+  <div class="ladder">
+    <div class="rung"><span class="price">월 0~3만</span><div class="bar">예약·CRM 앱<small>팅커뷰 9,900 · 공비서 9,900~19,800 · 뷰티인프라 22,500 · 뷰카 0~28,000</small></div></div>
+    <div class="rung"><span class="price">월 3만~10만</span><div class="bar">전화 영업형 관리 (3~6만, 1~3년 약정), 저가 외주<small>저품질·약정 중심으로 신뢰가 낮은 구간. 신뢰할 만한 셀프 가이드형 구독은 보이지 않음</small></div></div>
+    <div class="rung"><span class="price">월 10만~30만</span><div class="bar">홈피온 10만~, 크몽 뷰티샵 외주 10만 원대<small>보장 문구가 붙는 경우가 많음</small></div></div>
+    <div class="rung"><span class="price">월 30만~130만</span><div class="bar">플레이스 관리 3단계<small>트리플III, 리얼플랜제주: 30 / 60 / 130</small></div></div>
+    <div class="rung"><span class="price">60만~150만</span><div class="bar">성과형 (검색량 구간별)<small>선금 30~50%, 25일 유지 기준</small></div></div>
+    <div class="rung gap"><span class="price">월 150만~330만</span><div class="bar">일반 업종 공개 상품 보이지 않음 (표본 기준)<small>수요가 없어서 비어 있을 가능성도 있음</small></div></div>
+    <div class="rung lilo"><span class="price">월 260만~</span><div class="bar"><b>릴로 초안 (일반 상권)</b><small>후불제, 최소 3개월 유지, 대형 상권은 별도 협의</small></div></div>
+    <div class="rung"><span class="price">월 330만~1,000만</span><div class="bar">병원 종합 패키지<small>메디컬랜드마크 330 · 미담기획 500 / 1,000, 광고비 별도</small></div></div>
+  </div>
+  <div class="box">
+    <h3>260만 원이 시장에서 어떻게 보이는지</h3>
+    <p>공개가로 부품을 조합해 보면 플레이스 Premium 130만 + 블로그 월 12건 60만 + 체험단 20팀 10만 = <b>약 200만 원</b>입니다(제 계산, 업체가 서로 다르고 VAT 별도). 릴로 초안은 이 조합보다 약 60만 원 높습니다. 그 차이를 "후불, 해지 자유, 증명 가능한 리포트, 한 곳이 책임지는 운영"으로 설명할 수 있어야 합니다.</p>
+  </div>
+
+  <h2 id="gaps">틈새 후보 평가</h2>
+  <p class="sub">근거 강도는 위 표의 신뢰도 기준이고, 경쟁 밀도와 실행 부담은 제 판단입니다.</p>
+  <div class="tbl"><table>
+    <thead><tr><th>틈새</th><th>근거</th><th>경쟁 밀도</th><th>실행 부담</th><th>판단</th></tr></thead>
+    <tbody>
+      <tr><td><b>① 계약 구조</b><br>월 단위 해지, 위약금 0, 광고비 사장님 직접 결제</td><td><span class="tag t-ok">확인됨</span></td><td>중간. 후불 문구는 흔하지만 해지 조건을 공개한 곳은 없음</td><td>낮음 (계약서 설계)</td><td>단독으로는 약하고 ②와 묶으면 강합니다.</td></tr>
+      <tr><td><b>② 증명 방식</b><br>사장님 화면의 전환 숫자 + 한 일 내역 + 직접 재확인 가능한 성과 기준</td><td><span class="tag t-part">일부 확인</span></td><td>낮음. 리포트 양식을 공개한 곳이 없음</td><td>중간 (템플릿과 매월 작업)</td><td><b>가장 유망.</b> 따라 하기 어렵고 자가진단과도 이어집니다.</td></tr>
+      <tr><td><b>③ 소형 의원 전용</b><br>월 100만~250만 원대, 의료광고 검수 포함</td><td><span class="tag t-part">일부 확인</span></td><td>중간. 종합 패키지는 330만 원 이상</td><td>높음 (의료광고 검수 책임)</td><td>2차 후보입니다.</td></tr>
+      <tr><td><b>④ 미용실 특화</b><br>신규 유입 + 재방문 한 상품</td><td><span class="tag t-hyp">가설</span></td><td>중간. 범용 대행사가 미용실 글을 쓰지만 전용 상품은 불명</td><td>중간</td><td>업종 쐐기로 좋지만 원장 인터뷰 검증이 먼저입니다.</td></tr>
+      <tr><td><b>⑤ 셀프 가이드 구독</b><br>월 5만~15만 원, 저인력 운영</td><td><span class="tag t-hyp">가설</span> 가격 공백만 확인, 수요 미확인</td><td>낮음</td><td>낮음 (본업 병행에 맞음)</td><td>260만 원 상품의 입문 단계로 시험해 볼 만합니다.</td></tr>
+      <tr><td><b>⑥ 음식점 특화</b></td><td><span class="tag t-hyp">가설</span> 근거 부족</td><td>높음 (체험단 플랫폼, 허위 리뷰 시장)</td><td>중간</td><td>후순위입니다.</td></tr>
+    </tbody>
+  </table></div>
+
+  <h2 id="plan">추천 전략</h2>
+  <div class="box accent">
+    <h3>포지셔닝 한 문장</h3>
+    <p><b>"계약에 묶지 않고, 사장님 화면의 숫자로 증명하는 미용실 플레이스 파트너."</b></p>
+    <p style="margin:0">미용실 한 업종으로 시작하고, 틈새 ①과 ②를 한 상품으로 묶습니다.</p>
+  </div>
+
+  <h3>이 조합을 고르는 이유</h3>
+  <ul>
+    <li>①과 ②는 시장이 비워 둔 칸이고, 서로를 받쳐 줍니다. 해지가 자유로우려면 매달 성과를 보여줘야 하기 때문에 운영 규율도 따라옵니다.</li>
+    <li>한 업종에 집중하면 영업 문구, 진단 항목, 리포트 양식을 하나로 맞출 수 있습니다. 세 분 모두 본업이 있어서 여러 업종을 동시에 돌리기 어렵습니다.</li>
+    <li>자가진단이 이미 미용실 기준으로 동작하고, 입구에서 쌓이는 진단 데이터가 영업 자료가 됩니다.</li>
+  </ul>
+
+  <h3>상품 구조 가안</h3>
+  <div class="tbl"><table>
+    <thead><tr><th>단계</th><th>내용</th><th>가격 앵커</th><th>목적</th></tr></thead>
+    <tbody>
+      <tr><td><b>무료 자가진단 · 순위 리포트 신청</b></td><td>이미 구현. 연락처 없이 결과 확인 후 리포트 신청.</td><td class="n">0원</td><td>첫 접점, 리드 확보</td></tr>
+      <tr><td><b>정비 패키지 (1회)</b></td><td>플레이스 정보 정비, 소개글·메뉴명 재작성, 예약·톡톡 세팅, 리뷰 안내 장치.</td><td>플레이스 관리 시작가 30만 원대가 시장 앵커</td><td>첫 결제 장벽을 낮춤</td></tr>
+      <tr><td><b>월 파트너 (월 단위 계약)</b></td><td>정비 유지, 블로그, 리뷰 안내, 소식 운영, 월간 리포트. 월 단위 해지, 위약금 0원.</td><td>아래 가격 선택지 참고</td><td>핵심 수익 상품</td></tr>
+      <tr><td><b>소형 의원용 (2차)</b></td><td>의료광고 표현 검수 포함 플레이스·블로그.</td><td>안정기 의원 예산 100만~250만 원대가 안내값</td><td>파일럿 이후 검토</td></tr>
+    </tbody>
+  </table></div>
+  <h3>가격 선택지 (논의용)</h3>
+  <ul>
+    <li><b>A. 260만 원 유지:</b> 시장 부품 조합가(약 200만 원)보다 높으므로 후불, 해지 자유, 한 곳 책임 운영의 가치를 근거로 설명합니다.</li>
+    <li><b>B. 150만~200만 원으로 조정:</b> 부품 조합가 이하라서 비교가 쉽고, 월 단위 계약의 부담도 줄어듭니다.</li>
+    <li><b>C. 2단계 분리:</b> 월 100만 원대 기본, 월 200만 원대 확장. 경쟁사의 3단 가격 구조와 같은 눈높이로 비교됩니다.</li>
+  </ul>
+
+  <h3>메시지 4개 (홈페이지 반영 후보)</h3>
+  <ol>
+    <li><b>월 단위로 계약합니다. 위약금은 없습니다.</b> 맞서는 현실: 1~3년 약정과 위약금 분쟁.</li>
+    <li><b>광고비는 사장님 네이버 계정에서 직접 결제합니다.</b> 맞서는 현실: 대행료와 광고비가 섞인 패키지.</li>
+    <li><b>로그인 정보는 요구하지 않습니다.</b> 맞서는 현실: 환불 조건으로 ID·PW 요구.</li>
+    <li><b>성과는 사장님이 직접 확인합니다.</b> 사장님 화면의 숫자와 누구나 쓰는 순위 조회 툴로 확인하고, 매달 한 일 내역을 모두 공개합니다.</li>
   </ol>
 
-  <h2><span class="n">05</span>출처</h2>
+  <h3>영업 전개안</h3>
+  <div class="tbl"><table>
+    <thead><tr><th>순서</th><th>채널</th><th>방식</th></tr></thead>
+    <tbody>
+      <tr><td class="n">1</td><td><b>홈페이지 자가진단</b></td><td>이미 구현. 진단 결과와 연락처가 함께 들어와 첫 통화가 구체적입니다.</td></tr>
+      <tr><td class="n">2</td><td><b>"계약 전 체크리스트" 콘텐츠</b></td><td>어느 대행사와 계약하든 확인할 6가지(위약금, 광고비 분리, 계정정보, 보장 문구, 해지, 리포트)를 중립적으로 정리. 검색 유입과 신뢰를 함께 얻고, 자가진단으로 연결합니다.</td></tr>
+      <tr><td class="n">3</td><td><b>오프라인 방문 파일럿</b></td><td>자가진단 결과를 1장으로 출력해 가까운 미용실을 한산한 시간대에 방문. 경쟁이 비어 있을 수 있는 채널이라 직접 검증합니다(가설).</td></tr>
+      <tr><td class="n">4</td><td><b>소개</b></td><td>파일럿 거래처 원장이 동료 원장에게 소개. 업종 내 네트워크가 있는지는 확인이 필요합니다(가설).</td></tr>
+      <tr><td class="n">5</td><td><b>크몽·숨고 입점</b></td><td>가격 경쟁이 아니라 후기와 포트폴리오를 쌓는 신뢰 창구로, 후순위입니다.</td></tr>
+      <tr><td class="n">×</td><td><b>하지 않는 것</b></td><td>신규 등록 사업자 대상 콜드콜, 장기 약정, 기간 길수록 할인하는 선결제.</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>운영 스택 (비용 거의 0원부터)</h3>
+  <ul>
+    <li><b>지금:</b> 순위는 N체커·써치로 기록하고 시트에 정리. 월간 리포트는 스마트플레이스 통계 화면 + 한 일 내역 + 다음 달 계획 3쪽짜리 템플릿으로 시작합니다.</li>
+    <li><b>거래처 5곳 이상:</b> 리포트 생성을 시트 기반으로 자동화하고, 순위 추적 유료 툴 1개(몇등 55,000원 등)를 검토합니다.</li>
+    <li><b>광고 집행을 시작하면:</b> 광고주센터에서 권한 위임으로 운영하고, 필요하면 검색광고 API로 성과 취합을 자동화합니다.</li>
+  </ul>
+
+  <h3>파일럿 검증 계획</h3>
+  <ul>
+    <li><b>규모:</b> 미용실 5~10곳, 가까운 상권부터. 한 번에 감당 가능한 수를 먼저 정합니다.</li>
+    <li><b>성과 기준:</b> 계약 전에 키워드, 목표 순위, 유지 일수, 확인 방법(사장님 화면과 무료 순위 툴)을 서면으로 정합니다.</li>
+    <li><b>배울 것:</b> 신청에서 계약까지 전환율, 월 해지율, 거래처 1곳당 작업 시간(원가), 사장님이 리포트에서 가장 먼저 보는 숫자.</li>
+    <li><b>사례 확보:</b> 파일럿 거래처의 서면 동의를 받아 이용약관 제9조에 따라 사례로 공개합니다.</li>
+  </ul>
+
+  <h2 id="decide">오늘 회의에서 정할 것</h2>
+  <ol class="agenda">
+    <li><h4>업종 쐐기: 미용실 단일로 갈지</h4><p>미용실에 집중하고 병원·음식점은 문의가 와도 후순위로 둘지, 병행할지 정합니다.</p></li>
+    <li><h4>계약 구조: "최소 3개월 유지"와 "해지 자유"는 충돌합니다</h4><p>초안의 최소 3개월 유지 조건을 월 단위 계약으로 바꿀지, "첫 달 성과 미달 시 무료 해지"로 절충할지 정해야 합니다.</p></li>
+    <li><h4>"후불"의 성과 기준</h4><p>어떤 키워드, 몇 위 이내, 며칠 유지, 어떻게 확인(사장님 화면과 무료 툴)하는지. 선금을 정말 0원으로 둘지.</p></li>
+    <li><h4>가격: A, B, C 중 무엇으로</h4><p>260만 원 유지, 150만~200만 원 조정, 2단계 분리 중 선택하고, 260만 원에 들어가는 항목을 확정합니다.</p></li>
+    <li><h4>동시에 감당할 수 있는 거래처 수</h4><p>세 분 모두 본업이 있으므로 파일럿 상한과 월간 리포트 작성 담당을 정합니다.</p></li>
+    <li><h4>광고비 처리 원칙</h4><p>광고비는 사장님 계정에서 직접 결제하고 릴로는 권한 위임으로 운영하는 원칙을 확정할지. 스마트플레이스 권한 방식은 윤현노님이 실무에서 확인해 주세요.</p></li>
+    <li><h4>첫 영업 채널 두 가지</h4><p>체크리스트 콘텐츠와 오프라인 방문 중 무엇을 먼저 할지, 누가 맡을지 정합니다.</p></li>
+    <li><h4>병원 2차 진입 시점</h4><p>소형 의원용 상품을 언제 시작할지, 의료광고 표현 검수를 누가 맡을지 정합니다.</p></li>
+  </ol>
+
+  <h2 id="limits">확인하지 못한 것</h2>
+  <ul>
+    <li><b>파워링크 광고 화면:</b> 작업 환경에서 네이버 검색 화면이 열리지 않아 직접 캡처하지 못했습니다. 회의 전에 "플레이스마케팅", "미용실마케팅", "병원마케팅" 검색 화면을 캡처해 주시면 업체 목록과 광고 문구를 보완하겠습니다.</li>
+    <li><b>업체 원문 페이지:</b> 아이보스 게시글과 일부 업체 사이트(플레이스위자드, 주식회사 플레이스, 더리치마케팅)도 열리지 않아, 계약 절차와 리포트 구성은 검색 결과 요약 수준에서만 확인했습니다.</li>
+    <li><b>영업 채널별 전환율과 매출 비중:</b> 어떤 자료에서도 확인되지 않았습니다.</li>
+    <li><b>미용실 원장 고충:</b> 대행사에 대한 직접 후기는 찾지 못했고, 예약 앱 수수료 기사는 몇 년 전 자료입니다.</li>
+    <li><b>키워드 분석 툴, 리뷰 답글 자동화 SaaS 요금:</b> 이번 조사에서 확인하지 못했습니다.</li>
+    <li><b>가격은 모두 업체 공개가</b>이며 실제 견적과 다를 수 있고, VAT 포함 여부가 업체마다 다릅니다. 법령 관련 내용은 원문 확인이 필요합니다.</li>
+  </ul>
+
+  <h2>출처</h2>
   <ul class="src">
-    <li><a href="https://tripleiii.co.kr/pricing">트리플III 가격</a></li>
-    <li><a href="https://marketing.realplanjeju.com/marketing/">리얼플랜제주 마케팅 대행 월 비용</a></li>
-    <li><a href="https://hompion.com/marketing/naver-place-management/">홈피온 플레이스 관리 상품</a></li>
-    <li><a href="https://yeggu.com/">더바른컨설팅</a></li>
-    <li><a href="https://theplace-company.co.kr/">더플레이스</a></li>
-    <li><a href="https://practicecorp.kr/free/14330/">실행사닷컴 플레이스 최적화 패키지</a></li>
-    <li><a href="https://shop.gpakorea.com/item/view/172">GPA KOREA 플레이스 상위노출 월보장</a></li>
-    <li><a href="https://www.azmarketing.co.kr/">에즈마케팅</a></li>
-    <li><a href="https://www.tojobcn.com/bbs/order/86633">"100% 후불제" 게시글</a></li>
-    <li><a href="https://kmong.com/gig/651802">크몽 체험단 A</a> · <a href="https://kmong.com/gig/96346">크몽 체험단 B</a></li>
-    <li><a href="https://www.daangn.com/kr/local-profile/%EB%B8%94%EB%A1%9C%EA%B7%B8%EC%B2%B4%ED%97%98%EB%8B%A8-%ED%8F%AC%EB%B8%94%EB%A1%9C%EA%B7%B8-a7o29st7embr/">포블로그 (당근 프로필)</a></li>
-    <li><a href="https://brunch.co.kr/@seongsyeon/77">리뷰노트 소개 (브런치)</a></li>
-    <li><a href="https://udongji.com/hospital-blog-agency-cost/">병원 블로그 대행 비용 정리</a></li>
-    <li><a href="https://www.medicalandmark.com/services">메디컬랜드마크 서비스·비용</a></li>
-    <li><a href="https://www.midamplan.com/marketing/hospital">미담기획 병원 마케팅</a></li>
-    <li><a href="https://ai.euncoach.com/guide/naver-place-ad-cost">네이버 플레이스 광고 비용 2026 (광고주센터 사기 체크리스트 인용)</a></li>
-    <li><a href="https://www.i-boss.co.kr/ab-6141-62956">아이보스: 전화 영업 장기 약정 사례</a></li>
-    <li><a href="https://tamblemarketing.com/marketing-agency-cost-guide/">탬블마케팅: 광고비와 대행료 구분</a></li>
+    <li>가격·상품: <a href="https://tripleiii.co.kr/pricing">트리플III</a> · <a href="https://marketing.realplanjeju.com/marketing/">리얼플랜제주</a> · <a href="https://hompion.com/marketing/naver-place-management/">홈피온</a> · <a href="https://yeggu.com/">더바른컨설팅</a> · <a href="https://theplace-company.co.kr/">더플레이스</a> · <a href="https://practicecorp.kr/free/14330/">실행사닷컴</a> · <a href="https://shop.gpakorea.com/item/view/172">GPA KOREA</a> · <a href="https://www.azmarketing.co.kr/">에즈마케팅</a> · <a href="https://www.daangn.com/kr/local-profile/%EB%B8%94%EB%A1%9C%EA%B7%B8%EC%B2%B4%ED%97%98%EB%8B%A8-%ED%8F%AC%EB%B8%94%EB%A1%9C%EA%B7%B8-a7o29st7embr/">포블로그</a> · <a href="https://www.medicalandmark.com/services">메디컬랜드마크</a> · <a href="https://www.midamplan.com/marketing/hospital">미담기획</a></li>
+    <li>영업 방식: <a href="https://www.i-boss.co.kr/ab-6141-62956">전화 영업 장기 약정 사례</a> · <a href="https://www.i-boss.co.kr/ab-2987-580876">대행사 전환 영업 글</a> · <a href="https://www.i-boss.co.kr/ab-2987-495952">"순위 안 나오면 0원" 게시글</a> · <a href="https://www.tojobcn.com/bbs/order/86633">"100% 후불제" 게시글</a> · <a href="https://placewizard.kr/magazine/naver-place-marketing-agency-guide/">대행사 고르는 방법 (업체 매거진)</a> · <a href="https://soomgo.com/prices/%EB%B8%94%EB%A1%9C%EA%B7%B8-%EB%A7%88%EC%BC%80%ED%8C%85">숨고 블로그 마케팅 가격</a> · <a href="https://kmong.com/gig/651802">크몽 체험단</a> · <a href="https://brunch.co.kr/@@I74/126">방문 영업 글</a></li>
+    <li>인증·공식 대행사: <a href="https://www.i-boss.co.kr/ab-2987-469762">공식 인증 광고대행사 홍보 글</a> · <a href="https://inside.ampm.co.kr/insight/4197">공식 대행사 선택 이유</a> · <a href="https://ditoday.com/?p=141404">네이버 프리미어 파트너사 선정 보도</a></li>
+    <li>운영 도구: <a href="https://xearch.kr/">써치</a> · <a href="https://www.nchecker.kr/">N체커</a> · <a href="https://keywordmaster.kr/place-rank">키워드 마스터</a> · <a href="https://hongbotong.co.kr/guide/place-rank">홍보통</a> · <a href="https://sellerrank.kr/">셀러랭크</a> · <a href="https://myeotdng.com/">몇등</a> · <a href="https://placebaro.com/">플레이스 바로미터</a> · <a href="https://apify.com/magenta_courser/naver-place-rank-tracker">Apify</a> · <a href="https://www.digitalmarketer.co.kr/insights/naver-search-ad-api-data-for-non-developers">검색광고 API 정리</a> · <a href="https://tossplace.com/story/smartplace-ads">스마트플레이스 광고 운영</a></li>
+    <li>예약·CRM: <a href="https://www.techdaily.co.kr/news/articleView.html?idxno=25709">팅커뷰</a> · <a href="https://gongbiz.kr/landing-page/payment-plan">공비서</a> · <a href="https://beautyinfra.com/">뷰티인프라</a> · <a href="https://www.handsos.com/">핸드SOS</a> · <a href="https://pro.vuka.co.kr/index/">뷰카</a> · <a href="https://noshowhair.com/">노쇼 없는 미용실</a> · <a href="https://handsub.com/blog/hair-salon-reservation-system-comparison">HANDSUB</a></li>
+    <li>사장님 불만·정책: <a href="https://www.consumuch.com/news/articleView.html?idxno=78761">위약금 분쟁 사례</a> · <a href="https://www.m-i.kr/news/articleView.html?idxno=1411846">ID·PW 요구 사례</a> · <a href="https://www.hankyung.com/article/202507023716g">보장 문구 피해 보도</a> · <a href="https://www.mt.co.kr/society/2025/12/30/2025123011512149448">허위 리뷰 시장 보도</a> · <a href="https://www.i-boss.co.kr/ab-6141-69392">2026년 리뷰 어뷰징 안내 정리</a> · <a href="https://www.navercorp.com/media/pressReleasesDetail?seq=10034317">네이버 보도자료(별점 공개·어뷰징 방지)</a> · <a href="https://sedaily.com/NewsVIew/1VLOUQY7ZU">미용실 예약 앱 수수료 기사</a> · <a href="https://m.boannews.com/html/detail.html?idx=131772">AI 뷰티 마케팅 스쿨</a></li>
+    <li>리포트·병원: <a href="https://www.openads.co.kr/content/contentDetail?contsId=18650">리포트 설득 문제</a> · <a href="https://brandstoryland.com/276">대행사 12년 경험담 1</a> · <a href="https://brandstoryland.com/287">경험담 2</a> · <a href="https://www.i-boss.co.kr/ab-6141-70900">의료광고 책임</a> · <a href="https://blog.ehyun.co.kr/medical-advertising-regulation">의료광고 규제 정리</a> · <a href="https://www.daeryunlaw.com/field_new/3121">의료광고 행정처분</a> · <a href="https://udongji.com/hospital-blog-agency-cost/">병원 블로그 대행 비용</a></li>
   </ul>
 </main>
