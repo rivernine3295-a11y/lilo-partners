@@ -1,0 +1,195 @@
+<title>릴로 경쟁사 시장조사</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gothic+A1:wght@400;500;700;800&family=Space+Grotesk:wght@500;700&display=swap">
+<style>
+  /* layout: single reading column; price tiers as a ladder (cheap → premium) with Lilo's draft marked on it, then tables per segment, then meeting agenda */
+  :root{
+    --bg:#faf8f5; --surface:#ffffff; --fg:#1d1a16; --muted:#6b6257; --line:#e6dfd5;
+    --accent:#d9531e; --accent-soft:#fbe6dc; --warn:#a15c00; --warn-soft:#fdf0d9;
+    --font-kr:'Gothic A1',-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo',sans-serif;
+    --font-num:'Space Grotesk','Gothic A1',Arial,sans-serif;
+  }
+  @media (prefers-color-scheme:dark){ :root:not([data-theme="light"]){
+    --bg:#13110f; --surface:#1c1915; --fg:#f2ede6; --muted:#a39888; --line:#332d26;
+    --accent:#ff7a45; --accent-soft:#3a2219; --warn:#f2b45a; --warn-soft:#33270f; color-scheme:dark; } }
+  :root[data-theme="dark"]{
+    --bg:#13110f; --surface:#1c1915; --fg:#f2ede6; --muted:#a39888; --line:#332d26;
+    --accent:#ff7a45; --accent-soft:#3a2219; --warn:#f2b45a; --warn-soft:#33270f; color-scheme:dark; }
+  *{box-sizing:border-box}
+  body{background:var(--bg); color:var(--fg); font-family:var(--font-kr); font-size:15.5px; line-height:1.75;
+    word-break:keep-all; overflow-wrap:break-word;
+    padding-left:max(16px,env(safe-area-inset-left,0px)); padding-right:max(16px,env(safe-area-inset-right,0px));}
+  main{max-width:860px; margin:0 auto; padding-block:48px 80px;}
+  .eyebrow{font-family:var(--font-num); font-size:12px; font-weight:700; letter-spacing:.14em; color:var(--accent); margin:0 0 10px;}
+  h1{font-size:clamp(28px,4.6vw,40px); font-weight:800; line-height:1.25; margin:0 0 14px; text-wrap:balance;}
+  .lede{color:var(--muted); margin:0 0 8px; max-width:65ch;}
+  .meta{font-size:13px; color:var(--muted); margin:0;}
+  h2{font-size:22px; font-weight:800; margin:56px 0 6px; text-wrap:balance;}
+  h2 .n{font-family:var(--font-num); color:var(--accent); margin-right:8px;}
+  .sub{color:var(--muted); margin:0 0 20px; font-size:14.5px;}
+  h3{font-size:17px; font-weight:800; margin:28px 0 8px;}
+  p{margin:0 0 12px;}
+  ul{margin:0 0 12px; padding-left:20px;} li{margin:4px 0;}
+  b{font-weight:800;}
+  .note{background:var(--warn-soft); border-radius:12px; padding:14px 18px; font-size:14px; margin:20px 0;}
+  .note b{color:var(--warn);}
+  .key{display:grid; gap:10px; margin:24px 0 0; padding:0; list-style:none;}
+  .key li{background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:14px 18px; margin:0;}
+
+  .ladder{display:flex; flex-direction:column; gap:8px; margin:8px 0 0;}
+  .rung{display:grid; grid-template-columns:150px minmax(0,1fr); gap:14px; align-items:center;}
+  .rung .price{font-family:var(--font-num); font-weight:700; font-size:15px; text-align:right; font-variant-numeric:tabular-nums;}
+  .rung .bar{background:var(--surface); border:1px solid var(--line); border-radius:10px; padding:10px 14px; font-size:14px; min-width:0;}
+  .rung .bar small{display:block; color:var(--muted); font-size:12.5px;}
+  .rung.lilo .bar{background:var(--accent-soft); border-color:var(--accent);}
+  .rung.lilo .price{color:var(--accent);}
+  @media (max-width:560px){ .rung{grid-template-columns:1fr; gap:4px;} .rung .price{text-align:left;} }
+
+  .tbl{overflow-x:auto; margin:8px 0 12px; border:1px solid var(--line); border-radius:12px; background:var(--surface);}
+  table{border-collapse:collapse; width:100%; min-width:600px; font-size:14px;}
+  th,td{text-align:left; vertical-align:top; padding:11px 14px; border-bottom:1px solid var(--line);}
+  th{font-size:12.5px; color:var(--muted); font-weight:700; background:var(--bg);}
+  tr:last-child td{border-bottom:none;}
+  td.num{font-family:var(--font-num); font-variant-numeric:tabular-nums; white-space:nowrap; font-weight:700;}
+  .tag{display:inline-block; font-size:11.5px; font-weight:700; padding:1px 8px; border-radius:999px; background:var(--warn-soft); color:var(--warn); white-space:nowrap;}
+
+  .agenda{counter-reset:a; list-style:none; padding:0; margin:0; display:grid; gap:12px;}
+  .agenda li{counter-increment:a; position:relative; background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:16px 18px 16px 58px; margin:0;}
+  .agenda li::before{content:counter(a); position:absolute; left:18px; top:16px; width:26px; height:26px; border-radius:50%;
+    background:var(--accent); color:var(--surface); font-family:var(--font-num); font-weight:700; font-size:13px; display:flex; align-items:center; justify-content:center;}
+  .agenda h4{margin:0 0 4px; font-size:16px; font-weight:800;}
+  .agenda p{margin:0; font-size:14.5px; color:var(--muted);}
+  .src{font-size:13px; color:var(--muted);} .src a{color:var(--muted);} .src li{margin:2px 0;}
+  a{color:var(--accent);}
+</style>
+
+<main>
+  <p class="eyebrow">MARKET RESEARCH · 줌 회의 자료</p>
+  <h1>플레이스 마케팅 대행 시장,<br>누가 얼마에 무엇을 파나</h1>
+  <p class="lede">네이버 검색광고(파워링크)와 검색 상위에 노출되는 대행사들의 공개 가격·상품 구성을 모았습니다. 릴로 가격 초안이 시장 어디쯤에 있는지 보고, 회의에서 정할 것을 끝에 정리했습니다.</p>
+  <p class="meta">조사일 2026년 11월 10일 · 각 업체 홈페이지와 판매 페이지에 공개된 정보 기준</p>
+
+  <div class="note"><b>조사 한계</b> · 파워링크 광고 목록 화면 자체는 이번 조사 환경에서 열리지 않아, 광고를 집행하는 업체들의 공개 가격 페이지로 대신했습니다. 회의 전에 휴대폰으로 "플레이스마케팅", "미용실마케팅", "병원마케팅"을 검색해 파워링크 화면을 캡처해 오시면 업체 목록을 보완할 수 있어요. 공개가는 실제 견적과 다를 수 있고, VAT 포함 여부도 업체마다 다릅니다.</div>
+
+  <ul class="key">
+    <li><b>플레이스 관리만 하는 상품은 월 10만~30만 원대</b>가 시작점이고, 리뷰·블로그를 더하면 월 60만~130만 원대로 올라갑니다.</li>
+    <li><b>"순위 보장·성과형"은 키워드 검색량에 따라 60만~150만 원</b> 구간이며, 대부분 선금 30~50%를 받습니다. 진짜 100% 후불은 일부뿐입니다.</li>
+    <li><b>병원은 시장이 따로 있습니다.</b> 블로그만 월 50만~150만 원, 종합 패키지는 월 330만~1,000만 원입니다.</li>
+    <li><b>릴로 초안(월 260만 원 이상)은 미용실·음식점 시장 기준으로 최상단</b>이고, 병원 종합 패키지 가격대와 겹칩니다. 회의의 핵심 논점입니다.</li>
+    <li>고가 병원 패키지에는 이미 <b>"AI 검색 노출 세팅"</b>이 상품 항목으로 들어가 있습니다.</li>
+  </ul>
+
+  <h2><span class="n">01</span>가격 사다리</h2>
+  <p class="sub">월 기준, 업체 공개가. 릴로 초안이 어디에 걸리는지 보세요.</p>
+  <div class="ladder">
+    <div class="rung"><span class="price">월 3만~6만</span><div class="bar">전화 영업형 플레이스 관리<small>신규 등록 직후 전화로 1~3년 약정 권유. 피해 사례가 커뮤니티에 꾸준히 올라옴</small></div></div>
+    <div class="rung"><span class="price">월 10만~</span><div class="bar">저가 플레이스 관리 대행<small>홈피온 등. "순위 상승 100% 보장" 같은 문구를 함께 씀</small></div></div>
+    <div class="rung"><span class="price">월 30만~130만</span><div class="bar">플레이스 관리 패키지 (3단계)<small>트리플III, 리얼플랜제주 30/60/130만. 상위 단계일수록 블로그·리뷰 관리 추가</small></div></div>
+    <div class="rung"><span class="price">60만~150만</span><div class="bar">순위 보장·성과형<small>키워드 검색량 구간별 가격, 25일 노출 기준, 선금 30~50%</small></div></div>
+    <div class="rung lilo"><span class="price">월 260만~</span><div class="bar"><b>릴로 초안 (일반 상권)</b><small>후불제, 최소 3개월. 대형 상권은 별도 협의</small></div></div>
+    <div class="rung"><span class="price">월 330만~1,000만</span><div class="bar">병원 종합 패키지<small>플레이스·구글·블로그·숏폼·리뷰 모니터링·AI 노출 세팅·홈페이지까지. 광고비는 별도</small></div></div>
+  </div>
+
+  <h2><span class="n">02</span>유형별 상세</h2>
+  <p class="sub">같은 "플레이스 마케팅"이라도 파는 방식이 크게 다섯 갈래입니다.</p>
+
+  <h3>A. 플레이스 관리 월정액형</h3>
+  <div class="tbl"><table>
+    <thead><tr><th>업체</th><th>가격</th><th>포함 내용</th><th>특이사항</th></tr></thead>
+    <tbody>
+      <tr><td>트리플III</td><td class="num">30만 / 60만 / 130만</td><td>Standard: 플레이스 SEO 관리<br>Pro: + 검색광고 운영, 블로그 기자단 리뷰<br>Premium: + 리뷰 댓글 관리</td><td>3단계 구성이 가장 명확함</td></tr>
+      <tr><td>리얼플랜제주</td><td class="num">30만 / 60만 / 130만~</td><td>플레이스 관리 3단계, 블로그 대행 별도 (월 8건 40만, 12건 60만, 16건 80만)</td><td>월정액에 광고비 미포함 명시, AI 검색 최적화 항목 있음</td></tr>
+      <tr><td>더바른컨설팅</td><td class="num">30만~</td><td>플레이스 상위노출 관리</td><td>선금 50% + 성과 후 잔금 50%</td></tr>
+      <tr><td>더플레이스</td><td class="num">44만 (정가 55만)</td><td>플레이스·블로그 패키지</td><td>할인가 전면 노출</td></tr>
+      <tr><td>홈피온</td><td class="num">10만~</td><td>기본 관리 대행 (VAT 별도)</td><td><span class="tag">"100% 보장" 문구</span></td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>B. 순위 보장·성과형</h3>
+  <div class="tbl"><table>
+    <thead><tr><th>업체</th><th>가격</th><th>결제 방식</th><th>특이사항</th></tr></thead>
+    <tbody>
+      <tr><td>실행사닷컴</td><td class="num">60만~150만</td><td>선금 30%, 1페이지 노출 후 잔금</td><td>검색량 5천 이하 60만 ~ 3만~5만 구간 150만</td></tr>
+      <tr><td>GPA KOREA</td><td class="num">문의</td><td>25일 노출 보장</td><td>검색량 큰 키워드일수록 보장 단가 상승</td></tr>
+      <tr><td>다인기획</td><td class="num">문의</td><td>25일 노출 유지 확인 후 2차 결제</td><td></td></tr>
+      <tr><td>에즈마케팅</td><td class="num">문의</td><td>순위가 잡히기 전엔 비용 없음</td><td>완전 후불을 내세우는 몇 안 되는 곳</td></tr>
+      <tr><td>구인구직 게시판 광고</td><td class="num">문의</td><td>"100% 후불제"</td><td><span class="tag">"5등 이내 보장" 문구</span></td></tr>
+    </tbody>
+  </table></div>
+  <p>이 유형은 <b>"후불"이라고 해도 대부분 선금이 있고</b>, "성과"의 기준을 "25일 동안 몇 위 이내 유지"처럼 좁게 정의합니다. 릴로가 진짜 후불을 하려면 성과 기준부터 정확히 정해야 비교 우위가 생깁니다.</p>
+
+  <h3>C. 체험단·리뷰 건당형</h3>
+  <div class="tbl"><table>
+    <thead><tr><th>업체</th><th>가격</th><th>내용</th></tr></thead>
+    <tbody>
+      <tr><td>크몽 판매자 A</td><td class="num">5천 / 1만 / 2만 (건당)</td><td>배송형 / 방문형 / 기자단. 20팀 패키지 10만</td></tr>
+      <tr><td>크몽 판매자 B</td><td class="num">1만~1.5만 (건당)</td><td>방문 체험단, 리뷰 요청 포함 시 1.5만</td></tr>
+      <tr><td>포블로그</td><td class="num">8만~ (1개월)</td><td>월 5~10팀 모집. 6개월 36만, 12개월 59.9만. 플레이스 광고 대행 6개월 120만~</td></tr>
+      <tr><td>리뷰노트 등 플랫폼</td><td class="num">모집 무료~</td><td>광고주 무료 모집 가능. 유료 옵션은 공개 안 됨</td></tr>
+    </tbody>
+  </table></div>
+  <p>일부 업체는 "네이버 방문자리뷰 100건 44만 원" 같은 상품도 팝니다. 실제 방문 없이 리뷰를 만드는 상품이라면 네이버 정책 위반이라, 릴로가 차별화할 지점이기도 합니다.</p>
+
+  <h3>D. 블로그 운영 대행</h3>
+  <div class="tbl"><table>
+    <thead><tr><th>구분</th><th>월 8건</th><th>월 12건</th><th>비고</th></tr></thead>
+    <tbody>
+      <tr><td>일반 업종 (리얼플랜제주)</td><td class="num">40만</td><td class="num">60만</td><td>16건 80만, VAT 별도</td></tr>
+      <tr><td>병원 (업계 평균 안내)</td><td class="num">50만~80만</td><td class="num">80만~150만</td><td>의료광고 표현 검수 포함 여부가 가격 차이</td></tr>
+      <tr><td>초저가</td><td class="num" colspan="2">20만~30만</td><td>AI 자동생성 글 위주라는 지적, 저품질 위험</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>E. 병원 종합 패키지</h3>
+  <div class="tbl"><table>
+    <thead><tr><th>업체</th><th>가격</th><th>포함 내용</th></tr></thead>
+    <tbody>
+      <tr><td>메디컬랜드마크</td><td class="num">330만 (VAT 포함)</td><td>플레이스·구글 비즈니스 프로필 세팅, 리뷰 모니터링, 숏츠·릴스 월 4편, 브랜드 블로그, 검색·AI 노출 세팅, 홈페이지 제작. 광고비 별도</td></tr>
+      <tr><td>미담기획</td><td class="num">500만 / 1,000만</td><td>종합 패키지 2단계</td></tr>
+      <tr><td>업계 안내 기준</td><td class="num">100만~500만</td><td>개원 초기 월 300만~500만, 안정기 월 100만~250만. 의료광고 심의비 별도인 곳 많음</td></tr>
+    </tbody>
+  </table></div>
+
+  <h2><span class="n">03</span>경쟁사들의 공통 약점</h2>
+  <p class="sub">사장님들이 이미 데인 경험이 있는 부분이고, 릴로 홈페이지·영업 멘트로 뒤집을 수 있는 지점입니다.</p>
+  <ul>
+    <li><b>보장 문구 남발.</b> "100% 보장", "5등 이내 보장"이 흔합니다. 네이버 광고주센터도 상위노출 보장, 과도한 위약금 요구를 광고 사기 신호로 안내합니다.</li>
+    <li><b>무늬만 후불.</b> 대부분 선금 30~50%를 받고, 성과 기준이 좁습니다.</li>
+    <li><b>장기 약정.</b> 월 몇만 원에 1~3년 약정을 거는 전화 영업 피해가 반복됩니다.</li>
+    <li><b>대행료와 광고비 혼합.</b> 패키지 안에 광고비가 섞여 있으면 실제 집행 규모를 알 수 없다는 지적이 많습니다.</li>
+    <li><b>저품질 블로그.</b> 초저가 블로그 대행은 AI 생성 글 위주라 오히려 블로그 지수를 떨어뜨릴 위험이 있습니다.</li>
+  </ul>
+
+  <h2><span class="n">04</span>오늘 회의에서 정할 것</h2>
+  <ol class="agenda">
+    <li><h4>월 260만 원의 근거와 포지션</h4><p>미용실·음식점 시장의 성과형 상품은 60만~150만 원입니다. 260만 원이면 병원 종합 패키지와 비교됩니다. 이 가격에 무엇이 들어가는지(플레이스만? 블로그·리뷰·리포트까지?)를 정해야 영업에서 설명할 수 있습니다.</p></li>
+    <li><h4>입문 상품을 둘지</h4><p>경쟁사 대부분이 30만 / 60만 / 130만 같은 3단계를 씁니다. 자가진단으로 들어온 사장님이 처음 결제하기 쉬운 입문 상품(플레이스 정비 1회 + 월 관리)이 있으면 전환이 빨라집니다.</p></li>
+    <li><h4>"후불"의 성과 기준</h4><p>어떤 키워드로, 몇 위 이내를, 며칠 유지하면 성과로 볼지. 선금을 정말 0원으로 할지. 이게 경쟁사 대비 가장 강한 차별점이 될 수 있습니다.</p></li>
+    <li><h4>병원 상품 분리</h4><p>병원 시장은 가격대와 규제가 따로입니다. 의료광고 검수를 누가 할지, 병원은 블로그 중심 패키지로 갈지 정해야 합니다.</p></li>
+    <li><h4>체험단·블로그를 직접 할지, 외부를 쓸지</h4><p>체험단은 건당 5천~2만 원, 블로그는 월 8건 40만 원 선에서 외주가 가능합니다. 원가를 알면 패키지 가격과 마진을 계산할 수 있습니다.</p></li>
+    <li><h4>AI 검색(GEO) 항목을 넣을지</h4><p>고가 병원 패키지에는 이미 "AI 노출 세팅"이 들어가 있습니다. 미용실·음식점 대행사 중에는 아직 드뭅니다.</p></li>
+  </ol>
+
+  <h2><span class="n">05</span>출처</h2>
+  <ul class="src">
+    <li><a href="https://tripleiii.co.kr/pricing">트리플III 가격</a></li>
+    <li><a href="https://marketing.realplanjeju.com/marketing/">리얼플랜제주 마케팅 대행 월 비용</a></li>
+    <li><a href="https://hompion.com/marketing/naver-place-management/">홈피온 플레이스 관리 상품</a></li>
+    <li><a href="https://yeggu.com/">더바른컨설팅</a></li>
+    <li><a href="https://theplace-company.co.kr/">더플레이스</a></li>
+    <li><a href="https://practicecorp.kr/free/14330/">실행사닷컴 플레이스 최적화 패키지</a></li>
+    <li><a href="https://shop.gpakorea.com/item/view/172">GPA KOREA 플레이스 상위노출 월보장</a></li>
+    <li><a href="https://www.azmarketing.co.kr/">에즈마케팅</a></li>
+    <li><a href="https://www.tojobcn.com/bbs/order/86633">"100% 후불제" 게시글</a></li>
+    <li><a href="https://kmong.com/gig/651802">크몽 체험단 A</a> · <a href="https://kmong.com/gig/96346">크몽 체험단 B</a></li>
+    <li><a href="https://www.daangn.com/kr/local-profile/%EB%B8%94%EB%A1%9C%EA%B7%B8%EC%B2%B4%ED%97%98%EB%8B%A8-%ED%8F%AC%EB%B8%94%EB%A1%9C%EA%B7%B8-a7o29st7embr/">포블로그 (당근 프로필)</a></li>
+    <li><a href="https://brunch.co.kr/@seongsyeon/77">리뷰노트 소개 (브런치)</a></li>
+    <li><a href="https://udongji.com/hospital-blog-agency-cost/">병원 블로그 대행 비용 정리</a></li>
+    <li><a href="https://www.medicalandmark.com/services">메디컬랜드마크 서비스·비용</a></li>
+    <li><a href="https://www.midamplan.com/marketing/hospital">미담기획 병원 마케팅</a></li>
+    <li><a href="https://ai.euncoach.com/guide/naver-place-ad-cost">네이버 플레이스 광고 비용 2026 (광고주센터 사기 체크리스트 인용)</a></li>
+    <li><a href="https://www.i-boss.co.kr/ab-6141-62956">아이보스: 전화 영업 장기 약정 사례</a></li>
+    <li><a href="https://tamblemarketing.com/marketing-agency-cost-guide/">탬블마케팅: 광고비와 대행료 구분</a></li>
+  </ul>
+</main>
