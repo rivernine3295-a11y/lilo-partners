@@ -217,22 +217,74 @@
     </section>
 
     <section id="v-kw" class="hidden">
-      <h1 class="vtitle">키워드 순위</h1><p class="vsub">업체별 핵심 키워드의 최근 순위입니다. 줄을 누르면 해당 업체로 이동합니다.</p>
+      <h1 class="vtitle">키워드 순위</h1><p class="vsub">업체별 핵심 키워드와 네이버 순위를 등록하고 기록합니다.</p>
       <div class="help">
-        <b>키워드 순위란?</b> 손님이 네이버에서 검색하는 말(예: "강남 미용실")로 검색했을 때, 이 매장의 플레이스가 몇 번째에 나오는지를 적어 두는 기록입니다.
+        <b>키워드 순위란?</b> 손님이 네이버에서 검색하는 말(예: "강남 미용실")로 검색했을 때, 이 매장의 플레이스가 몇 번째에 나오는지 적어 두는 기록입니다.
         <ul>
-          <li><b>핵심 키워드</b>: 그 업체가 상위에 올라가고 싶은 검색어</li>
-          <li><b>순위</b>: 네이버에서 직접 검색해서 확인한 현재 순위 (자동으로 가져오지 않고 사람이 적습니다)</li>
+          <li><b>키워드 등록</b>: 아래 칸에서 업체를 고르고 키워드를 적어 등록합니다. 순위를 알면 같이 적으세요.</li>
+          <li><b>순위 기록</b>: 네이버에서 직접 검색해서 확인한 순위를 표의 칸에 적고 <b>기록</b>을 누릅니다. 자동으로 가져오지 않고 사람이 적습니다.</li>
           <li><b>변동 ▲▼</b>: 바로 전에 적은 순위보다 올랐는지(▲), 내렸는지(▼)</li>
         </ul>
-        <b>입력하는 곳</b>: 이 화면이 아니라 각 업체 상세(업체를 펼친 화면)의 "핵심 키워드와 순위 기록"입니다. 작업 전에 한 번, 이후 며칠에 한 번씩 적어 두면 "작업 전 15위 → 지금 12위"처럼 성과를 보여줄 근거가 됩니다.
+        작업 전에 한 번, 이후 며칠에 한 번씩 적어 두면 "작업 전 15위 → 지금 12위"처럼 성과를 보여줄 근거가 됩니다.
+      </div>
+      <div class="addbox">
+        <b style="font-size:13px">+ 키워드 등록</b>
+        <div class="grid">
+          <div><label>업체</label><select class="field" id="kwLead"></select></div>
+          <div><label>키워드</label><input class="field" id="kwText" placeholder="예: 강남 미용실"></div>
+          <div><label>현재 순위 (선택)</label><input class="field" id="kwRank" type="number" min="1" placeholder="모르면 비워두세요"></div>
+          <div style="display:flex;align-items:flex-end"><button class="btn" id="kwAdd" style="width:100%">키워드 등록</button></div>
+        </div>
       </div>
       <div id="kwTable"></div>
     </section>
 
     <section id="v-logs" class="hidden">
-      <h1 class="vtitle">최근 소통 기록</h1><p class="vsub">전체 업체의 통화·방문·카톡 기록을 최신순으로 봅니다.</p>
+      <h1 class="vtitle">소통 기록</h1><p class="vsub">통화·방문·카톡 내용을 남기고 전체 흐름을 봅니다.</p>
+      <div class="help">
+        <b>왜 남기나요?</b> 누가 언제 어떤 얘기를 했는지 3명이 같이 보면, 같은 업체에 중복 연락하거나 약속을 놓치는 일을 줄일 수 있습니다. 통화·방문·카톡·메일을 기록하면 그 업체의 <b>마지막 연락일</b>도 자동으로 오늘로 바뀝니다.
+      </div>
+      <div class="addbox">
+        <b style="font-size:13px">+ 소통 기록 남기기</b>
+        <div class="grid">
+          <div><label>업체</label><select class="field" id="lgLead"></select></div>
+          <div><label>유형</label><select class="field" id="lgType"></select></div>
+          <div style="grid-column:span 2"><label>내용</label><input class="field" id="lgText" placeholder="무슨 얘기를 했는지, 다음에 할 일은 무엇인지"></div>
+          <div style="display:flex;align-items:flex-end"><button class="btn" id="lgAdd" style="width:100%">기록 추가</button></div>
+        </div>
+      </div>
+      <div class="tools">
+        <input class="field" id="lgQ" placeholder="업체명·내용 검색" style="min-width:180px">
+        <select class="field" id="lgWho"><option value="">작성자 전체</option></select>
+        <select class="field" id="lgTypeF"><option value="">유형 전체</option></select>
+      </div>
       <div class="feed" id="feed"></div>
+    </section>
+
+    <section id="v-ideas" class="hidden">
+      <h1 class="vtitle">브레인스토밍</h1><p class="vsub">시스템 개선, 영업 방식 등 떠오르는 생각을 적고 서로 의견을 남깁니다.</p>
+      <div class="help">
+        <b>이렇게 쓰세요.</b> 주제를 고르고 제목과 내용을 적어 올리면, 다른 사람이 댓글로 의견을 남기고 <b>👍</b>로 동의를 표시합니다. 논의가 끝나면 상태를 <b>채택 / 보류 / 완료</b>로 바꿔 정리하세요.
+        <ul>
+          <li><b>시스템 변경</b>: 이 대시보드나 홈페이지에 바라는 기능, 불편한 점</li>
+          <li><b>영업 방식 · 마케팅·콘텐츠 · 견적·가격 · 업무 분담</b>: 일하는 방식에 대한 제안</li>
+        </ul>
+      </div>
+      <div class="addbox">
+        <b style="font-size:13px">+ 새 아이디어</b>
+        <div class="grid">
+          <div><label>주제</label><select class="field" id="idTopic"></select></div>
+          <div style="grid-column:span 2"><label>제목</label><input class="field" id="idTitle" placeholder="한 줄로 요약해 주세요"></div>
+        </div>
+        <textarea class="field" id="idBody" placeholder="자세한 내용, 왜 필요한지, 예시 등" style="margin-top:8px"></textarea>
+        <div class="err" id="idErr"></div>
+        <button class="btn small" id="idAdd">올리기</button>
+      </div>
+      <div class="tools">
+        <div class="chips" id="idChips" style="display:flex;gap:6px;flex-wrap:wrap"></div>
+        <select class="field" id="idStatusF"><option value="">상태 전체</option></select>
+      </div>
+      <div id="idList"></div>
     </section>
   </main>
   </div>
@@ -247,7 +299,7 @@
   var DEFAULT_OPEN={'문의':1,'상담':1,'견적 제시':1,'계약':1,'진행 중':1,'완료':0,'보류':0};
   var CH_COLOR={'온라인 폼':'#8a5cf6','오프라인':'#34c38f','카톡':'#f1b44c','전화':'#5aa9f6','소개':'#f46a6a','기타':'#7c8aa5'};
   var ACTIVE={'상담':1,'견적 제시':1,'계약':1,'진행 중':1};
-  var S={pw:'',who:'',leads:[],statuses:[],admins:[],logTypes:[],q:'',asg:'',timer:null,openLeads:{},openGrps:null,view:'dash'};
+  var S={pw:'',who:'',leads:[],statuses:[],admins:[],logTypes:[],q:'',asg:'',timer:null,openLeads:{},openGrps:null,view:'dash',ideas:[],ideaTopics:[],ideaStatuses:[],openIdeas:{},idTopic:''};
   var $=function(id){return document.getElementById(id)};
   try{S.pw=localStorage.getItem('lilo_admin_pw')||'';S.who=localStorage.getItem('lilo_admin_who')||'';S.openGrps=JSON.parse(localStorage.getItem('lilo_grp_open')||'null')}catch(e){}
   if(!S.openGrps)S.openGrps=Object.assign({},DEFAULT_OPEN);
@@ -276,11 +328,11 @@
     }).catch(function(e){if(fromForm)$('loginErr').textContent=e.message;else $('login').classList.remove('hidden')});
   }
   function logout(){clearInterval(S.timer);try{localStorage.removeItem('lilo_admin_pw')}catch(e){}S.pw='';$('app').classList.add('hidden');$('login').classList.remove('hidden');$('pw').value=''}
-  function busy(){var a=document.activeElement;return a&&/TEXTAREA|INPUT|SELECT/.test(a.tagName)&&a.closest&&a.closest('#groups, #addBox')}
+  function busy(){var a=document.activeElement;return a&&/TEXTAREA|INPUT|SELECT/.test(a.tagName)&&a.closest&&a.closest('#groups, #addBox, #v-kw, #v-logs, #v-ideas')}
   var HASH_TO_VIEW=function(){var h=decodeURIComponent((location.hash||'').replace(/^#\/?/,''));return h||'dash'};
   function poll(){if(busy())return;api('GET').then(apply).catch(function(e){if(e.status===401)logout();else $('sync').textContent='연결 확인 중…'})}
   function apply(j){
-    S.leads=j.leads;S.statuses=j.statuses;S.admins=j.admins;S.logTypes=j.logTypes||['통화','방문','카톡','메일','기타'];
+    S.leads=j.leads;S.statuses=j.statuses;S.admins=j.admins;S.logTypes=j.logTypes||['통화','방문','카톡','메일','기타'];S.ideas=j.ideas||[];S.ideaTopics=j.ideaTopics||[];S.ideaStatuses=j.ideaStatuses||[];fillSelects();
     $('sync').textContent='실시간 · '+fmt(j.now);
     var sel=$('asgFilter');if(sel.options.length<2){S.admins.forEach(function(a){var o=el('option',null,a);o.value=a;sel.appendChild(o)})}
     var as=$('aStatus');if(!as.options.length){S.statuses.forEach(function(s){as.appendChild(el('option',null,s))})}
@@ -503,40 +555,107 @@
     nav.appendChild(el('div','grp-t','모아보기'));
     item('kw','🔑 키워드 순위');
     item('logs','🗒 소통 기록');
+    nav.appendChild(el('div','grp-t','팀 공유'));
+    item('ideas','💡 브레인스토밍',S.ideas.length||'');
   }
+  function fillSelects(){
+    function fill(sel,items,placeholder,keepVal){var v=sel.value;if(sel.options.length&&sel.dataset.n===String(items.length))return;sel.textContent='';if(placeholder!=null){var o=el('option',null,placeholder);o.value='';sel.appendChild(o)}items.forEach(function(x){var op=el('option',null,x);op.value=x;sel.appendChild(op)});sel.dataset.n=String(items.length);sel.value=v||''}
+    fill($('lgType'),S.logTypes,null);
+    fill($('lgWho'),S.admins,'작성자 전체');
+    fill($('lgTypeF'),S.logTypes,'유형 전체');
+    fill($('idTopic'),S.ideaTopics,null);
+    fill($('idStatusF'),S.ideaStatuses,'상태 전체');
+  }
+  function leadOptions(sel){
+    var v=sel.value;sel.textContent='';
+    var o=el('option',null,S.leads.length?'업체를 골라주세요':'먼저 업체를 등록해주세요');o.value='';sel.appendChild(o);
+    S.leads.slice().sort(function(a,b){return (a.storeName||'').localeCompare(b.storeName||'','ko')}).forEach(function(l){var op=el('option',null,(l.storeName||'(이름 없음)')+' · '+l.status);op.value=l.id;sel.appendChild(op)});
+    sel.value=v;
+  }
+  function findLead(id){return S.leads.filter(function(l){return l.id===id})[0]}
   function renderKw(){
+    leadOptions($('kwLead'));
     var box=$('kwTable');box.textContent='';var rows=[];
-    S.leads.forEach(function(l){(l.keywords||[]).forEach(function(k){var rk=k.ranks||[];rows.push({l:l,k:k.k,last:rk.length?rk[rk.length-1]:null,prev:rk.length>1?rk[rk.length-2]:null})})});
-    if(!rows.length){box.appendChild(el('div','empty','등록된 키워드가 없어요. 업체 등록 때 키워드를 넣거나, 업체를 펼친 뒤 "핵심 키워드와 순위 기록"에서 추가하세요.'));return}
+    S.leads.forEach(function(l){(l.keywords||[]).forEach(function(k,idx){var rk=k.ranks||[];rows.push({l:l,idx:idx,k:k.k,last:rk.length?rk[rk.length-1]:null,prev:rk.length>1?rk[rk.length-2]:null})})});
+    if(!rows.length){box.appendChild(el('div','empty','아직 등록된 키워드가 없어요. 위에서 업체를 고르고 키워드를 등록해보세요.'));return}
     rows.sort(function(a,b){return (a.last?a.last.r:9999)-(b.last?b.last.r:9999)});
-    var tb=el('table','tb');var hd=el('tr');['업체','키워드','현재 순위','변동','기록일','단계'].forEach(function(h){hd.appendChild(el('th',null,h))});tb.appendChild(hd);
+    var tb=el('table','tb');var hd=el('tr');['업체','키워드','현재 순위','변동','기록일','순위 기록','단계'].forEach(function(h){hd.appendChild(el('th',null,h))});tb.appendChild(hd);
     rows.forEach(function(r){
       var tr=el('tr','clk');tr.appendChild(el('td',null,r.l.storeName||'(이름 없음)'));tr.appendChild(el('td',null,r.k));
       tr.appendChild(el('td',null,r.last?r.last.r+'위':'기록 없음'));
-      var ch=el('td');if(r.last&&r.prev){var df=r.prev.r-r.last.r;var sp=el('span',df>0?'up':df<0?'dn':'',df>0?'▲ '+df:df<0?'▼ '+(-df):'―');ch.appendChild(sp)}else ch.textContent='-';tr.appendChild(ch);
-      tr.appendChild(el('td',null,r.last?r.last.d.slice(5):'-'));tr.appendChild(el('td',null,r.l.status));
+      var ch=el('td');if(r.last&&r.prev){var df=r.prev.r-r.last.r;ch.appendChild(el('span',df>0?'up':df<0?'dn':'',df>0?'▲ '+df:df<0?'▼ '+(-df):'―'))}else ch.textContent='-';tr.appendChild(ch);
+      tr.appendChild(el('td',null,r.last?r.last.d.slice(5):'-'));
+      var rc=el('td');var n=el('input','field');n.type='number';n.min='1';n.placeholder='순위';n.style.cssText='width:70px;display:inline-block;margin:0;padding:4px 7px';
+      var bt=el('button','btn ghost small','기록');bt.style.marginLeft='6px';
+      bt.onclick=function(e){e.stopPropagation();if(!n.value){toast('순위를 적어주세요');return}var nk=JSON.parse(JSON.stringify(r.l.keywords));nk[r.idx].ranks=(nk[r.idx].ranks||[]).concat([{d:today(),r:Number(n.value)}]);save(r.l,{keywords:nk})};
+      n.onclick=function(e){e.stopPropagation()};
+      rc.appendChild(n);rc.appendChild(bt);tr.appendChild(rc);
+      tr.appendChild(el('td',null,r.l.status));
       tr.onclick=function(){jumpToLead(r.l)};tb.appendChild(tr);
     });
     box.appendChild(tb);
   }
   function renderFeed(){
+    leadOptions($('lgLead'));
     var box=$('feed');box.textContent='';var items=[];
-    S.leads.forEach(function(l){(l.logs||[]).forEach(function(g){items.push({l:l,g:g})})});
+    var q=($('lgQ').value||'').toLowerCase(),who=$('lgWho').value,ty=$('lgTypeF').value;
+    S.leads.forEach(function(l){(l.logs||[]).forEach(function(g){
+      if(who&&g.by!==who)return;if(ty&&g.type!==ty)return;
+      if(q&&((l.storeName||'')+' '+g.text).toLowerCase().indexOf(q)<0)return;
+      items.push({l:l,g:g})})});
     items.sort(function(a,b){return a.g.at<b.g.at?1:-1});
-    if(!items.length){box.appendChild(el('div','empty','아직 소통 기록이 없어요. 업체를 펼쳐서 통화·방문 내용을 남겨보세요.'));return}
-    items.slice(0,60).forEach(function(it){
+    if(!items.length){box.appendChild(el('div','empty','표시할 소통 기록이 없어요. 위에서 업체를 고르고 통화·방문 내용을 남겨보세요.'));return}
+    items.slice(0,80).forEach(function(it){
       var d=el('div','it');var h=el('div');h.appendChild(el('b',null,it.l.storeName||'(이름 없음)'));h.appendChild(el('small',null,'  ['+it.g.type+'] '+it.g.by+' · '+fmt(it.g.at)+' · '+it.l.status));d.appendChild(h);d.appendChild(el('div',null,it.g.text));
       d.onclick=function(){jumpToLead(it.l)};box.appendChild(d);
     });
   }
+  /* ---------- 브레인스토밍 ---------- */
+  function ideaSave(i,fields){api('POST',{action:'ideaUpdate',id:i.id,by:S.who,fields:fields}).then(function(j){replaceIdea(j.idea);toast('저장했어요');render()}).catch(function(e){toast(e.message);render()})}
+  function replaceIdea(n){var k=S.ideas.findIndex(function(x){return x.id===n.id});if(k>=0)S.ideas[k]=n;else S.ideas.unshift(n)}
+  function renderIdeas(){
+    var chips=$('idChips');chips.textContent='';
+    ['전체'].concat(S.ideaTopics).forEach(function(t){
+      var n=t==='전체'?S.ideas.length:S.ideas.filter(function(x){return x.topic===t}).length;
+      var b=el('button','chip'+((S.idTopic||'전체')===t?' on':''),t+' '+n);b.style.cssText='padding:6px 12px;border:1px solid var(--line);border-radius:999px;background:'+((S.idTopic||'전체')===t?'var(--acc)':'transparent')+';color:'+((S.idTopic||'전체')===t?'#fff':'var(--mut)')+';cursor:pointer;font-size:13px';
+      b.onclick=function(){S.idTopic=t==='전체'?'':t;renderIdeas()};chips.appendChild(b);
+    });
+    var st=$('idStatusF').value;
+    var list=S.ideas.filter(function(x){return (!S.idTopic||x.topic===S.idTopic)&&(!st||x.status===st)});
+    var box=$('idList');box.textContent='';
+    if(!list.length){box.appendChild(el('div','empty','아직 올라온 아이디어가 없어요. 위에서 첫 아이디어를 올려보세요.'));return}
+    list.forEach(function(i){
+      var d=el('details','lead idea');d.dataset.id=i.id;if(S.openIdeas[i.id])d.open=true;
+      var sm=el('summary');sm.appendChild(el('span','nm',i.title));sm.appendChild(el('span','tag',i.topic));sm.appendChild(el('span','tag',i.status));
+      var sp=el('span','sp');sp.appendChild(el('span',null,i.createdBy+' · '+fmt(i.createdAt)));sp.appendChild(el('span',null,'👍 '+i.votes.length));sp.appendChild(el('span',null,'💬 '+i.comments.length));sm.appendChild(sp);d.appendChild(sm);
+      var b=el('div','body');
+      if(i.body){var t=el('div',null,i.body);t.style.cssText='white-space:pre-wrap;margin-top:10px';b.appendChild(t)}
+      var g=el('div','grid');
+      var d1=el('div');d1.appendChild(el('label',null,'상태'));var s1=el('select','field');S.ideaStatuses.forEach(function(x){var o=el('option',null,x);o.value=x;if(x===i.status)o.selected=true;s1.appendChild(o)});s1.onchange=function(){ideaSave(i,{status:s1.value})};d1.appendChild(s1);g.appendChild(d1);
+      var d2=el('div');d2.appendChild(el('label',null,'주제'));var s2=el('select','field');S.ideaTopics.forEach(function(x){var o=el('option',null,x);o.value=x;if(x===i.topic)o.selected=true;s2.appendChild(o)});s2.onchange=function(){ideaSave(i,{topic:s2.value})};d2.appendChild(s2);g.appendChild(d2);
+      b.appendChild(g);
+      var vr=el('div','row');vr.style.marginTop='10px';
+      var vb=el('button','btn small'+(i.votes.indexOf(S.who)>=0?'':' ghost'),(i.votes.indexOf(S.who)>=0?'👍 동의함':'👍 동의')+' '+i.votes.length);
+      vb.onclick=function(){api('POST',{action:'ideaVote',id:i.id,by:S.who}).then(function(j){replaceIdea(j.idea);render()}).catch(function(e){toast(e.message)})};
+      vr.appendChild(vb);if(i.votes.length)vr.appendChild(el('span','meta','동의: '+i.votes.join(', ')));
+      vr.lastChild.style.cssText='font-size:12px;color:var(--mut)';b.appendChild(vr);
+      var cs=el('div','sec');cs.appendChild(el('b',null,'의견'));
+      if(i.comments.length){var lg=el('div','logs');i.comments.forEach(function(c){var x=el('div');x.appendChild(el('span',null,c.by+' · '+fmt(c.at)+' · '));x.appendChild(document.createTextNode(c.text));lg.appendChild(x)});cs.appendChild(lg)}
+      var cr=el('div','row');cr.style.marginTop='8px';var ci=el('input','field');ci.placeholder='의견을 남겨주세요';ci.style.cssText='min-width:240px;flex:1';var cb=el('button','btn small','남기기');
+      function send(){var v=ci.value.trim();if(!v)return;api('POST',{action:'ideaComment',id:i.id,by:S.who,text:v}).then(function(j){replaceIdea(j.idea);toast('의견을 남겼어요');render()}).catch(function(e){toast(e.message)})}
+      cb.onclick=send;ci.addEventListener('keydown',function(e){if(e.key==='Enter')send()});cr.appendChild(ci);cr.appendChild(cb);cs.appendChild(cr);b.appendChild(cs);
+      if(i.createdBy===S.who){var ft=el('div','foot');ft.appendChild(el('span'));var dl=el('button','btn ghost small danger','삭제 (작성자만)');dl.onclick=function(){if(confirm('이 아이디어를 삭제할까요?')){api('POST',{action:'ideaDelete',id:i.id,by:S.who}).then(function(){S.ideas=S.ideas.filter(function(x){return x.id!==i.id});render()}).catch(function(e){toast(e.message)})}};ft.appendChild(dl);b.appendChild(ft)}
+      d.appendChild(b);box.appendChild(d);
+    });
+  }
   function route(){
     var v=HASH_TO_VIEW();
-    var valid=['dash','add','all','kw','logs'].concat(S.statuses);
+    var valid=['dash','add','all','kw','logs','ideas'].concat(S.statuses);
     if(valid.indexOf(v)<0)v='dash';
     S.view=v;
-    ['dash','list','add','kw','logs'].forEach(function(x){$('v-'+x).classList.add('hidden')});
+    ['dash','list','add','kw','logs','ideas'].forEach(function(x){$('v-'+x).classList.add('hidden')});
     var isStage=S.statuses.indexOf(v)>=0;
-    var key=(v==='dash'||v==='add'||v==='kw'||v==='logs')?v:'list';
+    var key=(v==='dash'||v==='add'||v==='kw'||v==='logs'||v==='ideas')?v:'list';
     $('v-'+key).classList.remove('hidden');
     if(key==='list')$('listTitle').textContent=v==='all'?'전체 업체':v+' 단계';
     render();
@@ -547,13 +666,15 @@
     if(S.view==='dash'){renderKpis();renderCharts();renderTodo()}
     else if(S.view==='kw')renderKw();
     else if(S.view==='logs')renderFeed();
+    else if(S.view==='ideas')renderIdeas();
     else if(S.view!=='add')renderGroups();
   }
   window.addEventListener('hashchange',route);
 
   document.addEventListener('toggle',function(e){
     var t=e.target;if(!t||!t.classList)return;
-    if(t.classList.contains('lead')){if(t.open)S.openLeads[t.dataset.id]=1;else delete S.openLeads[t.dataset.id]}
+    if(t.classList.contains('idea')){if(t.open)S.openIdeas[t.dataset.id]=1;else delete S.openIdeas[t.dataset.id]}
+    else if(t.classList.contains('lead')){if(t.open)S.openLeads[t.dataset.id]=1;else delete S.openLeads[t.dataset.id]}
     else if(t.classList.contains('grp')&&!S.q){S.openGrps[t.dataset.s]=t.open?1:0;persistGrp()}
   },true);
 
@@ -573,6 +694,28 @@
       ['aStore','aContact','aRegion','aDes','aLink','aDm','aKw','aQuote','aNext','aMemo'].forEach(function(i){$(i).value=''});
       $('addErr').textContent='';toast('등록했어요');jumpToLead(j.lead);
     }).catch(function(e){$('addErr').textContent=e.message});
+  };
+  $('kwAdd').onclick=function(){
+    var l=findLead($('kwLead').value),k=$('kwText').value.trim(),r=$('kwRank').value;
+    if(!l){toast('업체를 먼저 골라주세요');return}if(!k){toast('키워드를 적어주세요');return}
+    var list=JSON.parse(JSON.stringify(l.keywords||[]));var ex=list.filter(function(x){return x.k===k})[0];
+    if(ex){if(!r){toast('이미 등록된 키워드예요. 순위를 적으면 기록이 추가돼요.');return}ex.ranks=(ex.ranks||[]).concat([{d:today(),r:Number(r)}])}
+    else list.push({k:k,ranks:r?[{d:today(),r:Number(r)}]:[]});
+    save(l,{keywords:list});$('kwText').value='';$('kwRank').value='';
+  };
+  $('kwText').addEventListener('keydown',function(e){if(e.key==='Enter')$('kwAdd').click()});
+  $('lgAdd').onclick=function(){
+    var l=findLead($('lgLead').value),v=$('lgText').value.trim();
+    if(!l){toast('업체를 먼저 골라주세요');return}if(!v){toast('내용을 적어주세요');return}
+    api('POST',{action:'addLog',id:l.id,by:S.who,log:{type:$('lgType').value,text:v}}).then(function(j){var i=S.leads.findIndex(function(x){return x.id===l.id});if(i>=0)S.leads[i]=j.lead;$('lgText').value='';toast('기록했어요');render()}).catch(function(e){toast(e.message)});
+  };
+  $('lgText').addEventListener('keydown',function(e){if(e.key==='Enter')$('lgAdd').click()});
+  ['lgQ','lgWho','lgTypeF'].forEach(function(id){$(id).addEventListener('input',function(){renderFeed()})});
+  $('idStatusF').onchange=function(){renderIdeas()};
+  $('idAdd').onclick=function(){
+    api('POST',{action:'ideaCreate',by:S.who,idea:{topic:$('idTopic').value,title:$('idTitle').value,body:$('idBody').value}}).then(function(j){
+      replaceIdea(j.idea);S.openIdeas[j.idea.id]=1;$('idTitle').value='';$('idBody').value='';$('idErr').textContent='';toast('올렸어요');render();
+    }).catch(function(e){$('idErr').textContent=e.message});
   };
   if(S.who)$('whoSel').value=S.who;
   if(S.pw&&S.who)enter(false);
