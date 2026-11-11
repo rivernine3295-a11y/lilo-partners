@@ -33,6 +33,13 @@ async function saveLead(store, lead) {
   await store.setJSON('lead:' + lead.id, lead);
 }
 
+async function saveLeadIfNew(store, lead) {
+  const exists = await store.get('lead:' + lead.id, { type: 'json' });
+  if (exists) return exists;
+  await saveLead(store, lead);
+  return lead;
+}
+
 async function listLeads(store) {
   const { blobs } = await store.list({ prefix: 'lead:' });
   const all = await Promise.all(blobs.map((b) => store.get(b.key, { type: 'json' })));
@@ -101,4 +108,4 @@ async function removeLead(store, id) {
   await store.delete('lead:' + id);
 }
 
-module.exports = { STATUSES, ADMINS, leadFromSubmission, saveLead, listLeads, updateLead, createManual, removeLead };
+module.exports = { STATUSES, ADMINS, leadFromSubmission, saveLead, saveLeadIfNew, listLeads, updateLead, createManual, removeLead };

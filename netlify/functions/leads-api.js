@@ -28,6 +28,11 @@ exports.handler = async (event) => {
     }
     if (event.httpMethod !== 'POST') return json(405, { error: 'method not allowed' });
     const req = JSON.parse(event.body || '{}');
+    if (req.action === 'ingest') {
+      const sub = req.submission || {};
+      if (!sub.id) return json(400, { error: 'no submission' });
+      return json(200, { lead: await L.saveLeadIfNew(store, L.leadFromSubmission(sub)) });
+    }
     const by = L.ADMINS.includes(req.by) ? req.by : '';
     if (!by) return json(400, { error: '누가 수정하는지 선택해주세요.' });
     if (req.action === 'update') return json(200, { lead: await L.updateLead(store, String(req.id || ''), req.fields || {}, by) });

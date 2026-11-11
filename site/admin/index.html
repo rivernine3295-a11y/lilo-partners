@@ -38,6 +38,9 @@
   .row{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between}
   .title{font-weight:700;font-size:15px}
   .meta{color:var(--mut);font-size:12px}
+  .done{display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;padding:6px 10px;border:1px solid var(--line);border-radius:10px;user-select:none}
+  .done.on{border-color:var(--ok);color:var(--ok)}
+  .done input{width:18px;height:18px;accent-color:var(--ok);cursor:pointer}
   .tag{display:inline-block;padding:2px 8px;border-radius:999px;border:1px solid var(--line);font-size:11px;color:var(--mut);margin-left:6px}
   .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin-top:10px}
   .grid label{font-size:11px;color:var(--mut);display:block;margin-bottom:3px}
@@ -177,9 +180,17 @@
     left.appendChild(m);
     if(l.diagnosis)left.appendChild(el('div','meta','자가진단: '+l.diagnosis));
     r.appendChild(left);
+    var right=el('div');right.style.cssText='display:flex;gap:8px;align-items:center';
+    var dl=el('label','done'+(l.status!=='신규'?' on':''));
+    var cb=el('input');cb.type='checkbox';cb.checked=l.status!=='신규';
+    cb.onchange=function(){
+      if(cb.checked){var f={status:'연락 완료'};if(!l.lastContactAt)f.lastContactAt=today();if(!l.assignee)f.assignee=S.who;save(l,f)}
+      else{save(l,{status:'신규'})}
+    };
+    dl.appendChild(cb);dl.appendChild(document.createTextNode('연락 완료'));right.appendChild(dl);
     var del=el('button','btn ghost small','삭제');
     del.onclick=function(){if(confirm('이 문의를 삭제할까요? 되돌릴 수 없어요.')){api('POST',{action:'delete',id:l.id,by:S.who}).then(function(){S.leads=S.leads.filter(function(x){return x.id!==l.id});render()}).catch(function(e){toast(e.message)})}};
-    r.appendChild(del);c.appendChild(r);
+    right.appendChild(del);r.appendChild(right);c.appendChild(r);
 
     var g=el('div','grid');
     var st=el('select','field');S.statuses.forEach(function(s){var o=el('option',null,s);if(s===l.status)o.selected=true;st.appendChild(o)});
