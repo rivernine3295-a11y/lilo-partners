@@ -2,6 +2,7 @@
 const { connectLambda, getStore } = require('@netlify/blobs');
 const L = require('../lib/leads');
 const S = require('../lib/studio');
+const AI = require('../lib/ai');
 
 function json(code, obj) {
   return { statusCode: code, headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' }, body: JSON.stringify(obj) };
@@ -48,7 +49,14 @@ exports.handler = async (event) => {
     if (req.action === 'unpublish') return json(200, { post: await S.unpublish(store, lead.id, req.id) });
     if (req.action === 'deletePost') { await S.deletePost(store, lead.id, req.id); return json(200, { ok: true }); }
     if (req.action === 'changePassword') { await S.changePassword(store, c, req.oldPassword, req.newPassword); return json(200, { ok: true }); }
-    if (req.action === 'generate') return json(503, { error: 'AI 글 자동 생성은 준비 중이에요. 지금은 "직접 쓴 글 저장"을 이용해 주세요.', notReady: true });
+    if (req.action === 'generate') {
+      const q = S.quotaOf(lead);
+      if (S.usedThisMonth(await S.listPosts(store, lead.id)) >= q) throw new Error('이번 달 사용 가능한 글 수(' + q + '편)를 모두 사용했어요.');
+      let g;
+      try { g = await AI.generate(lead, req); } catch (e) { if (e.notReady) return json(503, { error: e.message, notReady: true }); throw e; }
+      const kws = (Array.isArray(req.keywords) ? req.keywords : []);
+      return json(200, { post: await S.createPost(store, lead, { title: g.title, body: g.body, keywords: kws, source: 'AI 생성' }) });
+    }
     return json(400, { error: '알 수 없는 요청이에요.' });
   } catch (e) {
     return json(400, { error: e.message || '처리하지 못했어요.' });
