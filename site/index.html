@@ -23,8 +23,8 @@
     --bg-elev:#17140f;
     --fg:#f5f1ea;
     --fg-muted:#a89a86;
-    --accent:#ff6a39;
-    --accent-2:#ffb703;
+    --accent:hsl(270,85%,55%);
+    --accent-2:hsl(284,80%,60%);
     --line:rgba(245,241,234,.14);
     --font-display:'Space Grotesk',Arial,sans-serif;
     --font-kr:'Gothic A1',-apple-system,BlinkMacSystemFont,sans-serif;
@@ -85,7 +85,7 @@
   .scene-wrap.scene-fallback canvas{display:none;}
   .scene-wrap.scene-fallback::before{
     content:''; position:absolute; inset:0;
-    background:radial-gradient(circle at 50% 42%, rgba(255,106,57,.38), transparent 62%);
+    background:radial-gradient(circle at 50% 42%, rgba(138,43,226,.38), transparent 62%);
   }
 
   .hero-copy{
@@ -1149,7 +1149,7 @@
     }
     window.addEventListener('resize', resize);
 
-    var HUE_CYCLE_MS=48000, HUE_START=0.055;
+    var HUE_CYCLE_MS=48000, HUE_START=0.75;
     var _c=new THREE.Color();
     function applyHue(now){
       var h=(HUE_START+(now%HUE_CYCLE_MS)/HUE_CYCLE_MS)%1;
@@ -1193,7 +1193,7 @@
   function initAccentSync(){
     var root=document.documentElement;
     var reduceMotion=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    var HUE_CYCLE_MS=48000, HUE_START=0.055;
+    var HUE_CYCLE_MS=48000, HUE_START=0.75;
     function apply(now){
       var h=(HUE_START+(now%HUE_CYCLE_MS)/HUE_CYCLE_MS)%1;
       var h2=(h+0.05)%1;
@@ -1232,7 +1232,7 @@
       rx+=(mx-rx)*0.14;
       ry+=(my-ry)*0.14;
       var scrollDeg=(window.scrollY||window.pageYOffset||0)*0.55;
-      var hueDeg=((now%HUE_CYCLE_MS)/HUE_CYCLE_MS)*360;
+      var hueDeg=((now%HUE_CYCLE_MS)/HUE_CYCLE_MS)*360+255;
       dot.style.transform='translate3d('+mx+'px,'+my+'px,0)';
       dot.style.filter='hue-rotate('+hueDeg+'deg)';
       ring.style.transform='translate3d('+rx+'px,'+ry+'px,0) rotate('+scrollDeg+'deg)';
