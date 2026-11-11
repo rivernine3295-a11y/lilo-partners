@@ -315,7 +315,7 @@
   var DEFAULT_OPEN={'문의':1,'상담':1,'견적 제시':1,'계약':1,'진행 중':1,'완료':0,'보류':0};
   var CH_COLOR={'온라인 폼':'#8a5cf6','오프라인':'#34c38f','카톡':'#f1b44c','전화':'#5aa9f6','소개':'#f46a6a','기타':'#7c8aa5'};
   var ACTIVE={'상담':1,'견적 제시':1,'계약':1,'진행 중':1};
-  var S={pw:'',who:'',leads:[],statuses:[],admins:[],logTypes:[],q:'',asg:'',timer:null,openLeads:{},openGrps:null,view:'dash',ideas:[],ideaTopics:[],ideaStatuses:[],openIdeas:{},idTopic:'',payStatuses:['','보장 진행 중','청구 대기','청구 완료','입금 완료']};
+  var S={pw:'',who:'',leads:[],statuses:[],admins:[],logTypes:[],q:'',asg:'',timer:null,openLeads:{},openGrps:null,view:'dash',ideas:[],ideaTopics:[],ideaStatuses:[],openIdeas:{},customers:{},postStats:{},newAccount:null,idTopic:'',payStatuses:['','보장 진행 중','청구 대기','청구 완료','입금 완료']};
   var $=function(id){return document.getElementById(id)};
   try{S.pw=localStorage.getItem('lilo_admin_pw')||'';S.who=localStorage.getItem('lilo_admin_who')||'';S.openGrps=JSON.parse(localStorage.getItem('lilo_grp_open')||'null')}catch(e){}
   if(!S.openGrps)S.openGrps=Object.assign({},DEFAULT_OPEN);
@@ -340,15 +340,15 @@
     api('GET').then(function(j){
       try{localStorage.setItem('lilo_admin_pw',S.pw);localStorage.setItem('lilo_admin_who',S.who)}catch(e){}
       $('login').classList.add('hidden');$('app').classList.remove('hidden');$('whoLabel').textContent=S.who+' 님';
-      apply(j);clearInterval(S.timer);S.timer=setInterval(poll,8000);
+      apply(j);clearInterval(S.timer);S.timer=setInterval(poll,20000);
     }).catch(function(e){if(fromForm)$('loginErr').textContent=e.message;else $('login').classList.remove('hidden')});
   }
   function logout(){clearInterval(S.timer);try{localStorage.removeItem('lilo_admin_pw')}catch(e){}S.pw='';$('app').classList.add('hidden');$('login').classList.remove('hidden');$('pw').value=''}
   function busy(){var a=document.activeElement;return a&&/TEXTAREA|INPUT|SELECT/.test(a.tagName)&&a.closest&&a.closest('#groups, #addBox, #v-kw, #v-logs, #v-ideas')}
   var HASH_TO_VIEW=function(){var h=decodeURIComponent((location.hash||'').replace(/^#\/?/,''));return h||'dash'};
-  function poll(){if(busy())return;api('GET').then(apply).catch(function(e){if(e.status===401)logout();else $('sync').textContent='연결 확인 중…'})}
+  function poll(){if(document.hidden||busy())return;api('GET').then(apply).catch(function(e){if(e.status===401)logout();else $('sync').textContent='연결 확인 중…'})}
   function apply(j){
-    S.leads=j.leads;S.statuses=j.statuses;S.admins=j.admins;S.logTypes=j.logTypes||['통화','방문','카톡','메일','기타'];S.payStatuses=j.payStatuses||S.payStatuses;S.ideas=j.ideas||[];S.ideaTopics=j.ideaTopics||[];S.ideaStatuses=j.ideaStatuses||[];fillSelects();
+    S.leads=j.leads;S.statuses=j.statuses;S.admins=j.admins;S.logTypes=j.logTypes||['통화','방문','카톡','메일','기타'];S.payStatuses=j.payStatuses||S.payStatuses;S.customers=j.customers||{};S.postStats=j.postStats||{};S.ideas=j.ideas||[];S.ideaTopics=j.ideaTopics||[];S.ideaStatuses=j.ideaStatuses||[];fillSelects();
     $('sync').textContent='실시간 · '+fmt(j.now);
     var sel=$('asgFilter');if(sel.options.length<2){S.admins.forEach(function(a){var o=el('option',null,a);o.value=a;sel.appendChild(o)})}
     var as=$('aStatus');if(!as.options.length){S.statuses.forEach(function(s){as.appendChild(el('option',null,s))})}
@@ -512,6 +512,45 @@
     if(logs.length){var box=el('div','logs');logs.forEach(function(g){var d=el('div');d.appendChild(el('span',null,fmt(g.at)+' · '+g.by+' · ['+g.type+'] '));d.appendChild(document.createTextNode(g.text));box.appendChild(d)});sec.appendChild(box)}
     return sec;
   }
+  /* ---------- 고객 스튜디오(블로그 도구) 계정 ---------- */
+  function copyText(t){try{navigator.clipboard.writeText(t);toast('복사했어요')}catch(e){toast('복사하지 못했어요. 직접 선택해서 복사해 주세요.')}}
+  function studioCall(l,action,extra,done){
+    var body=Object.assign({action:action,id:l.id,by:S.who},extra||{});
+    api('POST',body).then(function(j){if(j.lead){var i=S.leads.findIndex(function(x){return x.id===l.id});if(i>=0)S.leads[i]=j.lead}if(j.account)S.newAccount={leadId:l.id,loginId:j.account.loginId,password:j.account.password};if(done)done(j);return api('GET')}).then(function(g){if(g)apply(g)}).catch(function(e){toast(e.message)});
+  }
+  function studioBlock(l){
+    var sec=el('div','sec');sec.appendChild(el('b',null,'고객 스튜디오 (블로그 도구) 계정'));
+    var cu=S.customers[l.id],ps=S.postStats[l.id]||{total:0,published:0,month:0,lastPublishedAt:'',recent:[]};
+    var hasTerm=!!l.contractEnd;
+    var info=el('div',null,'이용 기간은 이 업체의 계약 시작일~종료일 기준이에요. 종료일이 지나면 고객 로그인이 자동으로 막혀요.'+(hasTerm?'':' (지금은 계약 종료일이 비어 있어서 고객이 이용할 수 없어요.)'));info.style.cssText='font-size:12px;color:'+(hasTerm?'var(--mut)':'var(--warn)')+';margin-bottom:8px';sec.appendChild(info);
+    if(S.newAccount&&S.newAccount.leadId===l.id){
+      var nb=el('div');nb.style.cssText='background:var(--bg);border:1px solid var(--ok);border-radius:10px;padding:10px 12px;margin-bottom:10px;font-size:13px';
+      nb.appendChild(el('div',null,'고객에게 전달할 정보 (이 화면을 닫으면 비밀번호는 다시 볼 수 없어요)'));nb.firstChild.style.cssText='color:var(--ok);font-weight:700;margin-bottom:6px';
+      nb.appendChild(el('div',null,'주소: '+location.origin+'/studio/'));nb.appendChild(el('div',null,'아이디: '+S.newAccount.loginId));nb.appendChild(el('div',null,'비밀번호: '+S.newAccount.password));
+      var r=el('div','row');r.style.marginTop='8px';var cb=el('button','btn small','전체 복사');cb.onclick=function(){copyText('릴로 스튜디오\n주소: '+location.origin+'/studio/\n아이디: '+S.newAccount.loginId+'\n비밀번호: '+S.newAccount.password)};
+      var xb=el('button','btn ghost small','닫기');xb.onclick=function(){S.newAccount=null;render()};r.appendChild(cb);r.appendChild(xb);nb.appendChild(r);sec.appendChild(nb);
+    }
+    if(!cu){
+      var row=el('div','row');var li=el('input','field');li.placeholder='고객 아이디 (영문 소문자·숫자 4~24자)';li.value='lilo'+Math.floor(1000+Math.random()*9000);li.style.minWidth='220px';
+      var mk=el('button','btn small','계정 만들기');mk.onclick=function(){studioCall(l,'customerCreate',{loginId:li.value.trim()})};
+      row.appendChild(li);row.appendChild(mk);sec.appendChild(row);
+    }else{
+      var st=cu.disabled?'중지됨':({active:'이용 중',expired:'이용 기간 종료',no_term:'계약 종료일 없음',not_started:'이용 시작 전'}[cu.access.state]||'');
+      var line=el('div',null,'아이디 '+cu.loginId+' · 상태 '+st+(cu.access.daysLeft!=null&&cu.access.state==='active'?' (D-'+cu.access.daysLeft+')':'')+(cu.lastLoginAt?' · 최근 접속 '+fmt(cu.lastLoginAt):' · 아직 접속 없음'));line.style.cssText='font-size:13px;margin-bottom:8px';sec.appendChild(line);
+      var r2=el('div','row');
+      var rs=el('button','btn ghost small','비밀번호 재발급');rs.onclick=function(){if(confirm('비밀번호를 새로 만들까요? 기존 비밀번호는 더 쓸 수 없어요.'))studioCall(l,'customerReset')};
+      var tg=el('button','btn ghost small',cu.disabled?'사용 재개':'사용 중지');tg.onclick=function(){studioCall(l,'customerToggle',{disabled:!cu.disabled})};
+      var rm=el('button','btn ghost small danger','계정 삭제');rm.onclick=function(){if(confirm('고객 계정을 삭제할까요? 만든 글은 남아 있어요.'))studioCall(l,'customerRemove')};
+      r2.appendChild(rs);r2.appendChild(tg);r2.appendChild(rm);sec.appendChild(r2);
+    }
+    var g=el('div','grid');g.appendChild(inp(l,'월 글 수 한도','studioQuota','number'));sec.appendChild(g);
+    var q=Number(l.studioQuota);if(!(q>=0))q=12;
+    var c=el('div','cnt3');
+    [['만든 글',ps.total],['발행 완료',ps.published],['이번 달',ps.month+' / '+q],['최근 발행',ps.lastPublishedAt?ps.lastPublishedAt.slice(5,10):'-']].forEach(function(x){var d=el('div');d.appendChild(el('b',null,String(x[1])));d.appendChild(el('span',null,x[0]));c.appendChild(d)});
+    sec.appendChild(c);
+    if((ps.recent||[]).length){var w=el('div');w.style.cssText='margin-top:8px;font-size:12px';ps.recent.forEach(function(x){var d=el('div');d.appendChild(el('span',null,fmt(x.at)+' · '));if(/^https:\/\//.test(x.url)){var a=el('a',null,x.title);a.href=x.url;a.target='_blank';a.rel='noopener';d.appendChild(a)}else d.appendChild(document.createTextNode(x.title));w.appendChild(d)});sec.appendChild(w)}
+    return sec;
+  }
   function leadRow(l){
     var d=el('details','lead');d.dataset.id=l.id;if(S.openLeads[l.id])d.open=true;
     var sm=el('summary');
@@ -560,6 +599,7 @@
     if(/^https?:\/\//.test(l.placeLink||'')){var a=el('a',null,'열기 ↗');a.href=l.placeLink;a.target='_blank';a.rel='noopener';pr.appendChild(a)}
     pl.appendChild(pr);b.appendChild(pl);
     b.appendChild(kwBlock(l));
+    if(l.status==='계약'||l.status==='진행 중'||l.status==='완료'||l.studioLoginId)b.appendChild(studioBlock(l));
     var ms=el('div','sec');ms.appendChild(el('b',null,'메모'));var ta=el('textarea','field');ta.placeholder='메모 (정리된 내용, 주의사항 등)';ta.value=l.memo||'';ta.onblur=function(){if(ta.value!==(l.memo||''))save(l,{memo:ta.value})};ms.appendChild(ta);b.appendChild(ms);
     b.appendChild(logBlock(l));
     var cl=(l.history||[]).filter(function(x){return x.field==='closedBy'||x.field==='closedAt'||(x.field==='status'&&x.to==='계약')});
@@ -570,7 +610,7 @@
       sc.appendChild(bx);b.appendChild(sc);
     }
     var ft=el('div','foot');
-    var names={status:'단계',assignee:'담당자',memo:'메모',lastContactAt:'마지막 연락일',nextContactAt:'다음 연락일',quote:'견적가',keywords:'키워드',storeName:'매장명',contact:'연락처',region:'지역',designerCount:'디자이너 수',bizType:'업종',placeLink:'링크',decisionMaker:'결정권자',contractMonths:'계약 개월',contractStart:'계약 시작',contractEnd:'계약 종료',source:'경로',closedBy:'성사자',closedAt:'성사일',workStart:'작업 시작일',guaranteeDays:'보장 일수',paymentStatus:'결제 상태',paidAt:'입금일',exposure:'노출 확인'};
+    var names={status:'단계',assignee:'담당자',memo:'메모',lastContactAt:'마지막 연락일',nextContactAt:'다음 연락일',quote:'견적가',keywords:'키워드',storeName:'매장명',contact:'연락처',region:'지역',designerCount:'디자이너 수',bizType:'업종',placeLink:'링크',decisionMaker:'결정권자',contractMonths:'계약 개월',contractStart:'계약 시작',contractEnd:'계약 종료',source:'경로',closedBy:'성사자',closedAt:'성사일',workStart:'작업 시작일',guaranteeDays:'보장 일수',paymentStatus:'결제 상태',paidAt:'입금일',exposure:'노출 확인',studioAccount:'고객 계정',studioQuota:'월 글 수 한도'};
     var h=(l.history||[]).slice(-2).reverse().map(function(x){return fmt(x.at)+' '+x.by+' · '+(names[x.field]||x.field)+' 변경'}).join(' / ');
     ft.appendChild(el('span','hist',h?'최근 변경 · '+h:''));
     var del=el('button','btn ghost small danger','업체 삭제');
@@ -744,6 +784,7 @@
     else if(S.view!=='add')renderGroups();
   }
   window.addEventListener('hashchange',route);
+  document.addEventListener('visibilitychange',function(){if(!document.hidden&&S.pw&&!$('app').classList.contains('hidden'))poll()});
 
   document.addEventListener('toggle',function(e){
     var t=e.target;if(!t||!t.classList)return;

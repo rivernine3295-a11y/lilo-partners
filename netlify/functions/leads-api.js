@@ -3,6 +3,7 @@ const crypto = require('crypto');
 const { connectLambda, getStore } = require('@netlify/blobs');
 const L = require('../lib/leads');
 const I = require('../lib/ideas');
+const ST = require('../lib/studio');
 
 function json(code, obj) {
   return { statusCode: code, headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' }, body: JSON.stringify(obj) };
@@ -17,6 +18,25 @@ function authorized(event) {
   return crypto.timingSafeEqual(a, b);
 }
 
+async function customerMap(store) {
+  const leads = await L.listLeads(store);
+  const out = {};
+  for (const l of leads) if (l.studioLoginId) {
+    const c = await ST.getCustomer(store, l.studioLoginId);
+    if (c) out[l.id] = { loginId: c.loginId, disabled: !!c.disabled, createdAt: c.createdAt, lastLoginAt: c.lastLoginAt || '', access: ST.accessInfo(l) };
+  }
+  return out;
+}
+async function setStudioLogin(store, leadId, loginId, by) {
+  const lead = L.normalizeLead(await store.get('lead:' + leadId, { type: 'json' }));
+  if (!lead) throw new Error('업체를 찾지 못했어요.');
+  const now = new Date().toISOString();
+  lead.history = (lead.history || []).concat([{ at: now, by, field: 'studioAccount', from: lead.studioLoginId || '', to: loginId }]).slice(-80);
+  lead.studioLoginId = loginId; lead.updatedAt = now; lead.updatedBy = by;
+  await store.setJSON('lead:' + leadId, lead);
+  return lead;
+}
+
 exports.handler = async (event) => {
   connectLambda(event);
   if (!process.env.ADMIN_PASSWORD) return json(503, { error: '서버에 관리자 비밀번호가 아직 설정되지 않았어요.' });
@@ -25,7 +45,7 @@ exports.handler = async (event) => {
   const store = getStore('lilo-leads');
   try {
     if (event.httpMethod === 'GET') {
-      return json(200, { leads: await L.listLeads(store), ideas: await I.listIdeas(store), ideaTopics: I.TOPICS, ideaStatuses: I.IDEA_STATUSES, statuses: L.STATUSES, admins: L.ADMINS, logTypes: L.LOG_TYPES, payStatuses: L.PAY_STATUSES, now: new Date().toISOString() });
+      return json(200, { leads: await L.listLeads(store), ideas: await I.listIdeas(store), postStats: await ST.statsByLead(store), customers: await customerMap(store), ideaTopics: I.TOPICS, ideaStatuses: I.IDEA_STATUSES, statuses: L.STATUSES, admins: L.ADMINS, logTypes: L.LOG_TYPES, payStatuses: L.PAY_STATUSES, now: new Date().toISOString() });
     }
     if (event.httpMethod !== 'POST') return json(405, { error: 'method not allowed' });
     const req = JSON.parse(event.body || '{}');
@@ -42,6 +62,29 @@ exports.handler = async (event) => {
     if (req.action === 'ideaVote') return json(200, { idea: await I.voteIdea(store, String(req.id || ''), by) });
     if (req.action === 'ideaDelete') { await I.deleteIdea(store, String(req.id || ''), by); return json(200, { ok: true }); }
     if (req.action === 'exposure') return json(200, { lead: await L.toggleExposure(store, String(req.id || ''), req.date, by) });
+    if (req.action === 'customerCreate') {
+      const lead = L.normalizeLead(await store.get('lead:' + String(req.id || ''), { type: 'json' }));
+      if (!lead) throw new Error('업체를 찾지 못했어요.');
+      const made = await ST.createCustomer(store, lead, req.loginId, by);
+      return json(200, { account: made, lead: await setStudioLogin(store, lead.id, made.loginId, by) });
+    }
+    if (req.action === 'customerReset') {
+      const lead = L.normalizeLead(await store.get('lead:' + String(req.id || ''), { type: 'json' }));
+      if (!lead || !lead.studioLoginId) throw new Error('고객 계정이 없어요.');
+      return json(200, { account: await ST.resetCustomer(store, lead.studioLoginId) });
+    }
+    if (req.action === 'customerToggle') {
+      const lead = L.normalizeLead(await store.get('lead:' + String(req.id || ''), { type: 'json' }));
+      if (!lead || !lead.studioLoginId) throw new Error('고객 계정이 없어요.');
+      await ST.setCustomerDisabled(store, lead.studioLoginId, !!req.disabled);
+      return json(200, { ok: true });
+    }
+    if (req.action === 'customerRemove') {
+      const lead = L.normalizeLead(await store.get('lead:' + String(req.id || ''), { type: 'json' }));
+      if (!lead || !lead.studioLoginId) throw new Error('고객 계정이 없어요.');
+      await ST.removeCustomer(store, lead.studioLoginId);
+      return json(200, { lead: await setStudioLogin(store, lead.id, '', by) });
+    }
     if (req.action === 'addLog') return json(200, { lead: await L.addLog(store, String(req.id || ''), req.log || {}, by) });
     if (req.action === 'update') return json(200, { lead: await L.updateLead(store, String(req.id || ''), req.fields || {}, by) });
     if (req.action === 'create') return json(200, { lead: await L.createManual(store, req.lead || {}, by) });

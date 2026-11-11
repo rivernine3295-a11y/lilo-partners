@@ -16,7 +16,7 @@ function normalizeLead(l) {
   if (OLD_STATUS[l.status]) l.status = OLD_STATUS[l.status];
   if (!STATUSES.includes(l.status)) l.status = '문의';
   const defaults = { region: '', designerCount: '', quote: '', contractMonths: '', contractStart: '', contractEnd: '',
-    nextContactAt: '', decisionMaker: '', placeLink: '', closedBy: '', closedAt: '', workStart: '', guaranteeDays: 25, exposureDays: [], paymentStatus: '', paidAt: '', keywords: [], logs: [], history: [] };
+    nextContactAt: '', decisionMaker: '', placeLink: '', closedBy: '', closedAt: '', workStart: '', guaranteeDays: 25, exposureDays: [], paymentStatus: '', paidAt: '', studioLoginId: '', studioQuota: 12, keywords: [], logs: [], history: [] };
   for (const k of Object.keys(defaults)) if (l[k] === undefined) l[k] = defaults[k];
   return l;
 }
@@ -98,6 +98,7 @@ function validateFields(fields) {
   for (const k of ['lastContactAt', 'nextContactAt', 'contractStart', 'contractEnd']) if (k in f) out[k] = dateField(f[k]);
   if ('workStart' in f) out.workStart = dateField(f.workStart);
   if ('paidAt' in f) out.paidAt = dateField(f.paidAt);
+  if ('studioQuota' in f) { const q = numField(f.studioQuota, 999, '월 글 수'); out.studioQuota = q === '' ? 12 : q; }
   if ('guaranteeDays' in f) { const g = numField(f.guaranteeDays, 365, '보장 일수'); out.guaranteeDays = g === '' ? 25 : g; }
   if ('paymentStatus' in f) { if (!PAY_STATUSES.includes(f.paymentStatus)) throw new Error('결제 상태 값이 올바르지 않아요.'); out.paymentStatus = f.paymentStatus; }
   if ('closedBy' in f) {

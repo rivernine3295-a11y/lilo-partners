@@ -64,7 +64,7 @@
   }
   .nav-links a{color:var(--fg-muted); text-decoration:none; transition:color .2s ease;}
   .nav-links a:hover{color:var(--accent-2);}
-  @media (max-width:640px){ .nav-links{display:none;} }
+  @media (max-width:640px){ .nav-links li:not(:last-child){display:none;} }
 
   .hero{
     position:relative;
@@ -692,6 +692,7 @@
     <li><a href="#cases">사례</a></li>
     <li><a href="#pricing">가격</a></li>
     <li><a href="#contact">문의</a></li>
+    <li><a href="/studio/" style="color:#fff;border:1px solid rgba(255,255,255,.35);padding:6px 12px;border-radius:999px;background:rgba(138,92,246,.35)">고객 로그인</a></li>
   </ul>
 </nav>
 
