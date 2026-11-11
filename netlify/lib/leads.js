@@ -14,7 +14,7 @@ function normalizeLead(l) {
   if (OLD_STATUS[l.status]) l.status = OLD_STATUS[l.status];
   if (!STATUSES.includes(l.status)) l.status = '문의';
   const defaults = { region: '', designerCount: '', quote: '', contractMonths: '', contractStart: '', contractEnd: '',
-    nextContactAt: '', decisionMaker: '', placeLink: '', keywords: [], logs: [], history: [] };
+    nextContactAt: '', decisionMaker: '', placeLink: '', closedBy: '', closedAt: '', keywords: [], logs: [], history: [] };
   for (const k of Object.keys(defaults)) if (l[k] === undefined) l[k] = defaults[k];
   return l;
 }
@@ -94,6 +94,11 @@ function validateFields(fields) {
   const strs = { memo: 2000, storeName: 80, contact: 80, bizType: 20, placeLink: 300, region: 60, decisionMaker: 40, source: 40 };
   for (const k of Object.keys(strs)) if (k in f) out[k] = cleanStr(f[k], strs[k]);
   for (const k of ['lastContactAt', 'nextContactAt', 'contractStart', 'contractEnd']) if (k in f) out[k] = dateField(f[k]);
+  if ('closedBy' in f) {
+    if (f.closedBy !== '' && !ADMINS.includes(f.closedBy)) throw new Error('성사자 값이 올바르지 않아요.');
+    out.closedBy = f.closedBy;
+  }
+  if ('closedAt' in f) out.closedAt = dateField(f.closedAt);
   if ('designerCount' in f) out.designerCount = numField(f.designerCount, 999, '디자이너 수');
   if ('quote' in f) out.quote = numField(f.quote, 1000000000, '견적가');
   if ('contractMonths' in f) out.contractMonths = numField(f.contractMonths, 120, '계약 개월 수');
@@ -107,6 +112,11 @@ async function updateLead(store, id, fields, by) {
   if (!lead) throw new Error('업체를 찾지 못했어요.');
   const changes = validateFields(fields);
   const now = new Date().toISOString();
+  // 계약 단계로 처음 넘어가면 성사자·성사일을 자동으로 남긴다(정산 근거). 직접 지정한 값이 있으면 그 값을 우선한다.
+  if (changes.status === '계약' && lead.status !== '계약') {
+    if (!lead.closedBy && !('closedBy' in changes)) changes.closedBy = by;
+    if (!lead.closedAt && !('closedAt' in changes)) changes.closedAt = now.slice(0, 10);
+  }
   for (const k of Object.keys(changes)) {
     if (JSON.stringify(lead[k]) !== JSON.stringify(changes[k])) {
       const entry = k === 'keywords' || k === 'memo'

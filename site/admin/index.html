@@ -20,6 +20,40 @@
   .btn.small{padding:6px 10px;font-size:12px}
   .btn.danger{color:var(--bad);border-color:#5a2c35}
   .err{color:var(--bad);font-size:13px;min-height:18px;margin:4px 0 8px}
+  .shell{display:flex;min-height:100vh}
+  .side{width:228px;flex:none;background:#13111b;border-right:1px solid var(--line);padding:16px 12px;position:sticky;top:0;height:100vh;overflow:auto;display:flex;flex-direction:column}
+  .brand{font-weight:800;font-size:16px;padding:4px 10px 14px}
+  .brand small{display:block;font-weight:400;color:var(--mut);font-size:11px}
+  .nav{display:flex;flex-direction:column;gap:2px}
+  .nav .grp-t{font-size:11px;color:var(--mut);padding:12px 10px 4px;letter-spacing:.04em}
+  .nav a{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:10px;color:var(--fg);text-decoration:none;font-size:13px;cursor:pointer}
+  .nav a:hover{background:var(--card)}
+  .nav a.on{background:var(--acc);color:#fff;font-weight:700}
+  .nav a .n{margin-left:auto;font-size:11px;color:var(--mut);background:var(--card2);padding:0 7px;border-radius:999px}
+  .nav a.on .n{background:rgba(255,255,255,.22);color:#fff}
+  .nav a .n.hot{background:var(--warn);color:#1a1200;font-weight:700}
+  .side .me{margin-top:auto;padding:14px 10px 4px;border-top:1px solid var(--line);font-size:12px;color:var(--mut)}
+  .side .me b{display:block;color:var(--fg);font-size:13px;margin-bottom:2px}
+  .content{flex:1;min-width:0}
+  .vtitle{margin:0 0 4px;font-size:20px}
+  .vsub{margin:0 0 14px;color:var(--mut);font-size:13px}
+  table.tb{width:100%;border-collapse:collapse;background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden;font-size:13px}
+  table.tb th{text-align:left;font-size:11px;color:var(--mut);padding:9px 12px;border-bottom:1px solid var(--line);font-weight:700}
+  table.tb td{padding:9px 12px;border-bottom:1px solid var(--line)}
+  table.tb tr.clk{cursor:pointer}
+  table.tb tr.clk:hover td{background:var(--card2)}
+  .feed{display:grid;gap:8px}
+  .feed .it{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 14px;cursor:pointer}
+  .feed .it:hover{border-color:var(--acc)}
+  .feed .it small{color:var(--mut)}
+  @media(max-width:820px){
+    .shell{flex-direction:column}
+    .side{width:100%;height:auto;position:static;flex-direction:row;flex-wrap:wrap;align-items:center;padding:10px;border-right:0;border-bottom:1px solid var(--line)}
+    .brand{padding:0 10px 0 4px}
+    .nav{flex-direction:row;flex-wrap:wrap;gap:4px}
+    .nav .grp-t{display:none}
+    .side .me{display:none}
+  }
   header{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid var(--line)}
   header h1{margin:0;font-size:18px}
   .who{display:flex;gap:8px;align-items:center;color:var(--mut);font-size:13px}
@@ -118,25 +152,35 @@
 </div>
 
 <div id="app" class="hidden">
-  <header>
-    <h1>릴로 영업·문의 대시보드</h1>
-    <div class="who"><span id="whoLabel"></span><span id="sync"></span><button class="btn ghost small" id="logout">나가기</button></div>
-  </header>
+<div class="shell">
+  <aside class="side">
+    <div class="brand">릴로 관리자<small>영업·문의 대시보드</small></div>
+    <nav class="nav" id="nav"></nav>
+    <div class="me"><b id="whoLabel"></b><span id="sync"></span><br><button class="btn ghost small" id="logout" style="margin-top:8px">나가기</button></div>
+  </aside>
+  <div class="content">
   <main>
-    <h2>한눈에 보기</h2>
-    <div class="kpis" id="kpis"></div>
-    <div class="charts" id="charts"></div>
-    <div class="todo" id="todo"></div>
+    <section id="v-dash">
+      <h1 class="vtitle">대시보드</h1><p class="vsub">지금 상황을 한눈에 봅니다.</p>
+      <div class="kpis" id="kpis"></div>
+      <div class="charts" id="charts"></div>
+      <div class="todo" id="todo"></div>
+    </section>
 
-    <div class="tools">
-      <button class="btn small" id="addBtn">+ 업체 등록 (오프라인 영업·카톡·전화)</button>
-      <input class="field" id="search" placeholder="매장명·연락처·키워드 검색" style="min-width:200px">
-      <select class="field" id="asgFilter"><option value="">담당자 전체</option></select>
-      <button class="btn ghost small" id="openAll">모두 펼치기</button>
-      <button class="btn ghost small" id="closeAll">모두 접기</button>
-    </div>
+    <section id="v-list" class="hidden">
+      <h1 class="vtitle" id="listTitle">업체 목록</h1><p class="vsub" id="listSub"></p>
+      <div class="tools">
+        <input class="field" id="search" placeholder="매장명·연락처·키워드 검색" style="min-width:200px">
+        <select class="field" id="asgFilter"><option value="">담당자 전체</option></select>
+        <button class="btn ghost small" id="openAll">모두 펼치기</button>
+        <button class="btn ghost small" id="closeAll">모두 접기</button>
+      </div>
+      <div id="groups"></div>
+    </section>
 
-    <div class="addbox hidden" id="addBox">
+    <section id="v-add" class="hidden">
+      <h1 class="vtitle">업체 등록</h1><p class="vsub">오프라인 영업, 카톡, 전화로 알게 된 업체를 직접 등록합니다.</p>
+      <div class="addbox" id="addBox">
       <div class="grid">
         <div><label>매장명</label><input class="field" id="aStore"></div>
         <div><label>연락처</label><input class="field" id="aContact"></div>
@@ -157,8 +201,21 @@
       <button class="btn ghost small" id="aCancel">취소</button>
     </div>
 
-    <div id="groups"></div>
+    
+    </section>
+
+    <section id="v-kw" class="hidden">
+      <h1 class="vtitle">키워드 순위</h1><p class="vsub">업체별 핵심 키워드의 최근 순위입니다. 줄을 누르면 해당 업체로 이동합니다.</p>
+      <div id="kwTable"></div>
+    </section>
+
+    <section id="v-logs" class="hidden">
+      <h1 class="vtitle">최근 소통 기록</h1><p class="vsub">전체 업체의 통화·방문·카톡 기록을 최신순으로 봅니다.</p>
+      <div class="feed" id="feed"></div>
+    </section>
   </main>
+  </div>
+</div>
 </div>
 <div class="toast hidden" id="toast"></div>
 
@@ -169,7 +226,7 @@
   var DEFAULT_OPEN={'문의':1,'상담':1,'견적 제시':1,'계약':1,'진행 중':1,'완료':0,'보류':0};
   var CH_COLOR={'온라인 폼':'#8a5cf6','오프라인':'#34c38f','카톡':'#f1b44c','전화':'#5aa9f6','소개':'#f46a6a','기타':'#7c8aa5'};
   var ACTIVE={'상담':1,'견적 제시':1,'계약':1,'진행 중':1};
-  var S={pw:'',who:'',leads:[],statuses:[],admins:[],logTypes:[],q:'',asg:'',timer:null,openLeads:{},openGrps:null};
+  var S={pw:'',who:'',leads:[],statuses:[],admins:[],logTypes:[],q:'',asg:'',timer:null,openLeads:{},openGrps:null,view:'dash'};
   var $=function(id){return document.getElementById(id)};
   try{S.pw=localStorage.getItem('lilo_admin_pw')||'';S.who=localStorage.getItem('lilo_admin_who')||'';S.openGrps=JSON.parse(localStorage.getItem('lilo_grp_open')||'null')}catch(e){}
   if(!S.openGrps)S.openGrps=Object.assign({},DEFAULT_OPEN);
@@ -199,13 +256,14 @@
   }
   function logout(){clearInterval(S.timer);try{localStorage.removeItem('lilo_admin_pw')}catch(e){}S.pw='';$('app').classList.add('hidden');$('login').classList.remove('hidden');$('pw').value=''}
   function busy(){var a=document.activeElement;return a&&/TEXTAREA|INPUT|SELECT/.test(a.tagName)&&a.closest&&a.closest('#groups, #addBox')}
+  var HASH_TO_VIEW=function(){var h=decodeURIComponent((location.hash||'').replace(/^#\/?/,''));return h||'dash'};
   function poll(){if(busy())return;api('GET').then(apply).catch(function(e){if(e.status===401)logout();else $('sync').textContent='연결 확인 중…'})}
   function apply(j){
     S.leads=j.leads;S.statuses=j.statuses;S.admins=j.admins;S.logTypes=j.logTypes||['통화','방문','카톡','메일','기타'];
     $('sync').textContent='실시간 · '+fmt(j.now);
     var sel=$('asgFilter');if(sel.options.length<2){S.admins.forEach(function(a){var o=el('option',null,a);o.value=a;sel.appendChild(o)})}
     var as=$('aStatus');if(!as.options.length){S.statuses.forEach(function(s){as.appendChild(el('option',null,s))})}
-    render();
+    route();
   }
 
   /* ---------- 한눈에 보기 ---------- */
@@ -249,6 +307,11 @@
     if(!keys.length)lg.appendChild(el('span',null,'아직 데이터가 없어요'));
     keys.forEach(function(k){var d=el('div');var i=el('i');i.style.background=CH_COLOR[k];d.appendChild(i);d.appendChild(document.createTextNode(k+' '+counts[k]+'건 ('+Math.round(counts[k]/L.length*100)+'%)'));lg.appendChild(d)});
     wrap.appendChild(lg);c3.appendChild(wrap);box.appendChild(c3);
+    var c4=el('div','chart');c4.appendChild(el('h3',null,'성사자별 계약 (정산 기준)'));
+    var won2={},sumBy={};L.forEach(function(l){if(l.closedBy&&(l.status==='계약'||l.status==='진행 중'||l.status==='완료')){won2[l.closedBy]=(won2[l.closedBy]||0)+1;if(l.quote!=='')sumBy[l.closedBy]=(sumBy[l.closedBy]||0)+Number(l.quote)}});
+    var mx=1;S.admins.forEach(function(a){mx=Math.max(mx,won2[a]||0)});
+    S.admins.forEach(function(a){var r=el('div','hbar');r.appendChild(el('span',null,a));var w=el('span');var i=el('i');i.style.width=((won2[a]||0)/mx*100)+'%';i.style.background='#34c38f';w.appendChild(i);r.appendChild(w);r.appendChild(el('span',null,String(won2[a]||0)));c4.appendChild(r);if(sumBy[a]){var m2=el('div',null,'월 견적 '+man(sumBy[a]));m2.style.cssText='font-size:11px;color:var(--mut);margin:-3px 0 6px 72px';c4.appendChild(m2)}});
+    box.appendChild(c4);
   }
   function renderTodo(){
     var t=today(),box=$('todo');box.textContent='';
@@ -257,8 +320,8 @@
     box.className='todo'+(due.length||fresh?'':' none');
     box.appendChild(el('h3',null,due.length||fresh?'오늘 챙겨야 할 것':'오늘 챙길 연락이 없어요 👍'));
     var chips=el('div','todochips');
-    if(fresh){var f=el('span','todochip','아직 연락 전인 문의 '+fresh+'건');f.onclick=function(){S.openGrps['문의']=1;persistGrp();render();var g=document.querySelector('details.grp[data-s="문의"]');if(g)g.scrollIntoView({behavior:'smooth'})};chips.appendChild(f)}
-    due.forEach(function(l){var late=l.nextContactAt<t;var c=el('span','todochip'+(late?' late':''),(l.storeName||'(이름 없음)')+' · '+l.nextContactAt.slice(5)+(late?' 지남':''));c.onclick=function(){S.openLeads[l.id]=1;S.openGrps[l.status]=1;persistGrp();render();var n=document.querySelector('details.lead[data-id="'+l.id+'"]');if(n)n.scrollIntoView({behavior:'smooth',block:'center'})};chips.appendChild(c)});
+    if(fresh){var f=el('span','todochip','아직 연락 전인 문의 '+fresh+'건');f.onclick=function(){go('문의')};chips.appendChild(f)}
+    due.forEach(function(l){var late=l.nextContactAt<t;var c=el('span','todochip'+(late?' late':''),(l.storeName||'(이름 없음)')+' · '+l.nextContactAt.slice(5)+(late?' 지남':''));c.onclick=function(){jumpToLead(l)};chips.appendChild(c)});
     if(chips.childNodes.length)box.appendChild(chips);
   }
 
@@ -313,6 +376,7 @@
     sm.appendChild(el('span','tag',chanOf(l.source)));
     if(l.bizType)sm.appendChild(el('span','tag',l.bizType));
     var sp=el('span','sp');
+    if(l.closedBy)sp.appendChild(el('span','tag','성사 '+l.closedBy));
     if(l.assignee)sp.appendChild(el('span',null,'담당 '+l.assignee));
     if(l.quote!=='')sp.appendChild(el('span',null,'월 '+man(l.quote)));
     if(l.nextContactAt){var late=l.nextContactAt<today()&&l.status!=='완료'&&l.status!=='보류';sp.appendChild(el('span',late?'late':'','다음 연락 '+l.nextContactAt.slice(5)+(late?' (지남)':'')))}
@@ -337,6 +401,8 @@
     g.appendChild(inp(l,'디자이너 수','designerCount','number'));
     g.appendChild(inp(l,'결정권자','decisionMaker','text'));
     g.appendChild(inp(l,'월 견적가 (원)','quote','number'));
+    g.appendChild(inp(l,'계약 성사자 (정산 기준)','closedBy','select',['']. concat(S.admins)));
+    g.appendChild(inp(l,'성사일','closedAt','date'));
     g.appendChild(inp(l,'계약 개월 수','contractMonths','number'));
     g.appendChild(inp(l,'계약 시작일','contractStart','date'));
     g.appendChild(inp(l,'계약 종료일','contractEnd','date'));
@@ -350,8 +416,15 @@
     b.appendChild(kwBlock(l));
     var ms=el('div','sec');ms.appendChild(el('b',null,'메모'));var ta=el('textarea','field');ta.placeholder='메모 (정리된 내용, 주의사항 등)';ta.value=l.memo||'';ta.onblur=function(){if(ta.value!==(l.memo||''))save(l,{memo:ta.value})};ms.appendChild(ta);b.appendChild(ms);
     b.appendChild(logBlock(l));
+    var cl=(l.history||[]).filter(function(x){return x.field==='closedBy'||x.field==='closedAt'||(x.field==='status'&&x.to==='계약')});
+    if(cl.length||l.closedBy){
+      var sc=el('div','sec');sc.appendChild(el('b',null,'성사 이력 (정산 근거)'));var bx=el('div','logs');
+      var cur=el('div');cur.appendChild(document.createTextNode('현재 성사자: '+(l.closedBy||'미지정')+(l.closedAt?' · 성사일 '+l.closedAt:'')));bx.appendChild(cur);
+      cl.slice().reverse().forEach(function(x){var d=el('div');var lab=x.field==='status'?'계약 단계로 변경':(x.field==='closedBy'?'성사자 '+(x.from||'없음')+' → '+(x.to||'없음'):'성사일 '+(x.from||'없음')+' → '+(x.to||'없음'));d.appendChild(el('span',null,fmt(x.at)+' · '+x.by+' · '));d.appendChild(document.createTextNode(lab));bx.appendChild(d)});
+      sc.appendChild(bx);b.appendChild(sc);
+    }
     var ft=el('div','foot');
-    var names={status:'단계',assignee:'담당자',memo:'메모',lastContactAt:'마지막 연락일',nextContactAt:'다음 연락일',quote:'견적가',keywords:'키워드',storeName:'매장명',contact:'연락처',region:'지역',designerCount:'디자이너 수',bizType:'업종',placeLink:'링크',decisionMaker:'결정권자',contractMonths:'계약 개월',contractStart:'계약 시작',contractEnd:'계약 종료',source:'경로'};
+    var names={status:'단계',assignee:'담당자',memo:'메모',lastContactAt:'마지막 연락일',nextContactAt:'다음 연락일',quote:'견적가',keywords:'키워드',storeName:'매장명',contact:'연락처',region:'지역',designerCount:'디자이너 수',bizType:'업종',placeLink:'링크',decisionMaker:'결정권자',contractMonths:'계약 개월',contractStart:'계약 시작',contractEnd:'계약 종료',source:'경로',closedBy:'성사자',closedAt:'성사일'};
     var h=(l.history||[]).slice(-2).reverse().map(function(x){return fmt(x.at)+' '+x.by+' · '+(names[x.field]||x.field)+' 변경'}).join(' / ');
     ft.appendChild(el('span','hist',h?'최근 변경 · '+h:''));
     var del=el('button','btn ghost small danger','업체 삭제');
@@ -368,6 +441,15 @@
   }
   function renderGroups(){
     var box=$('groups');box.textContent='';
+    if(S.statuses.indexOf(S.view)>=0){
+      var rows=S.leads.filter(function(l){return l.status===S.view&&matches(l)});
+      var sum=0;rows.forEach(function(l){if(l.quote!=='')sum+=Number(l.quote)});
+      $('listSub').textContent=rows.length+'곳'+(sum?' · 월 견적 합계 '+man(sum):'');
+      if(!rows.length)box.appendChild(el('div','empty','해당하는 업체가 없어요.'));
+      rows.forEach(function(l){box.appendChild(leadRow(l))});
+      return;
+    }
+    $('listSub').textContent='단계별로 접어서 봅니다.';
     S.statuses.forEach(function(s){
       var rows=S.leads.filter(function(l){return l.status===s&&matches(l)});
       var g=el('details','grp');g.dataset.s=s;if(rows.length&&(S.openGrps[s]||S.q))g.open=true;
@@ -380,7 +462,73 @@
       g.appendChild(list);box.appendChild(g);
     });
   }
-  function render(){renderKpis();renderCharts();renderTodo();renderGroups()}
+  /* ---------- 왼쪽 메뉴·화면 전환 ---------- */
+  function jumpToLead(l){S.openLeads[l.id]=1;S.openGrps[l.status]=1;persistGrp();go(l.status);setTimeout(function(){var n=document.querySelector('details.lead[data-id="'+l.id+'"]');if(n)n.scrollIntoView({behavior:'smooth',block:'center'})},50)}
+  function go(v){if(HASH_TO_VIEW()===v)route();else location.hash='#/'+encodeURIComponent(v)}
+  function renderNav(){
+    var nav=$('nav');nav.textContent='';
+    var t=today();
+    var due=S.leads.filter(function(l){return l.status!=='완료'&&l.status!=='보류'&&((l.nextContactAt&&l.nextContactAt<=t)||l.status==='문의')}).length;
+    function item(v,label,n,hot){var a=el('a',S.view===v?'on':'');a.href='#/'+encodeURIComponent(v);a.appendChild(el('span',null,label));if(n!=null&&n!==''){a.appendChild(el('span','n'+(hot?' hot':''),String(n)))}nav.appendChild(a)}
+    item('dash','📊 대시보드',due||'',true);
+    item('add','➕ 업체 등록');
+    nav.appendChild(el('div','grp-t','업체 목록'));
+    item('all','📁 전체 보기',S.leads.length);
+    S.statuses.forEach(function(s){
+      var n=S.leads.filter(function(l){return l.status===s}).length;
+      var a=el('a',S.view===s?'on':'');a.href='#/'+encodeURIComponent(s);
+      var d=el('span','dot');d.style.background=STAGE_COLOR[s];a.appendChild(d);a.appendChild(el('span',null,s));a.appendChild(el('span','n',String(n)));nav.appendChild(a);
+    });
+    nav.appendChild(el('div','grp-t','모아보기'));
+    item('kw','🔑 키워드 순위');
+    item('logs','🗒 소통 기록');
+  }
+  function renderKw(){
+    var box=$('kwTable');box.textContent='';var rows=[];
+    S.leads.forEach(function(l){(l.keywords||[]).forEach(function(k){var rk=k.ranks||[];rows.push({l:l,k:k.k,last:rk.length?rk[rk.length-1]:null,prev:rk.length>1?rk[rk.length-2]:null})})});
+    if(!rows.length){box.appendChild(el('div','empty','등록된 키워드가 없어요. 업체를 펼쳐서 핵심 키워드를 추가해보세요.'));return}
+    rows.sort(function(a,b){return (a.last?a.last.r:9999)-(b.last?b.last.r:9999)});
+    var tb=el('table','tb');var hd=el('tr');['업체','키워드','현재 순위','변동','기록일','단계'].forEach(function(h){hd.appendChild(el('th',null,h))});tb.appendChild(hd);
+    rows.forEach(function(r){
+      var tr=el('tr','clk');tr.appendChild(el('td',null,r.l.storeName||'(이름 없음)'));tr.appendChild(el('td',null,r.k));
+      tr.appendChild(el('td',null,r.last?r.last.r+'위':'기록 없음'));
+      var ch=el('td');if(r.last&&r.prev){var df=r.prev.r-r.last.r;var sp=el('span',df>0?'up':df<0?'dn':'',df>0?'▲ '+df:df<0?'▼ '+(-df):'―');ch.appendChild(sp)}else ch.textContent='-';tr.appendChild(ch);
+      tr.appendChild(el('td',null,r.last?r.last.d.slice(5):'-'));tr.appendChild(el('td',null,r.l.status));
+      tr.onclick=function(){jumpToLead(r.l)};tb.appendChild(tr);
+    });
+    box.appendChild(tb);
+  }
+  function renderFeed(){
+    var box=$('feed');box.textContent='';var items=[];
+    S.leads.forEach(function(l){(l.logs||[]).forEach(function(g){items.push({l:l,g:g})})});
+    items.sort(function(a,b){return a.g.at<b.g.at?1:-1});
+    if(!items.length){box.appendChild(el('div','empty','아직 소통 기록이 없어요. 업체를 펼쳐서 통화·방문 내용을 남겨보세요.'));return}
+    items.slice(0,60).forEach(function(it){
+      var d=el('div','it');var h=el('div');h.appendChild(el('b',null,it.l.storeName||'(이름 없음)'));h.appendChild(el('small',null,'  ['+it.g.type+'] '+it.g.by+' · '+fmt(it.g.at)+' · '+it.l.status));d.appendChild(h);d.appendChild(el('div',null,it.g.text));
+      d.onclick=function(){jumpToLead(it.l)};box.appendChild(d);
+    });
+  }
+  function route(){
+    var v=HASH_TO_VIEW();
+    var valid=['dash','add','all','kw','logs'].concat(S.statuses);
+    if(valid.indexOf(v)<0)v='dash';
+    S.view=v;
+    ['dash','list','add','kw','logs'].forEach(function(x){$('v-'+x).classList.add('hidden')});
+    var isStage=S.statuses.indexOf(v)>=0;
+    var key=(v==='dash'||v==='add'||v==='kw'||v==='logs')?v:'list';
+    $('v-'+key).classList.remove('hidden');
+    if(key==='list')$('listTitle').textContent=v==='all'?'전체 업체':v+' 단계';
+    render();
+    window.scrollTo(0,0);
+  }
+  function render(){
+    renderNav();
+    if(S.view==='dash'){renderKpis();renderCharts();renderTodo()}
+    else if(S.view==='kw')renderKw();
+    else if(S.view==='logs')renderFeed();
+    else if(S.view!=='add')renderGroups();
+  }
+  window.addEventListener('hashchange',route);
 
   document.addEventListener('toggle',function(e){
     var t=e.target;if(!t||!t.classList)return;
@@ -394,8 +542,7 @@
   $('asgFilter').onchange=function(){S.asg=this.value;renderGroups()};
   $('openAll').onclick=function(){S.statuses.forEach(function(s){S.openGrps[s]=1});persistGrp();renderGroups()};
   $('closeAll').onclick=function(){S.statuses.forEach(function(s){S.openGrps[s]=0});S.openLeads={};persistGrp();renderGroups()};
-  $('addBtn').onclick=function(){$('addBox').classList.toggle('hidden')};
-  $('aCancel').onclick=function(){$('addBox').classList.add('hidden')};
+  $('aCancel').onclick=function(){go('dash')};
   $('aSave').onclick=function(){
     var kws=$('aKw').value.split(',').map(function(s){return s.trim()}).filter(Boolean);
     var lead={storeName:$('aStore').value,contact:$('aContact').value,bizType:$('aBiz').value,source:$('aSrc').value,region:$('aRegion').value,
@@ -403,7 +550,7 @@
     api('POST',{action:'create',by:S.who,lead:lead}).then(function(j){
       S.leads.unshift(j.lead);S.openLeads[j.lead.id]=1;S.openGrps[j.lead.status]=1;persistGrp();
       ['aStore','aContact','aRegion','aDes','aLink','aDm','aKw','aQuote','aNext','aMemo'].forEach(function(i){$(i).value=''});
-      $('addErr').textContent='';$('addBox').classList.add('hidden');render();toast('등록했어요');
+      $('addErr').textContent='';toast('등록했어요');jumpToLead(j.lead);
     }).catch(function(e){$('addErr').textContent=e.message});
   };
   if(S.who)$('whoSel').value=S.who;
