@@ -24,7 +24,7 @@ exports.handler = async (event) => {
   const store = getStore('lilo-leads');
   try {
     if (event.httpMethod === 'GET') {
-      return json(200, { leads: await L.listLeads(store), statuses: L.STATUSES, admins: L.ADMINS, now: new Date().toISOString() });
+      return json(200, { leads: await L.listLeads(store), statuses: L.STATUSES, admins: L.ADMINS, logTypes: L.LOG_TYPES, now: new Date().toISOString() });
     }
     if (event.httpMethod !== 'POST') return json(405, { error: 'method not allowed' });
     const req = JSON.parse(event.body || '{}');
@@ -35,6 +35,7 @@ exports.handler = async (event) => {
     }
     const by = L.ADMINS.includes(req.by) ? req.by : '';
     if (!by) return json(400, { error: '누가 수정하는지 선택해주세요.' });
+    if (req.action === 'addLog') return json(200, { lead: await L.addLog(store, String(req.id || ''), req.log || {}, by) });
     if (req.action === 'update') return json(200, { lead: await L.updateLead(store, String(req.id || ''), req.fields || {}, by) });
     if (req.action === 'create') return json(200, { lead: await L.createManual(store, req.lead || {}, by) });
     if (req.action === 'delete') { await L.removeLead(store, String(req.id || '')); return json(200, { ok: true }); }
