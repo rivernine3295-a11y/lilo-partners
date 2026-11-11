@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>릴로 관리자 대시보드</title>
+<style>
+  :root{--bg:#0f0e14;--card:#1a1824;--line:#2c2940;--fg:#f1eef8;--mut:#9a95b0;--acc:#8a5cf6;--ok:#34c38f;--warn:#f1b44c;--bad:#f46a6a;}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--fg);font-family:'Malgun Gothic','맑은 고딕',-apple-system,sans-serif;font-size:14px;line-height:1.5}
+  button,input,select,textarea{font:inherit;color:inherit}
+  .hidden{display:none!important}
+  .login{max-width:360px;margin:12vh auto;padding:28px;background:var(--card);border:1px solid var(--line);border-radius:16px}
+  .login h1{margin:0 0 6px;font-size:20px}
+  .login p{margin:0 0 18px;color:var(--mut);font-size:13px}
+  .field{display:block;width:100%;margin:0 0 10px;padding:10px 12px;background:var(--bg);border:1px solid var(--line);border-radius:10px}
+  .btn{padding:10px 16px;border:0;border-radius:10px;background:var(--acc);color:#fff;font-weight:700;cursor:pointer}
+  .btn.ghost{background:transparent;border:1px solid var(--line);color:var(--fg);font-weight:400}
+  .btn.small{padding:6px 10px;font-size:12px}
+  .err{color:var(--bad);font-size:13px;min-height:18px;margin:4px 0 8px}
+  header{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--line)}
+  header h1{margin:0;font-size:18px}
+  .who{display:flex;gap:8px;align-items:center;color:var(--mut);font-size:13px}
+  main{padding:16px 20px 60px;max-width:1200px;margin:0 auto}
+  .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:16px}
+  .stat{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+  .stat b{display:block;font-size:24px}
+  .stat span{color:var(--mut);font-size:12px}
+  .stat.alert b{color:var(--warn)}
+  .tools{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px;align-items:center}
+  .tools .field{width:auto;margin:0}
+  .chips{display:flex;flex-wrap:wrap;gap:6px}
+  .chip{padding:6px 12px;border:1px solid var(--line);border-radius:999px;background:transparent;cursor:pointer;font-size:13px;color:var(--mut)}
+  .chip.on{background:var(--acc);border-color:var(--acc);color:#fff}
+  .lead{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:10px}
+  .lead.new{border-color:var(--warn)}
+  .row{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between}
+  .title{font-weight:700;font-size:15px}
+  .meta{color:var(--mut);font-size:12px}
+  .tag{display:inline-block;padding:2px 8px;border-radius:999px;border:1px solid var(--line);font-size:11px;color:var(--mut);margin-left:6px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin-top:10px}
+  .grid label{font-size:11px;color:var(--mut);display:block;margin-bottom:3px}
+  .grid .field{margin:0;padding:8px 10px}
+  textarea.field{min-height:60px;resize:vertical;margin-top:8px}
+  .hist{margin-top:8px;font-size:11px;color:var(--mut)}
+  .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--card);border:1px solid var(--line);padding:10px 16px;border-radius:10px;z-index:9}
+  .empty{padding:40px;text-align:center;color:var(--mut)}
+  a{color:#b9a2ff}
+</style>
+</head>
+<body>
+
+<div class="login" id="login">
+  <h1>릴로 관리자</h1>
+  <p>팀원 3명만 사용하는 문의 관리 화면이에요.</p>
+  <select class="field" id="whoSel">
+    <option value="">누구세요?</option>
+    <option>강현구</option><option>윤현노</option><option>윤지수</option>
+  </select>
+  <input class="field" id="pw" type="password" placeholder="공용 비밀번호" autocomplete="current-password">
+  <div class="err" id="loginErr"></div>
+  <button class="btn" id="loginBtn" style="width:100%">들어가기</button>
+</div>
+
+<div id="app" class="hidden">
+  <header>
+    <h1>릴로 문의 대시보드</h1>
+    <div class="who"><span id="whoLabel"></span><span id="sync"></span><button class="btn ghost small" id="logout">나가기</button></div>
+  </header>
+  <main>
+    <div class="stats" id="stats"></div>
+    <div class="tools">
+      <div class="chips" id="chips"></div>
+      <input class="field" id="search" placeholder="매장명·연락처 검색" style="min-width:180px">
+      <button class="btn small" id="addBtn">+ 수동 등록 (카톡·전화로 온 문의)</button>
+    </div>
+    <div class="hidden lead" id="addBox">
+      <div class="grid">
+        <div><label>매장명</label><input class="field" id="aStore"></div>
+        <div><label>연락처</label><input class="field" id="aContact"></div>
+        <div><label>업종</label><select class="field" id="aBiz"><option value="">선택</option><option>미용실</option><option>음식점</option><option>병원</option><option>기타</option></select></div>
+        <div><label>유입 경로</label><select class="field" id="aSrc"><option>카카오톡</option><option>전화</option><option>지인 소개</option><option>기타</option></select></div>
+      </div>
+      <textarea class="field" id="aMemo" placeholder="메모 (예: 어떤 내용으로 문의했는지)"></textarea>
+      <div class="err" id="addErr"></div>
+      <button class="btn small" id="aSave">등록</button>
+      <button class="btn ghost small" id="aCancel">취소</button>
+    </div>
+    <div id="list"></div>
+  </main>
+</div>
+<div class="toast hidden" id="toast"></div>
+
+<script>
+(function(){
+  var API='/.netlify/functions/leads-api';
+  var S={pw:'',who:'',leads:[],statuses:[],admins:[],filter:'전체',q:'',timer:null};
+  var $=function(id){return document.getElementById(id)};
+  try{ S.pw=localStorage.getItem('lilo_admin_pw')||''; S.who=localStorage.getItem('lilo_admin_who')||''; }catch(e){}
+
+  function toast(t){var el=$('toast');el.textContent=t;el.classList.remove('hidden');clearTimeout(toast._t);toast._t=setTimeout(function(){el.classList.add('hidden')},2600)}
+  function api(method,body){
+    return fetch(API,{method:method,headers:{'content-type':'application/json','x-admin-password':S.pw},body:body?JSON.stringify(body):undefined})
+      .then(function(r){return r.json().then(function(j){if(!r.ok) throw Object.assign(new Error(j.error||'오류'),{status:r.status}); return j;})});
+  }
+  function el(tag,cls,text){var e=document.createElement(tag);if(cls)e.className=cls;if(text!=null)e.textContent=text;return e}
+  function fmt(iso){if(!iso)return '';var d=new Date(iso);return (d.getMonth()+1)+'/'+d.getDate()+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')}
+  function today(){var d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
+
+  function login(){
+    S.who=$('whoSel').value; S.pw=$('pw').value;
+    if(!S.who){$('loginErr').textContent='누구인지 먼저 골라주세요.';return}
+    enter(true);
+  }
+  function enter(fromForm){
+    api('GET').then(function(j){
+      try{localStorage.setItem('lilo_admin_pw',S.pw);localStorage.setItem('lilo_admin_who',S.who)}catch(e){}
+      $('login').classList.add('hidden');$('app').classList.remove('hidden');
+      $('whoLabel').textContent=S.who+' 님';
+      apply(j); clearInterval(S.timer); S.timer=setInterval(poll,8000);
+    }).catch(function(e){
+      if(fromForm) $('loginErr').textContent=e.message;
+      else{ $('login').classList.remove('hidden'); }
+    });
+  }
+  function poll(){
+    var a=document.activeElement;
+    if(a && a.closest && a.closest('#list') && /TEXTAREA|INPUT|SELECT/.test(a.tagName)) return;
+    api('GET').then(apply).catch(function(e){ if(e.status===401) logout(); else $('sync').textContent='연결 확인 중…'; });
+  }
+  function apply(j){
+    S.leads=j.leads;S.statuses=j.statuses;S.admins=j.admins;
+    $('sync').textContent='실시간 · '+fmt(j.now);
+    render();
+  }
+  function logout(){
+    clearInterval(S.timer);
+    try{localStorage.removeItem('lilo_admin_pw')}catch(e){}
+    S.pw='';$('app').classList.add('hidden');$('login').classList.remove('hidden');$('pw').value='';
+  }
+
+  function renderStats(){
+    var t=today(), L=S.leads;
+    var todayN=L.filter(function(l){return l.createdAt.slice(0,10)===t||(new Date(l.createdAt).toDateString()===new Date().toDateString())}).length;
+    var fresh=L.filter(function(l){return l.status==='신규'}).length;
+    var contacted=L.filter(function(l){return l.status!=='신규'}).length;
+    var rate=L.length?Math.round(contacted/L.length*100):0;
+    var won=L.filter(function(l){return l.status==='계약'}).length;
+    var items=[['오늘 유입',todayN],['전체 문의',L.length],['아직 연락 전',fresh,fresh>0],['연락 완료율',rate+'%'],['계약',won]];
+    var box=$('stats');box.textContent='';
+    items.forEach(function(it){var d=el('div','stat'+(it[2]?' alert':''));d.appendChild(el('b',null,String(it[1])));d.appendChild(el('span',null,it[0]));box.appendChild(d)});
+  }
+  function renderChips(){
+    var box=$('chips');box.textContent='';
+    ['전체'].concat(S.statuses).forEach(function(s){
+      var n=s==='전체'?S.leads.length:S.leads.filter(function(l){return l.status===s}).length;
+      var b=el('button','chip'+(S.filter===s?' on':''),s+' '+n);
+      b.onclick=function(){S.filter=s;render()};box.appendChild(b);
+    });
+  }
+  function field(labelTxt,node){var d=el('div');d.appendChild(el('label',null,labelTxt));d.appendChild(node);return d}
+  function save(l,fields){
+    api('POST',{action:'update',id:l.id,by:S.who,fields:fields}).then(function(j){
+      var i=S.leads.findIndex(function(x){return x.id===l.id}); if(i>=0)S.leads[i]=j.lead; toast('저장했어요'); render();
+    }).catch(function(e){toast(e.message)});
+  }
+  function card(l){
+    var c=el('div','lead'+(l.status==='신규'?' new':''));
+    var r=el('div','row');var left=el('div');
+    var t=el('div','title',l.storeName||'(매장명 없음)');t.appendChild(el('span','tag',l.source));
+    if(l.bizType)t.appendChild(el('span','tag',l.bizType));
+    left.appendChild(t);
+    var m=el('div','meta',fmt(l.createdAt)+' · ');
+    var tel=el('a',null,l.contact||'연락처 없음'); if(/^[0-9+\-\s]{8,}$/.test(l.contact)) tel.href='tel:'+l.contact.replace(/[^0-9+]/g,''); m.appendChild(tel);
+    if(l.placeLink){m.appendChild(document.createTextNode(' · '));var p=el('a',null,'플레이스');if(/^https?:\/\//.test(l.placeLink)){p.href=l.placeLink;p.target='_blank';p.rel='noopener'}m.appendChild(p)}
+    left.appendChild(m);
+    if(l.diagnosis)left.appendChild(el('div','meta','자가진단: '+l.diagnosis));
+    r.appendChild(left);
+    var del=el('button','btn ghost small','삭제');
+    del.onclick=function(){if(confirm('이 문의를 삭제할까요? 되돌릴 수 없어요.')){api('POST',{action:'delete',id:l.id,by:S.who}).then(function(){S.leads=S.leads.filter(function(x){return x.id!==l.id});render()}).catch(function(e){toast(e.message)})}};
+    r.appendChild(del);c.appendChild(r);
+
+    var g=el('div','grid');
+    var st=el('select','field');S.statuses.forEach(function(s){var o=el('option',null,s);if(s===l.status)o.selected=true;st.appendChild(o)});
+    st.onchange=function(){var f={status:st.value};if(st.value!=='신규'&&!l.lastContactAt)f.lastContactAt=today();save(l,f)};
+    var as=el('select','field');var o0=el('option',null,'미지정');o0.value='';as.appendChild(o0);
+    S.admins.forEach(function(a){var o=el('option',null,a);if(a===l.assignee)o.selected=true;as.appendChild(o)});
+    as.onchange=function(){save(l,{assignee:as.value})};
+    var dt=el('input','field');dt.type='date';dt.value=l.lastContactAt||'';dt.onchange=function(){save(l,{lastContactAt:dt.value})};
+    g.appendChild(field('상태',st));g.appendChild(field('담당자',as));g.appendChild(field('마지막 연락일',dt));
+    c.appendChild(g);
+    var memo=el('textarea','field');memo.placeholder='메모 (통화 내용, 다음 할 일 등)';memo.value=l.memo||'';
+    memo.onblur=function(){if(memo.value!==(l.memo||''))save(l,{memo:memo.value})};
+    c.appendChild(memo);
+    var h=(l.history||[]).slice(-2).reverse().map(function(x){return fmt(x.at)+' '+x.by+': '+({status:'상태',assignee:'담당자',memo:'메모',lastContactAt:'연락일'}[x.field]||x.field)+' 변경'}).join(' / ');
+    if(h)c.appendChild(el('div','hist','최근 변경 · '+h));
+    return c;
+  }
+  function render(){
+    renderStats();renderChips();
+    var q=S.q.toLowerCase();
+    var rows=S.leads.filter(function(l){
+      if(S.filter!=='전체'&&l.status!==S.filter)return false;
+      return !q||((l.storeName+' '+l.contact).toLowerCase().indexOf(q)>=0);
+    });
+    var box=$('list');box.textContent='';
+    if(!rows.length){box.appendChild(el('div','empty','표시할 문의가 없어요.'));return}
+    rows.forEach(function(l){box.appendChild(card(l))});
+  }
+
+  $('loginBtn').onclick=login;
+  $('pw').addEventListener('keydown',function(e){if(e.key==='Enter')login()});
+  $('logout').onclick=logout;
+  $('search').oninput=function(){S.q=this.value;render()};
+  $('addBtn').onclick=function(){$('addBox').classList.toggle('hidden')};
+  $('aCancel').onclick=function(){$('addBox').classList.add('hidden')};
+  $('aSave').onclick=function(){
+    api('POST',{action:'create',by:S.who,lead:{storeName:$('aStore').value,contact:$('aContact').value,bizType:$('aBiz').value,source:$('aSrc').value,memo:$('aMemo').value}})
+      .then(function(j){S.leads.unshift(j.lead);['aStore','aContact','aMemo'].forEach(function(i){$(i).value=''});$('addErr').textContent='';$('addBox').classList.add('hidden');render();toast('등록했어요')})
+      .catch(function(e){$('addErr').textContent=e.message});
+  };
+
+  if(S.who){$('whoSel').value=S.who}
+  if(S.pw&&S.who) enter(false);
+})();
+</script>
+</body>
+</html>
