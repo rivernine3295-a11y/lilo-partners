@@ -1056,6 +1056,7 @@
     <img class="share-img" id="shareImg" alt="플레이스 자가진단 결과 이미지">
     <div class="share-btns">
       <button type="button" class="btn btn-primary" id="shareKakao">카카오톡으로 보내기</button>
+      <button type="button" class="btn btn-primary" id="shareCopy" hidden>이미지 복사</button>
       <button type="button" class="btn btn-ghost" id="shareSave">이미지 저장</button>
     </div>
     <p class="share-hint" id="shareHint">휴대폰에서는 이미지를 길게 눌러 저장할 수도 있어요.</p>
@@ -1799,10 +1800,14 @@
       if(c.toBlob) c.toBlob(function(b){ shareBlob=b; }, 'image/png');
       var canFiles=false;
       try{ canFiles=!!(navigator.canShare && navigator.canShare({files:[new File([new Blob(['x'],{type:'image/png'})], 'x.png', {type:'image/png'})]})); }catch(e){}
-      document.getElementById('shareKakao').hidden=!canFiles;
-      document.getElementById('shareHint').textContent=canFiles
+      var isMobile=/Android|iPhone|iPad|iPod/i.test(navigator.userAgent) || window.matchMedia('(pointer:coarse)').matches;
+      var useShare=canFiles && isMobile;
+      var canCopy=!!(navigator.clipboard && window.ClipboardItem);
+      document.getElementById('shareKakao').hidden=!useShare;
+      document.getElementById('shareCopy').hidden=useShare || !canCopy;
+      document.getElementById('shareHint').textContent=useShare
         ? '이미지를 길게 눌러 저장할 수도 있어요.'
-        : '휴대폰에서는 이미지를 길게 눌러 저장할 수 있어요.';
+        : 'PC에서는 이미지를 복사하거나 저장한 뒤, 카카오톡 PC 대화창에 붙여넣기(Ctrl+V)하거나 파일로 보내주세요.';
       overlay.classList.add('show');
       document.body.style.overflow='hidden';
     });
@@ -1821,6 +1826,12 @@
       var file=new File([shareBlob], shareName, {type:'image/png'});
       navigator.share({files:[file], title:'플레이스 자가진단 결과', text:'릴로 네이버 플레이스 자가진단 결과예요.'})
         .catch(function(err){ if(err && err.name!=='AbortError') showToast('공유를 열지 못했어요. 이미지 저장 후 카톡으로 보내주세요.'); });
+    });
+    document.getElementById('shareCopy').addEventListener('click', function(){
+      if(!shareBlob){ showToast('이미지를 준비하고 있어요. 잠시 후 다시 눌러주세요.'); return; }
+      navigator.clipboard.write([new ClipboardItem({'image/png':shareBlob})])
+        .then(function(){ showToast('이미지를 복사했어요. 카카오톡 대화창에서 Ctrl+V로 붙여넣으세요.'); })
+        .catch(function(){ showToast('복사가 안 돼요. 이미지 저장 후 카카오톡으로 보내주세요.'); });
     });
     document.getElementById('shareSave').addEventListener('click', function(){
       var a=document.createElement('a');
