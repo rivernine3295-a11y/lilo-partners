@@ -18,8 +18,7 @@ function authorized(event) {
   return crypto.timingSafeEqual(a, b);
 }
 
-async function customerMap(store) {
-  const leads = await L.listLeads(store);
+async function customerMap(store, leads) {
   const out = {};
   for (const l of leads) if (l.studioLoginId) {
     const c = await ST.getCustomer(store, l.studioLoginId);
@@ -45,7 +44,8 @@ exports.handler = async (event) => {
   const store = getStore('lilo-leads');
   try {
     if (event.httpMethod === 'GET') {
-      return json(200, { leads: await L.listLeads(store), ideas: await I.listIdeas(store), postStats: await ST.statsByLead(store), customers: await customerMap(store), ideaTopics: I.TOPICS, ideaStatuses: I.IDEA_STATUSES, statuses: L.STATUSES, admins: L.ADMINS, logTypes: L.LOG_TYPES, payStatuses: L.PAY_STATUSES, now: new Date().toISOString() });
+      const leads = await L.listLeads(store);
+      return json(200, { leads, ideas: await I.listIdeas(store), postStats: await ST.statsByLead(store), customers: await customerMap(store, leads), ideaTopics: I.TOPICS, ideaStatuses: I.IDEA_STATUSES, statuses: L.STATUSES, admins: L.ADMINS, logTypes: L.LOG_TYPES, payStatuses: L.PAY_STATUSES, now: new Date().toISOString() });
     }
     if (event.httpMethod !== 'POST') return json(405, { error: 'method not allowed' });
     const req = JSON.parse(event.body || '{}');

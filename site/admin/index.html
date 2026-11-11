@@ -340,7 +340,7 @@
     api('GET').then(function(j){
       try{localStorage.setItem('lilo_admin_pw',S.pw);localStorage.setItem('lilo_admin_who',S.who)}catch(e){}
       $('login').classList.add('hidden');$('app').classList.remove('hidden');$('whoLabel').textContent=S.who+' 님';
-      apply(j);clearInterval(S.timer);S.timer=setInterval(poll,20000);
+      apply(j);clearInterval(S.timer);S.timer=setInterval(poll,60000);
     }).catch(function(e){if(fromForm)$('loginErr').textContent=e.message;else $('login').classList.remove('hidden')});
   }
   function logout(){clearInterval(S.timer);try{localStorage.removeItem('lilo_admin_pw')}catch(e){}S.pw='';$('app').classList.add('hidden');$('login').classList.remove('hidden');$('pw').value=''}

@@ -149,6 +149,7 @@ async function createPost(store, lead, input) {
   const id = now.replace(/[^0-9]/g, '') + '-' + Math.random().toString(36).slice(2, 6);
   const post = { id, leadId: lead.id, createdAt: now, updatedAt: now, title, body, keywords: cleanKeywords(input.keywords), source: cleanStr(input.source, 20) || '직접 작성', status: '초안', publishedUrl: '', publishedAt: '' };
   await store.setJSON('post:' + lead.id + ':' + id, post);
+  await refreshStats(store, lead.id);
   return post;
 }
 async function getPost(store, leadId, id) {
@@ -163,6 +164,7 @@ async function updatePost(store, leadId, id, fields) {
   if ('keywords' in fields) p.keywords = cleanKeywords(fields.keywords);
   p.updatedAt = new Date().toISOString();
   await store.setJSON('post:' + leadId + ':' + p.id, p);
+  await refreshStats(store, leadId);
   return p;
 }
 function validBlogUrl(u) {
@@ -177,32 +179,44 @@ async function markPublished(store, leadId, id, url) {
   const p = await getPost(store, leadId, id);
   p.status = '발행 완료'; p.publishedUrl = u; p.publishedAt = new Date().toISOString(); p.updatedAt = p.publishedAt;
   await store.setJSON('post:' + leadId + ':' + p.id, p);
+  await refreshStats(store, leadId);
   return p;
 }
 async function unpublish(store, leadId, id) {
   const p = await getPost(store, leadId, id);
   p.status = '초안'; p.publishedUrl = ''; p.publishedAt = ''; p.updatedAt = new Date().toISOString();
   await store.setJSON('post:' + leadId + ':' + p.id, p);
+  await refreshStats(store, leadId);
   return p;
 }
 async function deletePost(store, leadId, id) {
   const p = await getPost(store, leadId, id);
   if (p.status === '발행 완료') throw new Error('발행 완료로 기록된 글은 삭제할 수 없어요. 먼저 발행 기록을 취소해 주세요.');
   await store.delete('post:' + leadId + ':' + p.id);
+  await refreshStats(store, leadId);
 }
-// 관리자 화면용: 업체별 요약
-async function statsByLead(store) {
-  const { blobs } = await store.list({ prefix: 'post:' });
-  const all = (await Promise.all(blobs.map((b) => store.get(b.key, { type: 'json' })))).filter(Boolean);
-  const out = {};
-  for (const p of all) {
-    const s = out[p.leadId] || (out[p.leadId] = { total: 0, published: 0, lastPublishedAt: '', month: 0, recent: [] });
-    s.total++;
-    if (monthOf(p.createdAt) === kstToday().slice(0, 7)) s.month++;
+// 관리자 화면용: 업체별 요약. 글이 바뀔 때마다 그 업체 것만 다시 계산해 'stats:<업체>' 에 저장해 두고,
+// 관리자 화면은 이 작은 요약만 읽어요(모든 글을 매번 읽지 않아요).
+async function refreshStats(store, leadId) {
+  const posts = await listPosts(store, leadId);
+  const s = { total: posts.length, published: 0, lastPublishedAt: '', months: {}, recent: [] };
+  for (const p of posts) {
+    const m = monthOf(p.createdAt); s.months[m] = (s.months[m] || 0) + 1;
     if (p.status === '발행 완료') { s.published++; if (p.publishedAt > s.lastPublishedAt) s.lastPublishedAt = p.publishedAt; s.recent.push({ title: p.title, url: p.publishedUrl, at: p.publishedAt }); }
   }
-  for (const k of Object.keys(out)) out[k].recent = out[k].recent.sort((a, b) => (a.at < b.at ? 1 : -1)).slice(0, 5);
+  s.recent = s.recent.sort((a, b) => (a.at < b.at ? 1 : -1)).slice(0, 5);
+  if (!posts.length) await store.delete('stats:' + leadId); else await store.setJSON('stats:' + leadId, s);
+  return s;
+}
+async function statsByLead(store) {
+  const { blobs } = await store.list({ prefix: 'stats:' });
+  const mk = kstToday().slice(0, 7), out = {};
+  await Promise.all(blobs.map(async (b) => {
+    const s = await store.get(b.key, { type: 'json' });
+    if (!s) return;
+    out[b.key.slice(6)] = { total: s.total, published: s.published, lastPublishedAt: s.lastPublishedAt, month: (s.months || {})[mk] || 0, recent: s.recent || [] };
+  }));
   return out;
 }
 
-module.exports = { LOGIN_RE, DEFAULT_QUOTA, kstToday, accessInfo, createCustomer, resetCustomer, setCustomerDisabled, removeCustomer, getCustomer, login, authenticate, changePassword, listPosts, usedThisMonth, quotaOf, createPost, getPost, updatePost, markPublished, unpublish, deletePost, statsByLead, validBlogUrl, readToken, signToken };
+module.exports = { LOGIN_RE, DEFAULT_QUOTA, kstToday, accessInfo, createCustomer, resetCustomer, setCustomerDisabled, removeCustomer, getCustomer, login, authenticate, changePassword, listPosts, usedThisMonth, quotaOf, createPost, getPost, updatePost, markPublished, unpublish, deletePost, statsByLead, refreshStats, validBlogUrl, readToken, signToken };
