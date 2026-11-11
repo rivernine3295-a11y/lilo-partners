@@ -3,6 +3,8 @@ const STATUSES = ['문의', '상담', '견적 제시', '계약', '진행 중', '
 const ADMINS = ['강현구', '윤현노', '윤지수'];
 const OLD_STATUS = { '신규': '문의', '연락 완료': '상담', '상담 중': '상담' };
 const LOG_TYPES = ['통화', '방문', '카톡', '메일', '기타'];
+const PAY_STATUSES = ['', '보장 진행 중', '청구 대기', '청구 완료', '입금 완료'];
+const kstToday = () => new Date(Date.now() + 9 * 3600 * 1000).toISOString().slice(0, 10);
 
 function cleanStr(v, max) {
   return String(v == null ? '' : v).trim().slice(0, max);
@@ -14,7 +16,7 @@ function normalizeLead(l) {
   if (OLD_STATUS[l.status]) l.status = OLD_STATUS[l.status];
   if (!STATUSES.includes(l.status)) l.status = '문의';
   const defaults = { region: '', designerCount: '', quote: '', contractMonths: '', contractStart: '', contractEnd: '',
-    nextContactAt: '', decisionMaker: '', placeLink: '', closedBy: '', closedAt: '', keywords: [], logs: [], history: [] };
+    nextContactAt: '', decisionMaker: '', placeLink: '', closedBy: '', closedAt: '', workStart: '', guaranteeDays: 25, exposureDays: [], paymentStatus: '', paidAt: '', keywords: [], logs: [], history: [] };
   for (const k of Object.keys(defaults)) if (l[k] === undefined) l[k] = defaults[k];
   return l;
 }
@@ -94,6 +96,10 @@ function validateFields(fields) {
   const strs = { memo: 2000, storeName: 80, contact: 80, bizType: 20, placeLink: 300, region: 60, decisionMaker: 40, source: 40 };
   for (const k of Object.keys(strs)) if (k in f) out[k] = cleanStr(f[k], strs[k]);
   for (const k of ['lastContactAt', 'nextContactAt', 'contractStart', 'contractEnd']) if (k in f) out[k] = dateField(f[k]);
+  if ('workStart' in f) out.workStart = dateField(f.workStart);
+  if ('paidAt' in f) out.paidAt = dateField(f.paidAt);
+  if ('guaranteeDays' in f) { const g = numField(f.guaranteeDays, 365, '보장 일수'); out.guaranteeDays = g === '' ? 25 : g; }
+  if ('paymentStatus' in f) { if (!PAY_STATUSES.includes(f.paymentStatus)) throw new Error('결제 상태 값이 올바르지 않아요.'); out.paymentStatus = f.paymentStatus; }
   if ('closedBy' in f) {
     if (f.closedBy !== '' && !ADMINS.includes(f.closedBy)) throw new Error('성사자 값이 올바르지 않아요.');
     out.closedBy = f.closedBy;
@@ -117,6 +123,8 @@ async function updateLead(store, id, fields, by) {
     if (!lead.closedBy && !('closedBy' in changes)) changes.closedBy = by;
     if (!lead.closedAt && !('closedAt' in changes)) changes.closedAt = now.slice(0, 10);
   }
+  // 진행 중으로 처음 넘어가면 작업 시작일을 오늘로 자동 기록한다(보장 일수 계산의 기준).
+  if (changes.status === '진행 중' && lead.status !== '진행 중' && !lead.workStart && !('workStart' in changes)) changes.workStart = kstToday();
   for (const k of Object.keys(changes)) {
     if (JSON.stringify(lead[k]) !== JSON.stringify(changes[k])) {
       const entry = k === 'keywords' || k === 'memo'
@@ -148,6 +156,25 @@ async function addLog(store, id, log, by) {
   return lead;
 }
 
+// 1페이지 노출 확인일을 켜고 끈다(같은 날짜를 다시 누르면 취소). 누가 언제 확인했는지 함께 남긴다.
+async function toggleExposure(store, id, date, by) {
+  const key = 'lead:' + id;
+  const lead = normalizeLead(await store.get(key, { type: 'json' }));
+  if (!lead) throw new Error('업체를 찾지 못했어요.');
+  const d = dateField(date);
+  if (!d) throw new Error('날짜를 선택해주세요.');
+  if (d > kstToday()) throw new Error('오늘 이후 날짜는 기록할 수 없어요.');
+  const now = new Date().toISOString();
+  const list = lead.exposureDays || [];
+  const had = list.some((x) => x.d === d);
+  lead.exposureDays = had ? list.filter((x) => x.d !== d) : list.concat([{ d, by, at: now }]).sort((a, b) => (a.d < b.d ? -1 : 1)).slice(-400);
+  lead.history = (lead.history || []).concat([{ at: now, by, field: 'exposure', from: had ? d : '', to: had ? '' : d }]).slice(-80);
+  lead.updatedAt = now;
+  lead.updatedBy = by;
+  await store.setJSON(key, lead);
+  return lead;
+}
+
 async function createManual(store, input, by) {
   const now = new Date().toISOString();
   const id = 'manual-' + now.replace(/[^0-9]/g, '') + '-' + Math.random().toString(36).slice(2, 6);
@@ -173,4 +200,4 @@ async function removeLead(store, id) {
   await store.delete('lead:' + id);
 }
 
-module.exports = { STATUSES, ADMINS, LOG_TYPES, normalizeLead, leadFromSubmission, saveLead, saveLeadIfNew, listLeads, updateLead, addLog, createManual, removeLead };
+module.exports = { STATUSES, ADMINS, LOG_TYPES, PAY_STATUSES, toggleExposure, normalizeLead, leadFromSubmission, saveLead, saveLeadIfNew, listLeads, updateLead, addLog, createManual, removeLead };

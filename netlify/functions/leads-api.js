@@ -25,7 +25,7 @@ exports.handler = async (event) => {
   const store = getStore('lilo-leads');
   try {
     if (event.httpMethod === 'GET') {
-      return json(200, { leads: await L.listLeads(store), ideas: await I.listIdeas(store), ideaTopics: I.TOPICS, ideaStatuses: I.IDEA_STATUSES, statuses: L.STATUSES, admins: L.ADMINS, logTypes: L.LOG_TYPES, now: new Date().toISOString() });
+      return json(200, { leads: await L.listLeads(store), ideas: await I.listIdeas(store), ideaTopics: I.TOPICS, ideaStatuses: I.IDEA_STATUSES, statuses: L.STATUSES, admins: L.ADMINS, logTypes: L.LOG_TYPES, payStatuses: L.PAY_STATUSES, now: new Date().toISOString() });
     }
     if (event.httpMethod !== 'POST') return json(405, { error: 'method not allowed' });
     const req = JSON.parse(event.body || '{}');
@@ -41,6 +41,7 @@ exports.handler = async (event) => {
     if (req.action === 'ideaComment') return json(200, { idea: await I.commentIdea(store, String(req.id || ''), req.text, by) });
     if (req.action === 'ideaVote') return json(200, { idea: await I.voteIdea(store, String(req.id || ''), by) });
     if (req.action === 'ideaDelete') { await I.deleteIdea(store, String(req.id || ''), by); return json(200, { ok: true }); }
+    if (req.action === 'exposure') return json(200, { lead: await L.toggleExposure(store, String(req.id || ''), req.date, by) });
     if (req.action === 'addLog') return json(200, { lead: await L.addLog(store, String(req.id || ''), req.log || {}, by) });
     if (req.action === 'update') return json(200, { lead: await L.updateLead(store, String(req.id || ''), req.fields || {}, by) });
     if (req.action === 'create') return json(200, { lead: await L.createManual(store, req.lead || {}, by) });
