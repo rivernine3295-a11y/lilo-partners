@@ -102,7 +102,8 @@ async function signup(store, input, ip, listLeads) {
   fresh.history = (fresh.history || []).concat([{ at: now, by: '고객 본인', field: 'studioAccount', from: '', to: id }]).slice(-80);
   fresh.studioLoginId = id; fresh.updatedAt = now; fresh.updatedBy = '고객 본인';
   await store.setJSON('lead:' + lead.id, fresh);
-  return login(store, id, pw);
+  // 방금 만든 계정은 다시 읽지 않고 바로 로그인 처리해요(저장소 반영이 늦어도 실패하지 않도록).
+  return { token: signToken({ l: id, lid: lead.id, exp: Date.now() + TOKEN_DAYS * 86400000 }), loginId: id };
 }
 
 async function resetCustomer(store, loginId) {
