@@ -233,14 +233,14 @@ table.tb{width:100%;border-collapse:collapse;font-size:14px}table.tb td{padding:
     if(($('fTopic').value||'').trim().length<5){$('gerr').textContent='주제를 5글자 이상 적어주세요.';return}
     document.body.classList.add('gen');$('genPanel').classList.remove('hid');window.__spin=5;$('formCard').style.opacity='.3';$('formCard').style.pointerEvents='none';
     var box=$('gsteps');box.textContent='';STEPS.forEach(function(s,i){var d=el('div','gs');d.id='gs'+i;d.appendChild(el('span','ic'));d.appendChild(el('span',null,s[0]));box.appendChild(d)});
-    var t0=performance.now(),total=STEPS.reduce(function(a,s){return a+s[1]},0),done=false,fail=null,stop=false;
+    S.genState='';var t0=performance.now(),total=STEPS.reduce(function(a,s){return a+s[1]},0),done=false,fail=null,stop=false;
     var req=api('generate',{topic:$('fTopic').value,keywords:selKw(),tone:$('fTone').value,length:$('fLen').value,extra:$('fExtra').value}).then(function(){
       return new Promise(function(res,rej){var t1=Date.now();(function poll(){
         api('genStatus').then(function(j){
           if(j.status==='done')res({post:{id:j.postId}});
           else if(j.status==='error'||j.status==='none')rej(new Error(j.error||'글을 만들지 못했어요. 다시 시도해 주세요.'));
           else if(Date.now()-t1>150000)rej(new Error('AI 응답이 너무 오래 걸려요. 다시 시도해 주세요.'));
-          else setTimeout(poll,2000);
+          else{S.genState=j.status;setTimeout(poll,2000)}
         }).catch(rej);
       })()});
     }).then(function(j){done=true;return j}).catch(function(e){fail=e;done=true});
@@ -249,7 +249,7 @@ table.tb{width:100%;border-collapse:collapse;font-size:14px}table.tb td{padding:
       for(var i=0;i<STEPS.length;i++){if(el0<acc+STEPS[i][1]){cur=i;break}acc+=STEPS[i][1]}
       var pct=done?100:Math.min(92,Math.round(el0/total*100));$('gpct').textContent=pct+'%';$('gbar').style.width=pct+'%';
       STEPS.forEach(function(s,i){var d=$('gs'+i);if(!d)return;if(done||i<cur){d.className='gs done';d.firstChild.textContent='✓'}else if(i===cur){d.className='gs act';d.firstChild.textContent=''}});
-      $('gtxt').textContent=done?'COMPLETE':'STEP '+Math.min(cur+1,STEPS.length)+' / '+STEPS.length;
+      $('gtxt').textContent=done?'COMPLETE':(S.genState==='running'?'AI 작성 중':S.genState==='pending'?'작업 시작 대기':'STEP '+Math.min(cur+1,STEPS.length)+' / '+STEPS.length);
       if(done){setTimeout(finish,500);stop=true}else requestAnimationFrame(f);
     })(t0);
     function finish(){

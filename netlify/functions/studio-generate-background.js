@@ -14,6 +14,7 @@ exports.handler = async (event) => {
   const key = 'genjob:' + t.lid;
   const job = await store.get(key, { type: 'json' });
   if (!job || job.id !== t.job || job.status !== 'pending') return { statusCode: 200, body: 'skip' };
+  await store.setJSON(key, { ...job, status: 'running', ranAt: new Date().toISOString() });
   try {
     const lead = L.normalizeLead(await store.get('lead:' + t.lid, { type: 'json' }));
     if (!lead) throw new Error('업체 정보를 찾지 못했어요.');

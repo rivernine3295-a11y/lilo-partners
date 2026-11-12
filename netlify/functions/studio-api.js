@@ -56,7 +56,7 @@ exports.handler = async (event) => {
       if (!AI.isReady()) return json(503, { error: 'AI 글 생성이 아직 연결되지 않았어요. 담당자에게 문의해 주세요.', notReady: true });
       const key = 'genjob:' + lead.id;
       const prev = await store.get(key, { type: 'json' });
-      if (prev && prev.status === 'pending' && Date.now() - new Date(prev.startedAt).getTime() < 3 * 60000) throw new Error('이미 글을 만드는 중이에요. 잠시만 기다려 주세요.');
+      if (prev && (prev.status === 'pending' || prev.status === 'running') && Date.now() - new Date(prev.startedAt).getTime() < 3 * 60000) throw new Error('이미 글을 만드는 중이에요. 잠시만 기다려 주세요.');
       const jobId = Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
       const input = { topic: req.topic, keywords: Array.isArray(req.keywords) ? req.keywords.slice(0, 10) : [], tone: req.tone, length: req.length, extra: req.extra };
       await store.setJSON(key, { id: jobId, status: 'pending', startedAt: new Date().toISOString(), input });
@@ -76,7 +76,9 @@ exports.handler = async (event) => {
     if (req.action === 'genStatus') {
       const job = await store.get('genjob:' + lead.id, { type: 'json' });
       if (!job) return json(200, { status: 'none' });
-      if (job.status === 'pending' && Date.now() - new Date(job.startedAt).getTime() > 3 * 60000) return json(200, { status: 'error', error: 'AI 응답이 너무 오래 걸려요. 다시 시도해 주세요.' });
+      const age = Date.now() - new Date(job.startedAt).getTime();
+      if (job.status === 'pending' && age > 30000) return json(200, { status: 'error', error: 'AI 작업이 시작되지 않았어요. 다시 시도해 주세요. (백그라운드 실행 안 됨)' });
+      if ((job.status === 'pending' || job.status === 'running') && age > 4 * 60000) return json(200, { status: 'error', error: 'AI 응답이 너무 오래 걸려요. 다시 시도해 주세요.' });
       return json(200, { status: job.status, postId: job.postId || '', error: job.error || '' });
     }
     return json(400, { error: '알 수 없는 요청이에요.' });
