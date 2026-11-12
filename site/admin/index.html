@@ -212,17 +212,20 @@
       <div class="grid">
         <div><label>매장명</label><input class="field" id="aStore"></div>
         <div><label>연락처</label><input class="field" id="aContact"></div>
-        <div><label>업종</label><select class="field" id="aBiz"><option value="">선택</option><option>미용실</option><option>음식점</option><option>병원</option><option>기타</option></select></div>
+        <div><label>핵심 키워드 (쉼표로 구분)</label><input class="field" id="aKw" placeholder="강남 미용실, 역삼 헤어"></div>
+        <div><label>월 견적가 (원)</label><input class="field" id="aQuote" type="number" min="0"></div>
         <div><label>유입 경로</label><select class="field" id="aSrc"><option>오프라인 영업</option><option>카카오톡</option><option>전화</option><option>지인 소개</option><option>기타</option></select></div>
+        <div><label>단계</label><select class="field" id="aStatus"></select></div>
+      </div>
+      <details style="margin-top:12px"><summary style="cursor:pointer;color:var(--mut);font-size:13px">상세 정보 (선택 · 모르면 비워 두세요)</summary>
+      <div class="grid" style="margin-top:8px">
+        <div><label>업종</label><select class="field" id="aBiz"><option value="">선택</option><option>미용실</option><option>음식점</option><option>병원</option><option>기타</option></select></div>
         <div><label>지역</label><input class="field" id="aRegion" placeholder="예: 강남구 역삼동"></div>
         <div><label>디자이너 수</label><input class="field" id="aDes" type="number" min="0"></div>
         <div><label>플레이스 링크</label><input class="field" id="aLink"></div>
         <div><label>결정권자</label><input class="field" id="aDm" placeholder="예: 원장님"></div>
-        <div><label>핵심 키워드 (쉼표로 구분)</label><input class="field" id="aKw" placeholder="강남 미용실, 역삼 헤어"></div>
-        <div><label>월 견적가 (원)</label><input class="field" id="aQuote" type="number" min="0"></div>
         <div><label>다음 연락일</label><input class="field" id="aNext" type="date"></div>
-        <div><label>단계</label><select class="field" id="aStatus"></select></div>
-      </div>
+      </div></details>
       <textarea class="field" id="aMemo" placeholder="메모 (방문 내용, 반응 등)" style="margin-top:8px"></textarea>
       <div class="err" id="addErr"></div>
       <button class="btn small" id="aSave">등록</button>
@@ -479,8 +482,21 @@
     if(type==='select'){f=el('select','field');opts.forEach(function(o){var op=el('option',null,o||'미지정');op.value=o;if(o===(l[key]||''))op.selected=true;f.appendChild(op)})}
     else{f=el('input','field');f.type=type;f.value=l[key]==null?'':l[key]}
     f.onchange=function(){save(l,(function(){var o={};o[key]=f.value;return o})())};
-    d.appendChild(f);return d;
+    d.appendChild(f);
+    if(type==='date'&&(key==='contractStart'||key==='contractEnd')){
+      var qr=el('div','row');qr.style.cssText='gap:6px;margin-top:6px;flex-wrap:wrap';
+      var setv=function(v){f.value=v;f.onchange()};
+      var q=function(t,fn){var b=el('button','btn ghost small',t);b.type='button';b.onclick=fn;qr.appendChild(b)};
+      if(key==='contractStart')q('오늘',function(){setv(ymd(new Date()))});
+      else[1,3,6,12].forEach(function(n){q('+'+n+'개월',function(){var st=l.contractStart?new Date(l.contractStart+'T00:00:00'):new Date();setv(ymd(addMonths(st,n)))})});
+      d.appendChild(qr);
+    }
+    return d;
   }
+  function ymd(x){return x.getFullYear()+'-'+('0'+(x.getMonth()+1)).slice(-2)+'-'+('0'+x.getDate()).slice(-2)}
+  function addMonths(x,n){var d=new Date(x.getFullYear(),x.getMonth()+n,1);var last=new Date(d.getFullYear(),d.getMonth()+1,0).getDate();d.setDate(Math.min(x.getDate(),last));return d}
+  // 날짜 칸을 누르면 바로 달력이 열리게 (직접 타이핑하지 않아도 돼요)
+  document.addEventListener('click',function(e){var t=e.target;if(t&&t.tagName==='INPUT'&&t.type==='date'&&t.showPicker){try{t.showPicker()}catch(x){}}});
   function kwBlock(l){
     var sec=el('div','sec');sec.appendChild(el('b',null,'핵심 키워드와 순위 기록'));
     var list=(l.keywords||[]);
@@ -579,19 +595,24 @@
     g.appendChild(inp(l,'담당자','assignee','select',['']. concat(S.admins)));
     g.appendChild(inp(l,'매장명','storeName','text'));
     g.appendChild(inp(l,'연락처','contact','text'));
+    g.appendChild(inp(l,'월 견적가 (원)','quote','number'));
+    g.appendChild(inp(l,'계약 성사자 (정산 기준)','closedBy','select',['']. concat(S.admins)));
+    g.appendChild(inp(l,'계약 시작일','contractStart','date'));
+    g.appendChild(inp(l,'계약 종료일','contractEnd','date'));
+    b.appendChild(g);
+    var mdet=el('details','moreinfo');mdet.style.cssText='margin-top:12px';if(S.openMore&&S.openMore[l.id])mdet.open=true;
+    var msum=el('summary',null,'상세 정보 (선택 · 필요할 때만 채워요)');msum.style.cssText='cursor:pointer;color:var(--mut);font-size:13px';mdet.appendChild(msum);
+    mdet.addEventListener('toggle',function(){S.openMore=S.openMore||{};if(mdet.open)S.openMore[l.id]=1;else delete S.openMore[l.id]});
+    g=el('div','grid');g.style.marginTop='8px';
     g.appendChild(inp(l,'업종','bizType','select',['','미용실','음식점','병원','기타']));
     g.appendChild(inp(l,'지역','region','text'));
     g.appendChild(inp(l,'디자이너 수','designerCount','number'));
     g.appendChild(inp(l,'결정권자','decisionMaker','text'));
-    g.appendChild(inp(l,'월 견적가 (원)','quote','number'));
-    g.appendChild(inp(l,'계약 성사자 (정산 기준)','closedBy','select',['']. concat(S.admins)));
     g.appendChild(inp(l,'성사일','closedAt','date'));
     g.appendChild(inp(l,'계약 개월 수','contractMonths','number'));
-    g.appendChild(inp(l,'계약 시작일','contractStart','date'));
-    g.appendChild(inp(l,'계약 종료일','contractEnd','date'));
     g.appendChild(inp(l,'다음 연락 예정일','nextContactAt','date'));
     g.appendChild(inp(l,'마지막 연락일','lastContactAt','date'));
-    b.appendChild(g);
+    mdet.appendChild(g);b.appendChild(mdet);
     if(showGuarantee(l))b.appendChild(guaranteeBlock(l));
     else{var hint=el('div',null,'계약 후 단계를 "진행 중"으로 바꾸면 작업 시작일이 기록되고, 1페이지 노출 보장 일수 계산이 시작돼요.');hint.style.cssText='font-size:12px;color:var(--mut);margin-top:12px';b.appendChild(hint)}
     var pl=el('div','sec');pl.appendChild(el('b',null,'플레이스 링크'));var pr=el('div','row');
