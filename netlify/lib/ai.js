@@ -1,5 +1,5 @@
 // AI 글 생성 (Google Gemini). 환경변수 GEMINI_API_KEY 가 있어야 동작하고, 모델은 GEMINI_MODEL 로 바꿀 수 있어요.
-const DEFAULT_MODEL = 'gemini-2.5-flash';
+const DEFAULT_MODEL = 'gemini-3.8-flash';
 const LENGTHS = { '짧게': 1000, '중간': 2000, '길게': 3000 };
 const TONES = ['전문적', '친근한', '따뜻한'];
 
@@ -39,16 +39,18 @@ async function generate(lead, input) {
   if (clean(input.topic, 500).length < 5) throw new Error('주제를 5글자 이상 적어주세요.');
   const model = process.env.GEMINI_MODEL || DEFAULT_MODEL;
   const ctl = new AbortController(); const timer = setTimeout(() => ctl.abort(), 24000);
+  const url = 'https://generativelanguage.googleapis.com/v1beta/models/' + encodeURIComponent(model) + ':generateContent';
+  const send = (genCfg) => fetch(url, {
+    method: 'POST', signal: ctl.signal,
+    headers: { 'content-type': 'application/json', 'x-goog-api-key': process.env.GEMINI_API_KEY },
+    body: JSON.stringify({ contents: [{ role: 'user', parts: [{ text: buildPrompt(lead, input) }] }], generationConfig: genCfg }),
+  });
+  const base = { temperature: 0.8, maxOutputTokens: 6000, responseMimeType: 'application/json' };
   let res;
   try {
-    res = await fetch('https://generativelanguage.googleapis.com/v1beta/models/' + encodeURIComponent(model) + ':generateContent', {
-      method: 'POST', signal: ctl.signal,
-      headers: { 'content-type': 'application/json', 'x-goog-api-key': process.env.GEMINI_API_KEY },
-      body: JSON.stringify({
-        contents: [{ role: 'user', parts: [{ text: buildPrompt(lead, input) }] }],
-        generationConfig: { temperature: 0.8, maxOutputTokens: 6000, responseMimeType: 'application/json', thinkingConfig: { thinkingBudget: 0 } },
-      }),
-    });
+    // 생각 시간을 짧게 해서 빠르게. 모델이 이 설정을 받지 않으면(400) 설정 없이 한 번 더 시도해요.
+    res = await send({ ...base, thinkingConfig: { thinkingLevel: 'low' } });
+    if (res.status === 400) res = await send(base);
   } catch (e) {
     throw new Error(e.name === 'AbortError' ? 'AI 응답이 너무 오래 걸려요. 잠시 후 다시 시도해 주세요.' : 'AI 서버에 연결하지 못했어요. 잠시 후 다시 시도해 주세요.');
   } finally { clearTimeout(timer); }
