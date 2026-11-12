@@ -17,7 +17,7 @@ exports.handler = async (event) => {
   try {
     const lead = L.normalizeLead(await store.get('lead:' + t.lid, { type: 'json' }));
     if (!lead) throw new Error('업체 정보를 찾지 못했어요.');
-    const g = await AI.generate(lead, job.input || {});
+    const g = await AI.generate(lead, job.input || {}, { timeoutMs: 100000 });
     const kws = Array.isArray((job.input || {}).keywords) ? job.input.keywords : [];
     const post = await S.createPost(store, lead, { title: g.title, body: g.body, keywords: kws, source: 'AI 생성' });
     await store.setJSON(key, { ...job, status: 'done', postId: post.id, finishedAt: new Date().toISOString() });

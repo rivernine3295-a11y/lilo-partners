@@ -1,5 +1,6 @@
 // AI 글 생성 (Google Gemini). 환경변수 GEMINI_API_KEY 가 있어야 동작하고, 모델은 GEMINI_MODEL 로 바꿀 수 있어요.
 const DEFAULT_MODEL = 'gemini-3.8-flash';
+const FALLBACK_MODEL = 'gemini-2.5-flash'; // 기본 모델이 붐빌 때 쓰는 예비 모델(GEMINI_FALLBACK_MODEL 로 바꿀 수 있어요)
 const LENGTHS = { '짧게': 1000, '중간': 2000, '길게': 3000 };
 const TONES = ['전문적', '친근한', '따뜻한'];
 
@@ -34,32 +35,52 @@ function buildPrompt(lead, input) {
   ].filter((x) => x !== '').join('\n');
 }
 
-async function generate(lead, input) {
-  if (!isReady()) { const e = new Error('AI 글 생성이 아직 연결되지 않았어요. 담당자에게 문의해 주세요.'); e.notReady = true; throw e; }
-  if (clean(input.topic, 500).length < 5) throw new Error('주제를 5글자 이상 적어주세요.');
-  const model = process.env.GEMINI_MODEL || DEFAULT_MODEL;
-  const ctl = new AbortController(); const timer = setTimeout(() => ctl.abort(), 24000);
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+const BUSY = [429, 500, 502, 503, 504];
+
+// 한 모델에 한 번 요청. 생각 설정을 모델이 받지 않으면(400) 설정 없이 한 번 더 시도해요.
+async function callModel(model, prompt, ctl) {
   const url = 'https://generativelanguage.googleapis.com/v1beta/models/' + encodeURIComponent(model) + ':generateContent';
   const send = (genCfg) => fetch(url, {
     method: 'POST', signal: ctl.signal,
     headers: { 'content-type': 'application/json', 'x-goog-api-key': process.env.GEMINI_API_KEY },
-    body: JSON.stringify({ contents: [{ role: 'user', parts: [{ text: buildPrompt(lead, input) }] }], generationConfig: genCfg }),
+    body: JSON.stringify({ contents: [{ role: 'user', parts: [{ text: prompt }] }], generationConfig: genCfg }),
   });
   const base = { temperature: 0.8, maxOutputTokens: 6000, responseMimeType: 'application/json' };
-  let res;
+  let res = await send({ ...base, thinkingConfig: { thinkingLevel: 'low' } });
+  if (res.status === 400) res = await send(base);
+  return res;
+}
+
+// opts.timeoutMs: 전체 제한 시간. 붐비면(503 등) 잠깐 쉬고 다시, 그래도 안 되면 예비 모델로 시도해요.
+async function generate(lead, input, opts) {
+  if (!isReady()) { const e = new Error('AI 글 생성이 아직 연결되지 않았어요. 담당자에게 문의해 주세요.'); e.notReady = true; throw e; }
+  if (clean(input.topic, 500).length < 5) throw new Error('주제를 5글자 이상 적어주세요.');
+  const models = [process.env.GEMINI_MODEL || DEFAULT_MODEL, process.env.GEMINI_FALLBACK_MODEL || FALLBACK_MODEL].filter((m, i, a) => m && a.indexOf(m) === i);
+  const prompt = buildPrompt(lead, input);
+  const ctl = new AbortController(); const timer = setTimeout(() => ctl.abort(), (opts && opts.timeoutMs) || 24000);
+  const wait = (opts && opts.retryWaitMs != null) ? opts.retryWaitMs : 2500;
+  let res = null, lastErr = '';
   try {
-    // 생각 시간을 짧게 해서 빠르게. 모델이 이 설정을 받지 않으면(400) 설정 없이 한 번 더 시도해요.
-    res = await send({ ...base, thinkingConfig: { thinkingLevel: 'low' } });
-    if (res.status === 400) res = await send(base);
+    outer: for (const model of models) {
+      for (let attempt = 0; attempt < 2; attempt++) {
+        res = await callModel(model, prompt, ctl);
+        if (res.ok) break outer;
+        const raw = (await res.text().catch(() => '')).slice(0, 600);
+        console.error('gemini error', model, res.status, raw);
+        let msg = ''; try { msg = (JSON.parse(raw).error || {}).message || ''; } catch (e) { msg = raw; }
+        lastErr = '(오류 ' + res.status + (msg ? ': ' + String(msg).replace(/\s+/g, ' ').slice(0, 110) : '') + ')';
+        if (res.status === 404) break; // 모델 이름이 없다는 뜻이라 예비 모델로 넘어가요
+        if (!BUSY.includes(res.status)) break outer; // 키 문제 등은 다시 해도 같아요
+        if (attempt === 0) await sleep(wait);
+      }
+    }
   } catch (e) {
     throw new Error(e.name === 'AbortError' ? 'AI 응답이 너무 오래 걸려요. 잠시 후 다시 시도해 주세요.' : 'AI 서버에 연결하지 못했어요. 잠시 후 다시 시도해 주세요.');
   } finally { clearTimeout(timer); }
-  if (res.status === 429) throw new Error('지금 AI 사용량이 많아요. 잠시 후 다시 시도해 주세요.');
   if (!res.ok) {
-    const raw = (await res.text().catch(() => '')).slice(0, 600);
-    console.error('gemini error', res.status, raw);
-    let msg = ''; try { msg = (JSON.parse(raw).error || {}).message || ''; } catch (e) { msg = raw; }
-    throw new Error('AI가 글을 만들지 못했어요. (오류 ' + res.status + (msg ? ': ' + String(msg).replace(/\s+/g, ' ').slice(0, 110) : '') + ')');
+    if (BUSY.includes(res.status)) throw new Error('지금 AI가 많이 붐벼요. 1~2분 뒤에 다시 시도해 주세요. ' + lastErr);
+    throw new Error('AI가 글을 만들지 못했어요. ' + lastErr);
   }
   const data = await res.json();
   const text = (((data.candidates || [])[0] || {}).content || {}).parts;
