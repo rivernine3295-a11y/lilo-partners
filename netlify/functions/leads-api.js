@@ -4,6 +4,7 @@ const { connectLambda, getStore } = require('@netlify/blobs');
 const L = require('../lib/leads');
 const I = require('../lib/ideas');
 const ST = require('../lib/studio');
+const KW = require('../lib/keywords');
 
 function json(code, obj) {
   return { statusCode: code, headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' }, body: JSON.stringify(obj) };
@@ -56,6 +57,9 @@ exports.handler = async (event) => {
     }
     const by = L.ADMINS.includes(req.by) ? req.by : '';
     if (!by) return json(400, { error: '누가 수정하는지 선택해주세요.' });
+    if (req.action === 'kwSuggest') {
+      try { return json(200, { items: await KW.suggest(req.hints) }); } catch (e) { return json(e.notReady ? 503 : 400, { error: e.message, notReady: !!e.notReady }); }
+    }
     if (req.action === 'ideaCreate') return json(200, { idea: await I.createIdea(store, req.idea || {}, by) });
     if (req.action === 'ideaUpdate') return json(200, { idea: await I.updateIdea(store, String(req.id || ''), req.fields || {}, by) });
     if (req.action === 'ideaComment') return json(200, { idea: await I.commentIdea(store, String(req.id || ''), req.text, by) });

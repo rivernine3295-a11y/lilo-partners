@@ -514,7 +514,39 @@
     var add=el('div','row');var ni=el('input','field');ni.placeholder='키워드 추가 (예: 강남 미용실)';ni.style.minWidth='200px';
     var ab=el('button','btn small','추가');
     ab.onclick=function(){var v=ni.value.trim();if(!v)return;save(l,{keywords:list.concat([{k:v,ranks:[]}])})};
-    add.appendChild(ni);add.appendChild(ab);sec.appendChild(add);return sec;
+    add.appendChild(ni);add.appendChild(ab);sec.appendChild(add);
+    sec.appendChild(kwRecommend(l,list));
+    return sec;
+  }
+  // 지역·업종으로 기본 검색어를 만들어요. 예: 강남구 역삼동 + 미용실 → 역삼미용실, 강남미용실
+  function kwSeeds(l){
+    var biz={'미용실':'미용실','음식점':'맛집','병원':'병원'}[l.bizType]||'';
+    var places=String(l.region||'').split(/\s+/).filter(Boolean).map(function(t){return t.replace(/(특별시|광역시|시|구|군|동|읍|면|가)$/,'')}).filter(function(t){return t.length>=2});
+    var seeds=[];places.slice().reverse().forEach(function(p){seeds.push(p+biz)});
+    return biz?seeds.slice(0,3):places.slice(0,3);
+  }
+  function kwRecommend(l,list){
+    var box=el('div','sec');box.appendChild(el('b',null,'키워드 추천 (월 검색량 기준)'));
+    var note=el('div',null,'지역·업종으로 연관 키워드와 월 검색량을 찾아요. 아래 검색어는 바꿀 수 있어요.');note.style.cssText='font-size:12px;color:var(--mut);margin:4px 0 8px';box.appendChild(note);
+    var row=el('div','row');var hi=el('input','field');hi.value=kwSeeds(l).join(', ');hi.placeholder='예: 역삼미용실, 강남헤어';hi.style.cssText='min-width:240px;flex:1';
+    var go=el('button','btn small','추천 받기');row.appendChild(hi);row.appendChild(go);box.appendChild(row);
+    var out=el('div');out.style.marginTop='8px';box.appendChild(out);
+    function run(){
+      out.textContent='';var hints=hi.value.split(/[,\n]/).map(function(x){return x.trim()}).filter(Boolean);
+      if(!hints.length){out.appendChild(el('div','err','찾을 검색어를 적어주세요.'));return}
+      go.disabled=true;out.appendChild(el('div',null,'찾는 중…'));
+      api('POST',{action:'kwSuggest',by:S.who,hints:hints}).then(function(j){
+        out.textContent='';var have={};list.forEach(function(x){have[x.k.replace(/\s+/g,'')]=1});
+        var items=(j.items||[]).filter(function(x){return !have[x.k.replace(/\s+/g,'')]}).slice(0,20);
+        if(!items.length){out.appendChild(el('div',null,'추천할 키워드를 찾지 못했어요. 검색어를 바꿔 보세요.'));return}
+        var tb=el('div');items.forEach(function(it){
+          var r=el('div','kw');r.appendChild(el('span','k',it.k));
+          var meta=el('span','rk','월 '+it.total.toLocaleString()+'회 (PC '+it.pc.toLocaleString()+' · 모바일 '+it.mobile.toLocaleString()+') · 경쟁 '+(it.comp||'-'));r.appendChild(meta);
+          var ab=el('button','btn ghost small','추가');ab.onclick=function(){save(l,{keywords:(l.keywords||[]).concat([{k:it.k,ranks:[]}])})};r.appendChild(ab);tb.appendChild(r);
+        });out.appendChild(tb);
+      }).catch(function(e){out.textContent='';out.appendChild(el('div','err',e.message))}).then(function(){go.disabled=false});
+    }
+    go.onclick=run;return box;
   }
   function logBlock(l){
     var sec=el('div','sec');sec.appendChild(el('b',null,'소통 기록 (통화·방문·카톡)'));
