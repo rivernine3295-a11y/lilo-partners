@@ -519,7 +519,7 @@
     api('POST',body).then(function(j){if(j.lead){var i=S.leads.findIndex(function(x){return x.id===l.id});if(i>=0)S.leads[i]=j.lead}if(j.account)S.newAccount={leadId:l.id,loginId:j.account.loginId,password:j.account.password};if(done)done(j);return api('GET')}).then(function(g){if(g)apply(g)}).catch(function(e){toast(e.message)});
   }
   function studioBlock(l){
-    var sec=el('div','sec');sec.appendChild(el('b',null,'고객 스튜디오 (블로그 도구) 계정'));
+    var sec=el('div','sec');sec.appendChild(el('b',null,'릴로 블로그 서포터 계정'));
     var cu=S.customers[l.id],ps=S.postStats[l.id]||{total:0,published:0,month:0,lastPublishedAt:'',recent:[]};
     var hasTerm=!!l.contractEnd;
     var info=el('div',null,'이용 기간은 이 업체의 계약 시작일~종료일 기준이에요. 종료일이 지나면 고객 로그인이 자동으로 막혀요.'+(hasTerm?'':' (지금은 계약 종료일이 비어 있어서 고객이 이용할 수 없어요.)'));info.style.cssText='font-size:12px;color:'+(hasTerm?'var(--mut)':'var(--warn)')+';margin-bottom:8px';sec.appendChild(info);
@@ -527,7 +527,7 @@
       var nb=el('div');nb.style.cssText='background:var(--bg);border:1px solid var(--ok);border-radius:10px;padding:10px 12px;margin-bottom:10px;font-size:13px';
       nb.appendChild(el('div',null,'고객에게 전달할 정보 (이 화면을 닫으면 비밀번호는 다시 볼 수 없어요)'));nb.firstChild.style.cssText='color:var(--ok);font-weight:700;margin-bottom:6px';
       nb.appendChild(el('div',null,'주소: '+location.origin+'/studio/'));nb.appendChild(el('div',null,'아이디: '+S.newAccount.loginId));nb.appendChild(el('div',null,'비밀번호: '+S.newAccount.password));
-      var r=el('div','row');r.style.marginTop='8px';var cb=el('button','btn small','전체 복사');cb.onclick=function(){copyText('릴로 스튜디오\n주소: '+location.origin+'/studio/\n아이디: '+S.newAccount.loginId+'\n비밀번호: '+S.newAccount.password)};
+      var r=el('div','row');r.style.marginTop='8px';var cb=el('button','btn small','전체 복사');cb.onclick=function(){copyText('릴로 블로그 서포터\n주소: '+location.origin+'/studio/\n아이디: '+S.newAccount.loginId+'\n비밀번호: '+S.newAccount.password)};
       var xb=el('button','btn ghost small','닫기');xb.onclick=function(){S.newAccount=null;render()};r.appendChild(cb);r.appendChild(xb);nb.appendChild(r);sec.appendChild(nb);
     }
     if(!cu){

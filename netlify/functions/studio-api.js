@@ -1,4 +1,4 @@
-// 고객용 스튜디오 API. 로그인한 고객은 자기 업체의 정보와 글만 다룰 수 있다.
+// 릴로 블로그 서포터(고객용) API. 로그인한 고객은 자기 업체의 정보와 글만 다룰 수 있다.
 const { connectLambda, getStore } = require('@netlify/blobs');
 const L = require('../lib/leads');
 const S = require('../lib/studio');
