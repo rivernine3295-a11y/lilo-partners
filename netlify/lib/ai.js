@@ -55,13 +55,18 @@ async function generate(lead, input) {
     throw new Error(e.name === 'AbortError' ? 'AI 응답이 너무 오래 걸려요. 잠시 후 다시 시도해 주세요.' : 'AI 서버에 연결하지 못했어요. 잠시 후 다시 시도해 주세요.');
   } finally { clearTimeout(timer); }
   if (res.status === 429) throw new Error('지금 AI 사용량이 많아요. 잠시 후 다시 시도해 주세요.');
-  if (!res.ok) { console.error('gemini error', res.status, (await res.text().catch(() => '')).slice(0, 300)); throw new Error('AI가 글을 만들지 못했어요. 잠시 후 다시 시도해 주세요.'); }
+  if (!res.ok) {
+    const raw = (await res.text().catch(() => '')).slice(0, 600);
+    console.error('gemini error', res.status, raw);
+    let msg = ''; try { msg = (JSON.parse(raw).error || {}).message || ''; } catch (e) { msg = raw; }
+    throw new Error('AI가 글을 만들지 못했어요. (오류 ' + res.status + (msg ? ': ' + String(msg).replace(/\s+/g, ' ').slice(0, 110) : '') + ')');
+  }
   const data = await res.json();
   const text = (((data.candidates || [])[0] || {}).content || {}).parts;
   let out;
   try { out = JSON.parse((text || []).map((p) => p.text || '').join('')); } catch (e) { out = null; }
   const title = clean(out && out.title, 150), body = clean(out && out.body, 20000);
-  if (title.length < 2 || body.length < 10) throw new Error('AI가 글을 제대로 만들지 못했어요. 다시 시도해 주세요.');
+  if (title.length < 2 || body.length < 10) throw new Error('AI가 글을 제대로 만들지 못했어요. 다시 시도해 주세요. (응답 형식 오류' + (data.promptFeedback && data.promptFeedback.blockReason ? ': ' + data.promptFeedback.blockReason : (((data.candidates || [])[0] || {}).finishReason ? ': ' + data.candidates[0].finishReason : '')) + ')');
   return { title, body };
 }
 
