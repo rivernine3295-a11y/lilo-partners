@@ -8,7 +8,7 @@ const AI = require('../lib/ai');
 exports.handler = async (event) => {
   connectLambda(event);
   let t;
-  try { t = S.readToken(JSON.parse(event.body || '{}').token); } catch (e) { t = null; }
+  try { t = S.readToken(((event.queryStringParameters || {}).t) || JSON.parse(event.body || '{}').token); } catch (e) { t = null; }
   if (!t || !t.bg || !t.lid) return { statusCode: 401, body: 'no' };
   const store = getStore('lilo-leads');
   const key = 'genjob:' + t.lid;

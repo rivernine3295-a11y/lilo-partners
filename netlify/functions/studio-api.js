@@ -66,15 +66,20 @@ exports.handler = async (event) => {
       const input = { topic: req.topic, keywords: Array.isArray(req.keywords) ? req.keywords.slice(0, 10) : [], tone: req.tone, length: req.length, extra: req.extra };
       await store.setJSON(key, { id: jobId, status: 'pending', startedAt: new Date().toISOString(), input });
       const h = event.headers || {};
-      const origin = process.env.URL || ('https://' + (h['x-forwarded-host'] || h.host));
+      // 고객이 지금 접속한 주소 그대로 부르면 주소 이동(리다이렉트)에 걸리지 않아요.
+      const origin = (h['x-forwarded-host'] || h.host) ? 'https://' + (h['x-forwarded-host'] || h.host) : process.env.URL;
+      const bgToken = S.signToken({ bg: 1, lid: lead.id, job: jobId, exp: Date.now() + 10 * 60000 });
+      let bgInfo = '';
       try {
         const ctl = new AbortController(); const tm = setTimeout(() => ctl.abort(), 8000);
-        const r = await fetch(origin + '/.netlify/functions/studio-generate-background', { method: 'POST', signal: ctl.signal, headers: { 'content-type': 'application/json' }, body: JSON.stringify({ token: S.signToken({ bg: 1, lid: lead.id, job: jobId, exp: Date.now() + 10 * 60000 }) }) });
+        // 백그라운드 함수는 요청이 어떤 내용이든 바로 202 로 답해요. 주소 이동에도 안전하도록 GET + 주소에 토큰을 실어요.
+        const r = await fetch(origin + '/.netlify/functions/studio-generate-background?t=' + encodeURIComponent(bgToken), { method: 'GET', signal: ctl.signal });
         clearTimeout(tm);
+        bgInfo = 'HTTP ' + r.status;
         if (!r.ok && r.status !== 202) throw new Error('bg ' + r.status);
       } catch (e) {
-        await store.setJSON(key, { id: jobId, status: 'error', error: 'AI 작업을 시작하지 못했어요. 잠시 후 다시 시도해 주세요.', finishedAt: new Date().toISOString() });
-        throw new Error('AI 작업을 시작하지 못했어요. 잠시 후 다시 시도해 주세요.');
+        await store.setJSON(key, { id: jobId, status: 'error', error: 'AI 작업을 시작하지 못했어요. 잠시 후 다시 시도해 주세요. (' + (bgInfo || e.message) + ')', finishedAt: new Date().toISOString() });
+        throw new Error('AI 작업을 시작하지 못했어요. 잠시 후 다시 시도해 주세요. (' + (bgInfo || e.message) + ')');
       }
       return json(200, { started: true });
     }
@@ -82,7 +87,7 @@ exports.handler = async (event) => {
       const job = await store.get('genjob:' + lead.id, { type: 'json' });
       if (!job) return json(200, { status: 'none' });
       const age = Date.now() - new Date(job.startedAt).getTime();
-      if (job.status === 'pending' && age > 30000) return json(200, { status: 'error', error: 'AI 작업이 시작되지 않았어요. 다시 시도해 주세요. (백그라운드 실행 안 됨)' });
+      if (job.status === 'pending' && age > 30000) return json(200, { status: 'error', error: 'AI 작업이 시작되지 않았어요. 다시 시도해 주세요. (백그라운드 실행 안 됨' + (job.bg ? ', ' + job.bg : '') + ')' });
       if ((job.status === 'pending' || job.status === 'running') && age > 4 * 60000) return json(200, { status: 'error', error: 'AI 응답이 너무 오래 걸려요. 다시 시도해 주세요.' });
       return json(200, { status: job.status, postId: job.postId || '', error: job.error || '' });
     }
