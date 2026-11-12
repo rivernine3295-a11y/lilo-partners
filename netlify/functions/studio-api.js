@@ -53,10 +53,31 @@ exports.handler = async (event) => {
     if (req.action === 'generate') {
       const q = S.quotaOf(lead);
       if (S.usedThisMonth(await S.listPosts(store, lead.id)) >= q) throw new Error('이번 달 사용 가능한 글 수(' + q + '편)를 모두 사용했어요.');
-      let g;
-      try { g = await AI.generate(lead, req); } catch (e) { if (e.notReady) return json(503, { error: e.message, notReady: true }); throw e; }
-      const kws = (Array.isArray(req.keywords) ? req.keywords : []);
-      return json(200, { post: await S.createPost(store, lead, { title: g.title, body: g.body, keywords: kws, source: 'AI 생성' }) });
+      if (!AI.isReady()) return json(503, { error: 'AI 글 생성이 아직 연결되지 않았어요. 담당자에게 문의해 주세요.', notReady: true });
+      const key = 'genjob:' + lead.id;
+      const prev = await store.get(key, { type: 'json' });
+      if (prev && prev.status === 'pending' && Date.now() - new Date(prev.startedAt).getTime() < 3 * 60000) throw new Error('이미 글을 만드는 중이에요. 잠시만 기다려 주세요.');
+      const jobId = Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+      const input = { topic: req.topic, keywords: Array.isArray(req.keywords) ? req.keywords.slice(0, 10) : [], tone: req.tone, length: req.length, extra: req.extra };
+      await store.setJSON(key, { id: jobId, status: 'pending', startedAt: new Date().toISOString(), input });
+      const h = event.headers || {};
+      const origin = process.env.URL || ('https://' + (h['x-forwarded-host'] || h.host));
+      try {
+        const ctl = new AbortController(); const tm = setTimeout(() => ctl.abort(), 8000);
+        const r = await fetch(origin + '/.netlify/functions/studio-generate-background', { method: 'POST', signal: ctl.signal, headers: { 'content-type': 'application/json' }, body: JSON.stringify({ token: S.signToken({ bg: 1, lid: lead.id, job: jobId, exp: Date.now() + 10 * 60000 }) }) });
+        clearTimeout(tm);
+        if (!r.ok && r.status !== 202) throw new Error('bg ' + r.status);
+      } catch (e) {
+        await store.setJSON(key, { id: jobId, status: 'error', error: 'AI 작업을 시작하지 못했어요. 잠시 후 다시 시도해 주세요.', finishedAt: new Date().toISOString() });
+        throw new Error('AI 작업을 시작하지 못했어요. 잠시 후 다시 시도해 주세요.');
+      }
+      return json(200, { started: true });
+    }
+    if (req.action === 'genStatus') {
+      const job = await store.get('genjob:' + lead.id, { type: 'json' });
+      if (!job) return json(200, { status: 'none' });
+      if (job.status === 'pending' && Date.now() - new Date(job.startedAt).getTime() > 3 * 60000) return json(200, { status: 'error', error: 'AI 응답이 너무 오래 걸려요. 다시 시도해 주세요.' });
+      return json(200, { status: job.status, postId: job.postId || '', error: job.error || '' });
     }
     return json(400, { error: '알 수 없는 요청이에요.' });
   } catch (e) {

@@ -234,7 +234,16 @@ table.tb{width:100%;border-collapse:collapse;font-size:14px}table.tb td{padding:
     document.body.classList.add('gen');$('genPanel').classList.remove('hid');window.__spin=5;$('formCard').style.opacity='.3';$('formCard').style.pointerEvents='none';
     var box=$('gsteps');box.textContent='';STEPS.forEach(function(s,i){var d=el('div','gs');d.id='gs'+i;d.appendChild(el('span','ic'));d.appendChild(el('span',null,s[0]));box.appendChild(d)});
     var t0=performance.now(),total=STEPS.reduce(function(a,s){return a+s[1]},0),done=false,fail=null,stop=false;
-    var req=api('generate',{topic:$('fTopic').value,keywords:selKw(),tone:$('fTone').value,length:$('fLen').value,extra:$('fExtra').value}).then(function(j){done=true;return j}).catch(function(e){fail=e;done=true});
+    var req=api('generate',{topic:$('fTopic').value,keywords:selKw(),tone:$('fTone').value,length:$('fLen').value,extra:$('fExtra').value}).then(function(){
+      return new Promise(function(res,rej){var t1=Date.now();(function poll(){
+        api('genStatus').then(function(j){
+          if(j.status==='done')res({post:{id:j.postId}});
+          else if(j.status==='error'||j.status==='none')rej(new Error(j.error||'글을 만들지 못했어요. 다시 시도해 주세요.'));
+          else if(Date.now()-t1>150000)rej(new Error('AI 응답이 너무 오래 걸려요. 다시 시도해 주세요.'));
+          else setTimeout(poll,2000);
+        }).catch(rej);
+      })()});
+    }).then(function(j){done=true;return j}).catch(function(e){fail=e;done=true});
     (function f(n){
       if(stop)return;var el0=n-t0,acc=0,cur=STEPS.length;
       for(var i=0;i<STEPS.length;i++){if(el0<acc+STEPS[i][1]){cur=i;break}acc+=STEPS[i][1]}
@@ -245,7 +254,7 @@ table.tb{width:100%;border-collapse:collapse;font-size:14px}table.tb td{padding:
     })(t0);
     function finish(){
       document.body.classList.remove('gen');window.__spin=1;$('genPanel').classList.add('hid');$('formCard').style.opacity='';$('formCard').style.pointerEvents='';
-      if(fail){$('gerr').textContent=fail.message;return}
+      if(fail){$('gerr').textContent=fail.message;toast(fail.message);return}
       req.then(function(j){if(j&&j.post){toast('글을 만들었어요. 보관함에서 확인하세요.');loadPosts().then(function(){setTab('lib');openPost(j.post.id)})}});
     }
   }
