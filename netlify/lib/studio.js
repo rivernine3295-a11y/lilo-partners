@@ -74,6 +74,37 @@ async function createCustomer(store, lead, loginId, by) {
   await store.setJSON('customer:' + id, { loginId: id, leadId: lead.id, salt: h.salt, hash: h.hash, createdAt: new Date().toISOString(), createdBy: by, disabled: false, failCount: 0, lockUntil: 0 });
   return { loginId: id, password };
 }
+/* ---------- 계약 고객 직접 가입: 매장명 + 연락처가 계약 업체와 같으면 자동 연결 ---------- */
+const SIGNUP_STATUSES = ['계약', '진행 중', '완료'];
+const SIGNUP_MAX_FAILS = 10, SIGNUP_LOCK_MIN = 15;
+const digits = (v) => String(v == null ? '' : v).replace(/\D/g, '');
+const normName = (v) => String(v == null ? '' : v).replace(/\s+/g, '').toLowerCase();
+async function signup(store, input, ip, listLeads) {
+  const key = 'signupfail:' + crypto.createHash('sha256').update(String(ip || 'unknown')).digest('hex').slice(0, 24);
+  const fail = (await store.get(key, { type: 'json' })) || { n: 0, until: 0 };
+  if (fail.until && fail.until > Date.now()) throw new Error('가입 시도가 너무 많아요. 잠시 후 다시 시도해 주세요.');
+  const id = cleanStr(input.loginId, 24).toLowerCase(), pw = String(input.password == null ? '' : input.password);
+  if (!LOGIN_RE.test(id)) throw new Error('아이디는 영문 소문자·숫자·-_ 4~24자로 적어주세요.');
+  if (pw.length < 8 || pw.length > 100) throw new Error('비밀번호는 8자 이상으로 적어주세요.');
+  const name = normName(input.storeName), phone = digits(input.contact);
+  const bad = new Error('계약 정보를 찾지 못했어요. 계약 때 알려주신 매장명과 연락처가 맞는지 확인해 주세요. 계속 안 되면 담당자에게 문의해 주세요.');
+  const leads = name && phone.length >= 9 ? (await listLeads(store)).filter((l) => SIGNUP_STATUSES.includes(l.status) && normName(l.storeName) === name && digits(l.contact) === phone) : [];
+  if (leads.length !== 1) {
+    fail.n += 1; if (fail.n >= SIGNUP_MAX_FAILS) { fail.until = Date.now() + SIGNUP_LOCK_MIN * 60000; fail.n = 0; }
+    await store.setJSON(key, fail); throw bad;
+  }
+  const lead = leads[0];
+  if (lead.studioLoginId) throw new Error('이미 가입된 업체예요. 로그인해 주세요. 비밀번호를 잊으셨다면 담당자에게 문의해 주세요.');
+  if (await getCustomer(store, id)) throw new Error('이미 사용 중인 아이디예요. 다른 아이디를 적어주세요.');
+  const h = hashPassword(pw), now = new Date().toISOString();
+  await store.setJSON('customer:' + id, { loginId: id, leadId: lead.id, salt: h.salt, hash: h.hash, createdAt: now, createdBy: '본인 가입', disabled: false, failCount: 0, lockUntil: 0 });
+  const fresh = await store.get('lead:' + lead.id, { type: 'json' });
+  fresh.history = (fresh.history || []).concat([{ at: now, by: '고객 본인', field: 'studioAccount', from: '', to: id }]).slice(-80);
+  fresh.studioLoginId = id; fresh.updatedAt = now; fresh.updatedBy = '고객 본인';
+  await store.setJSON('lead:' + lead.id, fresh);
+  return login(store, id, pw);
+}
+
 async function resetCustomer(store, loginId) {
   const c = await getCustomer(store, loginId);
   if (!c) throw new Error('고객 계정을 찾지 못했어요.');
@@ -219,4 +250,4 @@ async function statsByLead(store) {
   return out;
 }
 
-module.exports = { LOGIN_RE, DEFAULT_QUOTA, kstToday, accessInfo, createCustomer, resetCustomer, setCustomerDisabled, removeCustomer, getCustomer, login, authenticate, changePassword, listPosts, usedThisMonth, quotaOf, createPost, getPost, updatePost, markPublished, unpublish, deletePost, statsByLead, refreshStats, validBlogUrl, readToken, signToken };
+module.exports = { LOGIN_RE, DEFAULT_QUOTA, kstToday, accessInfo, createCustomer, resetCustomer, setCustomerDisabled, removeCustomer, getCustomer, login, authenticate, changePassword, listPosts, usedThisMonth, quotaOf, createPost, getPost, updatePost, markPublished, unpublish, deletePost, statsByLead, refreshStats, signup, validBlogUrl, readToken, signToken };

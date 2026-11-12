@@ -21,6 +21,7 @@ exports.handler = async (event) => {
   let req;
   try { req = JSON.parse(event.body || '{}'); } catch (e) { return json(400, { error: '요청 형식이 올바르지 않아요.' }); }
   try {
+    if (req.action === 'signup') return json(200, await S.signup(store, req, (event.headers || {})['x-nf-client-connection-ip'] || (event.headers || {})['x-forwarded-for'], L.listLeads));
     if (req.action === 'login') return json(200, await S.login(store, req.loginId, req.password));
 
     const c = await S.authenticate(store, (event.headers || {})['x-studio-token']);

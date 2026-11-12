@@ -538,7 +538,7 @@
     var sec=el('div','sec');sec.appendChild(el('b',null,'릴로 블로그 서포터 계정'));
     var cu=S.customers[l.id],ps=S.postStats[l.id]||{total:0,published:0,month:0,lastPublishedAt:'',recent:[]};
     var hasTerm=!!l.contractEnd;
-    var info=el('div',null,'이용 기간은 이 업체의 계약 시작일~종료일 기준이에요. 종료일이 지나면 고객 로그인이 자동으로 막혀요.'+(hasTerm?'':' (지금은 계약 종료일이 비어 있어서 고객이 이용할 수 없어요.)'));info.style.cssText='font-size:12px;color:'+(hasTerm?'var(--mut)':'var(--warn)')+';margin-bottom:8px';sec.appendChild(info);
+    var info=el('div',null,'이용 기간은 이 업체의 계약 시작일~종료일 기준이에요. 종료일이 지나면 고객 로그인이 자동으로 막혀요. 고객이 /studio/ 에서 매장명·연락처로 직접 가입할 수도 있어서, 계약 단계와 연락처만 정확하면 계정을 따로 만들지 않아도 돼요.'+(hasTerm?'':' (지금은 계약 종료일이 비어 있어서 고객이 이용할 수 없어요.)'));info.style.cssText='font-size:12px;color:'+(hasTerm?'var(--mut)':'var(--warn)')+';margin-bottom:8px';sec.appendChild(info);
     if(S.newAccount&&S.newAccount.leadId===l.id){
       var nb=el('div');nb.style.cssText='background:var(--bg);border:1px solid var(--ok);border-radius:10px;padding:10px 12px;margin-bottom:10px;font-size:13px';
       nb.appendChild(el('div',null,'고객에게 전달할 정보 (이 화면을 닫으면 비밀번호는 다시 볼 수 없어요)'));nb.firstChild.style.cssText='color:var(--ok);font-weight:700;margin-bottom:6px';

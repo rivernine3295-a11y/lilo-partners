@@ -106,7 +106,13 @@ table.tb{width:100%;border-collapse:collapse;font-size:14px}table.tb td{padding:
  <p class="sub">계약하신 매장을 위한 블로그 콘텐츠 도구예요.<br>발급받은 아이디로 로그인하세요.</p>
  <div class="card"><label for="lid">아이디</label><input class="f" id="lid" autocomplete="username" autocapitalize="none" placeholder="예: lilo1234"><label for="lpw">비밀번호</label><input class="f" id="lpw" type="password" autocomplete="current-password">
  <div class="err" id="lerr"></div><button class="btn" id="lbtn">로그인</button>
- <p class="note" style="margin:14px 0 0;text-align:center">계정이 없으신가요? 계약 담당자에게 문의해 주세요.</p></div></div></div>
+ <p class="note" style="margin:14px 0 0;text-align:center">처음이신가요? <a href="#" id="toSignup" style="color:var(--accent,#8a5cf6);font-weight:700">계약 고객 가입하기</a></p></div>
+ <div class="card hid" id="signupCard"><label for="suStore">매장명 (계약 때 알려주신 이름)</label><input class="f" id="suStore" autocomplete="organization">
+ <label for="suTel">연락처 (계약 때 알려주신 번호)</label><input class="f" id="suTel" type="tel" autocomplete="tel" placeholder="예: 010-1234-5678">
+ <label for="suId">사용할 아이디</label><input class="f" id="suId" autocomplete="username" autocapitalize="none" placeholder="영문 소문자·숫자 4자 이상">
+ <label for="suPw">사용할 비밀번호</label><input class="f" id="suPw" type="password" autocomplete="new-password" placeholder="8자 이상">
+ <div class="err" id="suErr"></div><button class="btn" id="suBtn">가입하고 시작하기</button>
+ <p class="note" style="margin:14px 0 0;text-align:center">이미 계정이 있으신가요? <a href="#" id="toLogin" style="color:var(--accent,#8a5cf6);font-weight:700">로그인</a></p></div></div></div>
 
 <!-- 이용 불가 -->
 <div class="wrap hid" id="blockedView"><div class="login"><div class="eyebrow">Blog Supporter</div><h1 class="h" id="bTitle">이용 기간이 <span class="grad">끝났어요</span></h1>
@@ -313,6 +319,12 @@ table.tb{width:100%;border-collapse:collapse;font-size:14px}table.tb td{padding:
   }
 
   /* ---------- 이벤트 ---------- */
+  function swap(toSignup){document.querySelector('#loginView .login > .card:not(#signupCard)').classList.toggle('hid',toSignup);$('signupCard').classList.toggle('hid',!toSignup)}
+  $('toSignup').onclick=function(e){e.preventDefault();swap(true)};$('toLogin').onclick=function(e){e.preventDefault();swap(false)};
+  $('suBtn').onclick=function(){
+    $('suErr').textContent='';var b=$('suBtn');b.disabled=true;
+    api('signup',{storeName:$('suStore').value,contact:$('suTel').value,loginId:$('suId').value,password:$('suPw').value}).then(function(j){S.token=j.token;try{localStorage.setItem(TK,j.token)}catch(e){}$('suPw').value='';return boot()}).catch(function(e){$('suErr').textContent=e.message}).then(function(){b.disabled=false});
+  };
   $('lbtn').onclick=doLogin;$('lpw').addEventListener('keydown',function(e){if(e.key==='Enter')doLogin()});
   $('blogout').onclick=logout;$('logoutBtn').onclick=logout;
   document.querySelectorAll('.tab[data-t]').forEach(function(b){b.onclick=function(){setTab(b.dataset.t)}});
