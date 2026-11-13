@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow"><title>진단서 만들기</title>
+<style>
+:root{--bg:#0b0a09;--el:#17140f;--fg:#f5f1ea;--mut:#a89a86;--line:rgba(245,241,234,.16);--ac:#8a5cf6;--ac2:#c15bf0;--bad:#ff8f8f}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font-family:'Malgun Gothic','Apple SD Gothic Neo','Noto Sans KR','WenQuanYi Zen Hei',sans-serif;word-break:keep-all;line-height:1.5}
+.hid{display:none!important}.wrap{max-width:1100px;margin:0 auto;padding:24px 18px 60px}
+h1{font-size:26px;margin:0 0 4px}.sub{color:var(--mut);font-size:14px;margin:0 0 20px}
+.card{background:var(--el);border:1px solid var(--line);border-radius:18px;padding:20px;margin-bottom:16px}
+label{display:block;font-size:13px;color:var(--mut);margin:12px 0 5px}
+input,select,textarea{width:100%;background:#0b0a09;border:1px solid var(--line);color:var(--fg);border-radius:12px;padding:11px 13px;font:inherit;font-size:15px}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}.row>*{flex:1 1 140px}.row>.nf{flex:0 0 auto}
+.btn{background:linear-gradient(100deg,var(--ac),var(--ac2));border:0;color:#fff;font-weight:700;border-radius:999px;padding:11px 22px;font:inherit;font-size:15px;cursor:pointer}
+.btn.g{background:transparent;border:1px solid var(--line);color:var(--fg)}.btn.s{padding:7px 14px;font-size:13px}.btn:disabled{opacity:.5}
+.err{color:var(--bad);font-size:14px;margin-top:8px;min-height:18px}.note{color:var(--mut);font-size:13px}
+.kw{display:grid;grid-template-columns:1.3fr .8fr .8fr .7fr auto;gap:8px;align-items:center;margin-top:8px}.kw .t{font-weight:700}.kw small{color:var(--mut)}
+.sug{margin-top:10px;max-height:260px;overflow:auto}.sug div{display:flex;justify-content:space-between;gap:10px;padding:8px 4px;border-bottom:1px solid var(--line);font-size:14px}
+.grid2{display:grid;grid-template-columns:minmax(0,420px) 1fr;gap:18px}@media(max-width:900px){.grid2{grid-template-columns:1fr}}
+.pv{position:relative;background:#000;border-radius:14px;overflow:hidden;border:1px solid var(--line);width:100%;min-height:200px}.pv iframe{border:0;width:1080px;height:1600px;position:absolute;left:0;top:0;transform-origin:0 0}
+.hist div{display:flex;justify-content:space-between;gap:8px;padding:9px 0;border-bottom:1px solid var(--line);font-size:14px;align-items:center}
+.chk{display:flex;gap:8px;align-items:center;margin-top:8px;font-size:15px}.chk input{width:auto}
+</style></head><body><div class="wrap">
+<div id="login"><h1>진단서 만들기</h1><p class="sub">개인 전용 도구예요. 비밀번호를 입력해 주세요.</p>
+ <div class="card" style="max-width:380px"><label>비밀번호</label><input id="pw" type="password" autocomplete="current-password"><div class="err" id="lerr"></div><button class="btn" id="lbtn" style="margin-top:10px">열기</button></div></div>
+<div id="app" class="hid">
+ <div class="row" style="justify-content:space-between;margin-bottom:6px"><div><h1>진단서 만들기</h1><p class="sub" style="margin:0">매장 정보와 확인한 순위를 넣으면 진단서 이미지가 만들어져요.</p></div><button class="btn g s nf" id="out">나가기</button></div>
+ <div class="grid2"><div>
+  <div class="card"><b>1. 매장</b>
+   <label>매장명</label><input id="fStore"><div class="row"><div><label>지역</label><input id="fRegion" placeholder="예: 서울 강남구 역삼동"></div><div><label>업종</label><select id="fBiz"><option>미용실</option><option>음식점</option><option>병원</option><option>기타</option></select></div></div>
+   <label>확인 시각 (순위를 직접 확인한 시각)</label><input id="fAt" type="datetime-local">
+   <label>보내는 사람 문의 방법 (선택, 진단서 맨 아래에 들어가요)</label><input id="fContact" placeholder="예: 010-0000-0000 · 카카오톡 ID"></div>
+  <div class="card"><b>2. 키워드</b><div class="note" style="margin:6px 0 8px">검색어를 넣으면 월 검색량과 경쟁도를 가져와요. 순위는 직접 확인한 숫자를 넣어 주세요(안 넣으면 "미확인"으로 나와요).</div>
+   <div class="row"><input id="hint" placeholder="예: 역삼미용실, 강남헤어"><button class="btn s nf" id="sBtn">검색량 가져오기</button></div><div class="err" id="serr"></div><div class="sug" id="sug"></div>
+   <div id="kws"></div>
+   <div class="row" style="margin-top:10px"><input id="manual" placeholder="직접 키워드 추가"><button class="btn g s nf" id="mBtn">추가</button></div></div>
+  <div class="card"><b>3. 점검에서 확인한 개선 가능 항목</b><div class="note" style="margin:6px 0 4px">실제로 확인한 항목만 체크해 주세요. 체크한 항목만 진단서에 나와요.</div>
+   <div class="chk"><input type="checkbox" id="c0"><label for="c0" style="margin:0;color:var(--fg)">검색어 반영 상태</label></div>
+   <div class="chk"><input type="checkbox" id="c1"><label for="c1" style="margin:0;color:var(--fg)">정보·사진·소식 최신 상태</label></div>
+   <div class="chk"><input type="checkbox" id="c2"><label for="c2" style="margin:0;color:var(--fg)">예약·문의 연결과 리뷰</label></div></div>
+  <div class="row"><button class="btn nf" id="dl">이미지로 저장</button><button class="btn g nf" id="save">기록에 저장</button><button class="btn g nf" id="reset">새로 쓰기</button></div><div class="err" id="gerr"></div>
+  <div class="card hist" style="margin-top:16px"><b>저장한 진단서</b><div id="hist"></div></div>
+ </div><div><div class="note" style="margin-bottom:8px">미리보기</div><div class="pv" id="pvBox"><iframe id="pv" title="미리보기"></iframe></div></div></div>
+</div>
+<script>
+(function(){
+var API='/.netlify/functions/report-api',PK='lilo_report_pw',$=function(i){return document.getElementById(i)};
+var S={pw:'',kws:[],editId:''};
+function esc(t){return String(t==null?'':t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
+function call(action,body){return fetch(API,{method:'POST',headers:{'content-type':'application/json','x-report-password':S.pw},body:JSON.stringify(Object.assign({action:action},body||{}))}).then(function(r){return r.json().catch(function(){throw new Error('서버 응답을 읽지 못했어요. (HTTP '+r.status+')')}).then(function(j){if(!r.ok){var e=new Error(j.error||'오류');e.status=r.status;throw e}return j})})}
+function nowLocal(){var d=new Date();d.setMinutes(d.getMinutes()-d.getTimezoneOffset());return d.toISOString().slice(0,16)}
+function fmtAt(v){if(!v)return '';var d=new Date(v);if(isNaN(d))return v;var h=d.getHours(),ap=h<12?'오전':'오후';h=h%12||12;return d.getFullYear()+'년 '+(d.getMonth()+1)+'월 '+d.getDate()+'일 '+ap+' '+h+':'+('0'+d.getMinutes()).slice(-2)+' 기준'}
+var CHECKS=['검색어 반영 상태','정보·사진·소식 최신 상태','예약·문의 연결과 리뷰'];
+
+/* ---------- 진단서 마크업 (미리보기와 이미지가 같은 걸 써요) ---------- */
+var CSS="*{box-sizing:border-box;margin:0}body,.s{font-family:'Malgun Gothic','Apple SD Gothic Neo','Noto Sans KR','WenQuanYi Zen Hei',sans-serif;word-break:keep-all}"
++".s{width:1080px;line-height:1.5;position:relative;overflow:hidden;padding:70px 76px 56px;color:#f5f1ea;background:radial-gradient(900px 600px at 85% -5%,rgba(138,92,246,.45),transparent 60%),radial-gradient(700px 500px at -10% 105%,rgba(176,84,230,.28),transparent 60%),#0b0a09}"
++".eb{font-size:22px;letter-spacing:.26em;color:#b58cff;font-weight:700}h1{font-size:62px;line-height:1.2;font-weight:900;margin-top:20px}.g{color:#c08bff}"
++".info{margin-top:26px;background:#14110d;border:1px solid rgba(245,241,234,.16);border-radius:24px;padding:10px 28px}.ir{display:flex;gap:22px;padding:13px 0;border-bottom:1px solid rgba(245,241,234,.1)}.ir:last-child{border-bottom:0}.ir span{width:120px;flex:none;font-size:22px;color:#a89a86}.ir b{font-size:26px;font-weight:900;line-height:1.4}.ir em{font-style:normal;font-weight:400;color:#a89a86;font-size:23px;margin-left:10px}"
++".kpi{display:flex;gap:16px;margin-top:30px}.k{flex:1;background:#14110d;border:1px solid rgba(245,241,234,.14);border-radius:24px;padding:24px 26px}.k.hl{border-color:rgba(155,107,255,.7);background:#231a3d}.k small{display:block;font-size:22px;color:#a89a86;margin-bottom:8px}.k b{font-size:46px;font-weight:900}.k i{font-style:normal;font-size:26px;color:#a89a86;font-weight:400;margin-left:4px}"
++"h2{font-size:34px;font-weight:900;margin:36px 0 14px}table{width:100%;border-collapse:separate;border-spacing:0 8px}th{font-size:21px;color:#a89a86;font-weight:400;text-align:left;padding:0 18px 4px}td{background:#14110d;padding:18px;font-size:26px;border-top:1px solid rgba(245,241,234,.12);border-bottom:1px solid rgba(245,241,234,.12)}td:first-child{border-left:1px solid rgba(245,241,234,.12);border-radius:18px 0 0 18px;font-weight:900}td:last-child{border-right:1px solid rgba(245,241,234,.12);border-radius:0 18px 18px 0}.rk{color:#ffcf6b;font-weight:900}.rk.bad{color:#ff8f8f}.rk.na{color:#a89a86;font-weight:400}"
++".p{display:flex;gap:20px;align-items:flex-start;background:#14110d;border:1px solid rgba(245,241,234,.14);border-radius:22px;padding:20px 26px;margin-bottom:12px}.p .n{width:50px;height:50px;border-radius:25px;background:#9a62ee;display:flex;align-items:center;justify-content:center;font-size:26px;flex:none;font-weight:700}.p div{font-size:25px;line-height:1.45;color:#d8cfc2}.p strong{display:block;font-size:29px;color:#f5f1ea;margin-bottom:2px}.lk{color:#b58cff;font-weight:900}"
++".gap{margin-top:18px;font-size:27px;line-height:1.5;color:#e6dcd0;padding:0 6px}.gap b{color:#ffcf6b}.offer{margin-top:22px;border:1px solid rgba(155,107,255,.7);background:#231a3d;border-radius:26px;padding:24px 30px;font-size:26px;line-height:1.5;color:#e6dcd0}.offer b{color:#fff}"
++".ft{margin-top:34px;display:flex;justify-content:space-between;align-items:flex-end}.logo{font-size:42px;font-weight:900;letter-spacing:.05em}.logo span{color:#b58cff}.ct{font-size:22px;color:#a89a86;text-align:right;line-height:1.5}";
+function data(){
+  return {store:$('fStore').value.trim(),region:$('fRegion').value.trim(),biz:$('fBiz').value,checkedAt:$('fAt').value,contact:$('fContact').value.trim(),keywords:S.kws.map(function(k){return {k:k.k,vol:k.vol,comp:k.comp,rank:k.rank}}),checks:[$('c0').checked,$('c1').checked,$('c2').checked]};
+}
+function reportBody(r){
+  var ks=r.keywords||[],sum=ks.reduce(function(a,k){return a+(k.vol||0)},0);
+  var ranked=ks.filter(function(k){return k.rank!=null});var top=ranked.length?ranked[0]:null;
+  var h='<div class="s"><div class="eb">RILO · PLACE DIAGNOSIS</div><h1>네이버 플레이스<br/><span class="g">진단서</span></h1>';
+  h+='<div class="info"><div class="ir"><span>진단 매장</span><b>'+esc(r.store||'매장명')+(r.region||r.biz?' <em>'+esc([r.region,r.biz].filter(Boolean).join(' · '))+'</em>':'')+'</b></div>';
+  h+='<div class="ir"><span>진단 시점</span><b>'+esc(fmtAt(r.checkedAt)||'미입력')+'</b></div>';
+  h+='<div class="ir"><span>확인 기준</span><b>네이버 검색 순위(담당자 직접 확인) · 월 검색량(네이버 검색광고 키워드 도구)</b></div></div>';
+  h+='<div class="kpi"><div class="k hl"><small>대표 키워드 현재 순위</small><b>'+(top?top.rank+'<i>위</i>':'<i>미확인</i>')+'</b></div><div class="k"><small>키워드 월 검색량 합계</small><b>'+sum.toLocaleString()+'<i>회</i></b></div><div class="k"><small>1페이지 노출 목표</small><b>1<i>페이지</i></b></div></div>';
+  if(ks.length){h+='<h2>핵심 키워드 현황</h2><table><tr><th>키워드</th><th>월 검색량</th><th>경쟁도</th><th>현재 순위</th></tr>';
+   ks.forEach(function(k){var c=k.rank==null?'<td class="rk na">미확인</td>':(k.rank>20?'<td class="rk bad">20위 밖</td>':'<td class="rk">'+k.rank+'위</td>');h+='<tr><td>'+esc(k.k)+'</td><td>'+(k.vol?k.vol.toLocaleString()+'회':'-')+'</td><td>'+esc(k.comp||'-')+'</td>'+c+'</tr>'});h+='</table>'}
+  var cs=(r.checks||[]).map(function(on,i){return on?CHECKS[i]:null}).filter(Boolean);
+  if(cs.length){h+='<h2>점검에서 확인된 개선 가능 항목</h2>';cs.forEach(function(t,i){h+='<div class="p"><div class="n">'+(i+1)+'</div><div><strong>'+esc(t)+'</strong>개선할 수 있는 부분이 확인됐어요 · <span class="lk">상담에서 안내해 드립니다</span></div></div>'})}
+  if(top&&top.vol)h+='<div class="gap">월 <b>'+top.vol.toLocaleString()+'회</b> 검색되는 키워드에서, 지금은 <b>'+top.rank+'위</b>예요. 위에 보이는 매장이 먼저 손님을 만나요.</div>';
+  h+='<div class="offer"><b>무료 상담으로 이어서 안내해 드려요.</b><br/>개선 방법과 견적은 상담에서 알려 드리고, 비용은 <b>총 25일 노출이 확인된 뒤</b>에 청구해요.</div>';
+  h+='<div class="ft"><div class="logo">RILO<span>.</span></div><div class="ct">'+(r.contact?esc(r.contact):'')+'</div></div></div>';
+  return h;
+}
+function pvRender(){
+  var f=$('pv'),r=data();f.srcdoc='<!doctype html><html><head><meta charset="utf-8"><style>'+CSS+'</style></head><body style="margin:0">'+reportBody(r)+'</body></html>';
+  f.onload=fit;
+}
+function fit(){var f=$('pv'),box=$('pvBox');if(!f.contentDocument||!f.contentDocument.body)return;var h=f.contentDocument.body.scrollHeight,w=box.clientWidth||420,sc=w/1080;f.style.height=h+'px';f.style.transform='scale('+sc+')';box.style.height=Math.ceil(h*sc)+'px'}
+window.addEventListener('resize',function(){try{fit()}catch(e){}});
+function kwDraw(){
+  var box=$('kws');box.textContent='';
+  S.kws.forEach(function(k,i){var row=document.createElement('div');row.className='kw';
+   row.innerHTML='<div class="t">'+esc(k.k)+'</div><div><small>월 검색량</small><br/>'+(k.vol?k.vol.toLocaleString()+'회':'-')+'</div><div><small>경쟁도</small><br/>'+esc(k.comp||'-')+'</div>';
+   var inp=document.createElement('input');inp.type='number';inp.min='1';inp.placeholder='현재 순위';inp.value=k.rank==null?'':k.rank;inp.oninput=function(){k.rank=inp.value===''?null:Number(inp.value);pvRender()};
+   var d=document.createElement('button');d.className='btn g s';d.textContent='삭제';d.onclick=function(){S.kws.splice(i,1);kwDraw();pvRender()};
+   var c=document.createElement('div');c.appendChild(inp);row.appendChild(c);row.appendChild(d);box.appendChild(row)});
+}
+function addKw(k){if(S.kws.some(function(x){return x.k===k.k})||S.kws.length>=8)return;S.kws.push({k:k.k,vol:k.total||k.vol||0,comp:k.comp||'',rank:null});kwDraw();pvRender()}
+function reset(){S.kws=[];S.editId='';['fStore','fRegion','fContact','hint','manual'].forEach(function(i){$(i).value=''});$('fAt').value=nowLocal();['c0','c1','c2'].forEach(function(i){$(i).checked=false});$('sug').textContent='';kwDraw();pvRender()}
+function hist(){call('list').then(function(j){var b=$('hist');b.textContent='';if(!j.reports.length){b.innerHTML='<div class="note">아직 저장한 진단서가 없어요.</div>';return}
+  j.reports.forEach(function(r){var d=document.createElement('div');d.innerHTML='<span>'+esc(r.store)+' <span class="note">'+esc(fmtAt(r.checkedAt)||'')+'</span></span>';var w=document.createElement('span');
+   var o=document.createElement('button');o.className='btn g s';o.textContent='열기';o.onclick=function(){S.editId=r.id;$('fStore').value=r.store;$('fRegion').value=r.region;$('fBiz').value=r.biz||'미용실';$('fAt').value=r.checkedAt;$('fContact').value=r.contact||'';S.kws=(r.keywords||[]).map(function(k){return {k:k.k,vol:k.vol,comp:k.comp,rank:k.rank}});[0,1,2].forEach(function(i){$('c'+i).checked=!!r.checks[i]});kwDraw();pvRender();window.scrollTo(0,0)};
+   var x=document.createElement('button');x.className='btn g s';x.style.marginLeft='6px';x.textContent='삭제';x.onclick=function(){if(confirm('이 진단서 기록을 지울까요?'))call('delete',{id:r.id}).then(hist)};w.appendChild(o);w.appendChild(x);d.appendChild(w);b.appendChild(d)})}).catch(function(){});
+}
+function toPng(){
+  var r=data();var body=reportBody(r);
+  var tmp=document.createElement('div');tmp.style.cssText='position:fixed;left:-9999px;top:0;width:1080px';tmp.innerHTML='<style>'+CSS+'</style>'+body;document.body.appendChild(tmp);
+  var h=tmp.querySelector('.s').offsetHeight;document.body.removeChild(tmp);
+  var xml='<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="'+h+'"><foreignObject width="1080" height="'+h+'"><div xmlns="http://www.w3.org/1999/xhtml" style="background:#0b0a09"><style>'+CSS+'</style>'+body+'</div></foreignObject></svg>';
+  return new Promise(function(res,rej){var img=new Image();img.onload=function(){var c=document.createElement('canvas');c.width=1080*2;c.height=h*2;var x=c.getContext('2d');x.scale(2,2);x.drawImage(img,0,0);try{c.toBlob(function(b){b?res(b):rej(new Error('이미지를 만들지 못했어요.'))},'image/png')}catch(e){rej(e)}};img.onerror=function(){rej(new Error('이미지를 만들지 못했어요.'))};img.src='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(xml)});
+}
+function boot(){$('login').classList.add('hid');$('app').classList.remove('hid');$('fAt').value=nowLocal();kwDraw();pvRender();hist()}
+$('lbtn').onclick=function(){S.pw=$('pw').value;$('lerr').textContent='';call('ping').then(function(){try{sessionStorage.setItem(PK,S.pw)}catch(e){}boot()}).catch(function(e){$('lerr').textContent=e.message})};
+$('pw').addEventListener('keydown',function(e){if(e.key==='Enter')$('lbtn').click()});
+$('out').onclick=function(){try{sessionStorage.removeItem(PK)}catch(e){}location.reload()};
+$('sBtn').onclick=function(){
+  $('serr').textContent='';var hints=$('hint').value.split(/[,\n]/).map(function(x){return x.trim()}).filter(Boolean);if(!hints.length){$('serr').textContent='검색어를 적어주세요.';return}
+  var b=$('sBtn');b.disabled=true;call('suggest',{hints:hints}).then(function(j){var box=$('sug');box.textContent='';(j.items||[]).slice(0,15).forEach(function(it){var d=document.createElement('div');d.innerHTML='<span><b>'+esc(it.k)+'</b> <span class="note">월 '+it.total.toLocaleString()+'회 · 경쟁 '+esc(it.comp||'-')+'</span></span>';var a=document.createElement('button');a.className='btn g s';a.textContent='추가';a.onclick=function(){addKw(it)};d.appendChild(a);box.appendChild(d)});if(!(j.items||[]).length)box.innerHTML='<div class="note">찾지 못했어요. 검색어를 바꿔 보세요.</div>'}).catch(function(e){$('serr').textContent=e.message}).then(function(){b.disabled=false});
+};
+$('mBtn').onclick=function(){var v=$('manual').value.trim();if(v){addKw({k:v,total:0,comp:''});$('manual').value=''}};
+['fStore','fRegion','fBiz','fAt','fContact','c0','c1','c2'].forEach(function(i){$(i).addEventListener('input',pvRender);$(i).addEventListener('change',pvRender)});
+$('dl').onclick=function(){$('gerr').textContent='';var b=$('dl');b.disabled=true;toPng().then(function(blob){var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='진단서_'+(($('fStore').value||'매장').replace(/[^\w가-힣]/g,'_'))+'.png';document.body.appendChild(a);a.click();a.remove()}).catch(function(e){$('gerr').textContent=(e.message||'')+' 미리보기를 화면 캡처해서 쓰셔도 돼요.'}).then(function(){b.disabled=false})};
+$('save').onclick=function(){$('gerr').textContent='';call('save',{id:S.editId,report:data()}).then(function(j){S.editId=j.report.id;hist();$('gerr').style.color='#8ee59a';$('gerr').textContent='저장했어요.';setTimeout(function(){$('gerr').textContent='';$('gerr').style.color=''},1800)}).catch(function(e){$('gerr').textContent=e.message})};
+$('reset').onclick=reset;
+try{var sp=sessionStorage.getItem(PK);if(sp){S.pw=sp;call('ping').then(boot).catch(function(){})}}catch(e){}
+})();
+</script></body></html>
