@@ -38,7 +38,7 @@ body.gen .hud .r1{animation-duration:14s}body.gen .hud .r2{animation-duration:6s
 .logo{font-family:var(--font-display);font-weight:700;font-size:17px;color:var(--fg);text-decoration:none}.logo span{color:var(--accent)}
 .links{display:flex;gap:clamp(12px,3vw,26px);list-style:none;margin:0;padding:0;align-items:center}.links li{font-family:var(--font-display);font-size:11px;font-weight:500;letter-spacing:.12em;text-transform:uppercase}.links a{color:var(--fg-muted);text-decoration:none}
 .links .me{color:#fff;border:1px solid rgba(255,255,255,.35);padding:6px 12px;border-radius:999px;background:rgba(138,92,246,.35)}
-@media(max-width:640px){.links li:not(:last-child){display:none}}
+@media(max-width:640px){.links li:not(.keep){display:none}.links li.keep .me{padding:6px 10px;font-size:10.5px}}
 .wrap{position:relative;z-index:2;max-width:980px;margin:0 auto;padding:30px clamp(16px,5vw,32px) 70px}
 .eyebrow{font-family:var(--font-display);font-size:12px;font-weight:500;letter-spacing:.22em;text-transform:uppercase;color:var(--accent-2);display:flex;align-items:center;justify-content:center;gap:10px;margin:0 0 16px}
 .eyebrow::before,.eyebrow::after{content:'';width:28px;height:1px;background:var(--line)}
@@ -99,7 +99,7 @@ table.tb{width:100%;border-collapse:collapse;font-size:14px}table.tb td{padding:
 </svg></div>
 
 <nav class="nav"><a class="logo" href="/">릴로<span>.</span></a>
- <ul class="links"><li><a href="/#services">서비스</a></li><li><a href="/#diagnose">자가진단</a></li><li><a href="/#pricing">가격</a></li><li><a href="/#contact">문의</a></li><li><a class="me" href="/studio/">내 블로그 서포터</a></li></ul></nav>
+ <ul class="links"><li><a href="/#services">서비스</a></li><li><a href="/#diagnose">자가진단</a></li><li><a href="/#pricing">가격</a></li><li><a href="/#contact">문의</a></li><li class="keep"><a class="me" href="/studio/">내 블로그 서포터</a></li><li class="keep hid" id="navLogoutLi"><button type="button" id="navLogout" style="cursor:pointer;color:#fff;border:1px solid rgba(255,255,255,.35);padding:6px 12px;border-radius:999px;background:transparent;font:inherit;letter-spacing:inherit">↩ 로그아웃</button></li></ul></nav>
 
 <!-- 로그인 -->
 <div class="wrap" id="loginView"><div class="login"><div class="eyebrow">Blog Supporter</div><h1 class="h">계약 고객 <span class="grad">전용 블로그 서포터</span></h1>
@@ -123,7 +123,7 @@ table.tb{width:100%;border-collapse:collapse;font-size:14px}table.tb td{padding:
  <div class="eyebrow">Blog Supporter</div>
  <h1 class="h"><span id="hStore">-</span><br><span class="grad" id="hTab">블로그 만들기</span></h1>
  <p class="sub" id="hSub"></p>
- <div class="status"><span class="pill ok" id="pTerm"><span class="live">이용 기간</span></span><span class="pill" id="pQuota">이번 달 사용 -</span><button class="pill" id="topLogout" type="button" style="cursor:pointer;background:transparent;font:inherit">↩ 로그아웃 · 다른 계정으로</button></div>
+ <div class="status"><span class="pill ok" id="pTerm"><span class="live">이용 기간</span></span><span class="pill" id="pQuota">이번 달 사용 -</span></div>
  <div class="tabs"><button class="tab on" data-t="create">✍ 블로그 만들기</button><button class="tab" data-t="lib">📚 보관함</button><button class="tab" data-t="cal">📅 캘린더</button><button class="tab" data-t="info">👤 내 정보</button></div>
 
  <section id="t-create">
@@ -173,7 +173,7 @@ table.tb{width:100%;border-collapse:collapse;font-size:14px}table.tb td{padding:
   function pad(n){return String(n).padStart(2,'0')}
   function fmtD(iso){var d=new Date(iso);return (d.getMonth()+1)+'/'+d.getDate()}
   function kstDate(iso){return new Date(new Date(iso).getTime()+9*3600*1000).toISOString().slice(0,10)}
-  function show(v){['loginView','blockedView','appView'].forEach(function(i){$(i).classList.toggle('hid',i!==v)})}
+  function show(v){['loginView','blockedView','appView'].forEach(function(i){$(i).classList.toggle('hid',i!==v)});$('navLogoutLi').classList.toggle('hid',v==='loginView')}
   function countUp(node,to){if(typeof to!=='number'){node.textContent=String(to);return}var t0=performance.now(),D=900;node.textContent='0';(function f(n){var k=Math.min(1,(n-t0)/D);node.textContent=String(Math.round(to*(1-Math.pow(1-k,3))));if(k<1)requestAnimationFrame(f)})(t0)}
 
   /* ---------- 로그인 ---------- */
@@ -341,7 +341,7 @@ table.tb{width:100%;border-collapse:collapse;font-size:14px}table.tb td{padding:
     api('signup',{storeName:$('suStore').value,contact:$('suTel').value,loginId:$('suId').value,password:$('suPw').value}).then(function(j){S.token=j.token;try{localStorage.setItem(TK,j.token)}catch(e){}$('suPw').value='';return boot()}).catch(function(e){$('suErr').textContent=e.message}).then(function(){b.disabled=false});
   };
   $('lbtn').onclick=doLogin;$('lpw').addEventListener('keydown',function(e){if(e.key==='Enter')doLogin()});
-  $('topLogout').onclick=logout;$('blogout').onclick=logout;$('logoutBtn').onclick=logout;
+  $('navLogout').onclick=logout;$('blogout').onclick=logout;$('logoutBtn').onclick=logout;
   document.querySelectorAll('.tab[data-t]').forEach(function(b){b.onclick=function(){setTab(b.dataset.t)}});
   initPh();$('genBtn').onclick=runGen;$('sBtn').onclick=savePost;$('pwBtn').onclick=changePw;
   $('eBack').onclick=showList;
