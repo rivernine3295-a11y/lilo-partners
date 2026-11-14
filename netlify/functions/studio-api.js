@@ -54,10 +54,16 @@ exports.handler = async (event) => {
       const q = S.quotaOf(lead);
       if (S.usedThisMonth(await S.listPosts(store, lead.id)) >= q) throw new Error('이번 달 사용 가능한 글 수(' + q + '편)를 모두 사용했어요.');
       if (!AI.isReady()) return json(503, { error: 'AI 글 생성이 아직 연결되지 않았어요. 담당자에게 문의해 주세요.', notReady: true });
+      // 전체 하루 사용 상한(무료 한도를 넘지 않도록). AI_DAILY_CAP 환경변수로 바꿀 수 있어요(기본 150편).
+      const capKey = 'aiusage:' + S.kstToday(); const cap = Number(process.env.AI_DAILY_CAP) || 150;
+      const usage = (await store.get(capKey, { type: 'json' })) || { n: 0 };
+      if (usage.n >= cap) throw new Error('오늘은 AI 글 만들기를 많이 써서 잠시 쉬어요. 내일 다시 시도하시거나, 직접 쓴 글을 저장해 주세요.');
       // 한 번의 요청 안에서 바로 만들어 돌려줘요. (저장소 반영 지연에 영향받지 않도록 따로 상태를 읽지 않아요)
       const g = await AI.generate(lead, req, { timeoutMs: 25000, retryWaitMs: 1500 });
       const kws = Array.isArray(req.keywords) ? req.keywords.slice(0, 10) : [];
-      return json(200, { post: await S.createPost(store, lead, { title: g.title, body: g.body, keywords: kws, source: 'AI 생성' }) });
+      const post = await S.createPost(store, lead, { title: g.title, body: g.body, keywords: kws, source: 'AI 생성' });
+      try { await store.setJSON(capKey, { n: usage.n + 1 }); } catch (e) { /* 집계 실패는 글 생성에 영향 없어요 */ }
+      return json(200, { post });
     }
     return json(400, { error: '알 수 없는 요청이에요.' });
   } catch (e) {

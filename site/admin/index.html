@@ -859,16 +859,17 @@
   $('aiCheckBtn').onclick=function(){
     var b=$('aiCheckBtn'),o=$('aiCheckOut');b.disabled=true;o.textContent='점검 중… (최대 40초)';
     api('POST',{action:'aiCheck',by:S.who}).then(function(r){
-      o.textContent='';function line(t,ok){var d=el('div',null,(ok===true?'✅ ':ok===false?'❌ ':'· ')+t);o.appendChild(d)}
-      line('키 등록: '+(r.keySet?'있음':'없음'),r.keySet);
-      line('기본 모델: '+r.primary+(r.primaryExists===true?' (사용 가능)':r.primaryExists===false?' (이 키로는 목록에 없음)':''),r.primaryExists);
-      line('예비 모델: '+r.fallback+(r.fallbackExists===true?' (사용 가능)':r.fallbackExists===false?' (이 키로는 목록에 없음)':''),r.fallbackExists);
-      if(r.listError)line('모델 목록 조회 실패: '+r.listError,false);
-      if(r.flashModels&&r.flashModels.length)line('사용 가능한 flash 모델: '+r.flashModels.join(', '));
-      if(r.genOk===true)line('글 생성 성공: "'+r.title+'" ('+r.chars+'자, '+(r.genMs/1000).toFixed(1)+'초)',true);
-      else if(r.genOk===false)line('글 생성 실패: '+r.error+' ('+(r.genMs/1000).toFixed(1)+'초)',false);
-      else if(r.error)line(r.error,false);
-      if(r.genMs>8000)line('생성이 8초 넘게 걸려요. 서버 응답 제한(약 10초)에 걸릴 수 있어요.',false);
+      o.textContent='';function line(t,ok,ind){var d=el('div',null,(ok===true?'✅ ':ok===false?'❌ ':'· ')+t);if(ind)d.style.marginLeft='18px';o.appendChild(d)}
+      if(r.error){line(r.error,false);return}
+      line('연결된 AI: '+(r.configured||[]).join(' → ')+' (앞에서부터 순서대로 시도해요)');
+      (r.results||[]).forEach(function(x){
+        line(x.label+': '+(x.ok?'글 생성 성공 ('+(x.ms/1000).toFixed(1)+'초, '+x.chars+'자, 모델 '+x.model+')':'실패 ('+(x.ms/1000).toFixed(1)+'초)'),x.ok);
+        if(x.error)line(x.error,false,true);
+        if(x.primary)line('기본 모델 '+x.primary+(x.primaryExists===true?' · 사용 가능':x.primaryExists===false?' · 이 키로는 목록에 없음':''),null,true);
+        if(x.listError)line('모델 목록: '+x.listError,false,true);
+        if(x.models&&x.models.length)line('사용 가능 모델: '+x.models.join(', '),null,true);
+        if(x.ms>8000)line('8초 넘게 걸려요. 서버 응답 제한에 걸릴 수 있어요.',false,true);
+      });
     }).catch(function(e){o.textContent=e.message}).then(function(){b.disabled=false});
   };
   $('closeAll').onclick=function(){S.statuses.forEach(function(s){S.openGrps[s]=0});S.openLeads={};persistGrp();renderGroups()};
