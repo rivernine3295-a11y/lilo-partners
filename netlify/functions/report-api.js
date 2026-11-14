@@ -22,11 +22,12 @@ function sanitize(r) {
     k: clean(k.k, 40), vol: Math.max(0, Math.round(Number(k.vol) || 0)), comp: clean(k.comp, 10),
     rank: k.rank === '' || k.rank == null || !Number.isFinite(Number(k.rank)) ? null : Math.max(1, Math.round(Number(k.rank))),
   })).filter((k) => k.k);
-  const checks = (Array.isArray(r.checks) ? r.checks : []).slice(0, 3).map((c) => !!c);
-  while (checks.length < 3) checks.push(false);
+  const checks = (Array.isArray(r.checks) ? r.checks : []).slice(0, 6).map((c) => !!c);
+  while (checks.length < 6) checks.push(false);
+  const mainN = Number(r.main); const main = Number.isInteger(mainN) && mainN >= 0 && mainN < 6 ? mainN : -1;
   return {
     store: clean(r.store, 60), region: clean(r.region, 60), biz: clean(r.biz, 20), checkedAt: clean(r.checkedAt, 40),
-    keywords, checks, contact: clean(r.contact, 80),
+    keywords, checks, main, placeLink: clean(r.placeLink, 300), contact: clean(r.contact, 80),
   };
 }
 
