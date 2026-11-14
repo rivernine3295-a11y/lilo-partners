@@ -174,7 +174,7 @@ table.tb{width:100%;border-collapse:collapse;font-size:14px}table.tb td{padding:
   function fmtD(iso){var d=new Date(iso);return (d.getMonth()+1)+'/'+d.getDate()}
   function kstDate(iso){return new Date(new Date(iso).getTime()+9*3600*1000).toISOString().slice(0,10)}
   function show(v){['loginView','blockedView','appView'].forEach(function(i){$(i).classList.toggle('hid',i!==v)})}
-  function countUp(node,to){var t0=performance.now(),D=900;node.textContent='0';(function f(n){var k=Math.min(1,(n-t0)/D);node.textContent=String(Math.round(to*(1-Math.pow(1-k,3))));if(k<1)requestAnimationFrame(f)})(t0)}
+  function countUp(node,to){if(typeof to!=='number'){node.textContent=String(to);return}var t0=performance.now(),D=900;node.textContent='0';(function f(n){var k=Math.min(1,(n-t0)/D);node.textContent=String(Math.round(to*(1-Math.pow(1-k,3))));if(k<1)requestAnimationFrame(f)})(t0)}
 
   /* ---------- 로그인 ---------- */
   function logout(){try{localStorage.removeItem(TK)}catch(e){}S.token='';S.me=null;$('lpw').value='';show('loginView');hud('● STANDBY','- / -','QUOTA - / -','TERM -')}
@@ -200,17 +200,17 @@ table.tb{width:100%;border-collapse:collapse;font-size:14px}table.tb td{padding:
   }
   function renderHeader(){
     var me=S.me;$('hStore').textContent=me.store.name||'내 매장';
-    $('pTerm').innerHTML='';var lv=el('span','live');lv.appendChild(document.createTextNode('이용 기간 D-'));var cn=el('b','','0');lv.appendChild(cn);lv.appendChild(document.createTextNode(' · ~ '+me.access.end));$('pTerm').appendChild(lv);countUp(cn,Math.max(me.access.daysLeft,0));
+    $('pTerm').innerHTML='';var lv=el('span','live');var cn=el('b','','0');if(me.access.unlimited){lv.appendChild(document.createTextNode('이용 기간 무제한 (관리자)'))}else{lv.appendChild(document.createTextNode('이용 기간 D-'));lv.appendChild(cn);lv.appendChild(document.createTextNode(' · ~ '+me.access.end));countUp(cn,Math.max(me.access.daysLeft,0))}$('pTerm').appendChild(lv);
     $('pTerm').className='pill '+(me.access.daysLeft<=7?'w':'ok');
     updQuota();
     $('fStore').value=me.store.name||'';$('fArea').value=[me.store.bizType,me.store.region].filter(Boolean).join(' · ');
     S.kw={};me.keywords.forEach(function(k){S.kw[k]=true});drawChips();
-    hud('● ONLINE',me.keywords.length+' / '+me.keywords.length,'QUOTA '+me.quota.used+' / '+me.quota.limit,'TERM D-'+me.access.daysLeft);
+    hud('● ONLINE',me.keywords.length+' / '+me.keywords.length,'QUOTA '+me.quota.used+' / '+(me.quota.limit>=9999?'∞':me.quota.limit),'TERM '+(me.access.unlimited?'∞':'D-'+me.access.daysLeft));
   }
   function updQuota(){
-    var q=S.me.quota;$('pQuota').innerHTML='';$('pQuota').appendChild(document.createTextNode('이번 달 사용 '));var b=el('b','','0');$('pQuota').appendChild(b);$('pQuota').appendChild(document.createTextNode(' / '+q.limit+'편'));countUp(b,q.used);
+    var q=S.me.quota;$('pQuota').innerHTML='';$('pQuota').appendChild(document.createTextNode('이번 달 사용 '));var b=el('b','','0');$('pQuota').appendChild(b);$('pQuota').appendChild(document.createTextNode(' / '+(q.limit>=9999?'무제한':q.limit+'편')));countUp(b,q.used);
     var full=q.used>=q.limit;$('genBtn').disabled=full;$('sBtn').disabled=full;
-    $('hudQuota').textContent='QUOTA '+q.used+' / '+q.limit;
+    $('hudQuota').textContent='QUOTA '+q.used+' / '+(q.limit>=9999?'∞':q.limit);
   }
   function drawChips(){
     var box=$('kwChips');box.textContent='';
@@ -271,7 +271,7 @@ table.tb{width:100%;border-collapse:collapse;font-size:14px}table.tb td{padding:
   function drawLib(){
     var P=S.posts,pub=P.filter(function(p){return p.status==='발행 완료'}).length;
     var k=$('libKpis');k.textContent='';
-    [['만든 글',P.length],['발행 완료',pub],['발행 전',P.length-pub],['이번 달 남은 횟수',Math.max(S.me.quota.limit-S.me.quota.used,0)]].forEach(function(x){var d=el('div','kpi');var b=el('b','','0');d.appendChild(b);d.appendChild(el('span',null,x[0]));k.appendChild(d);countUp(b,x[1])});
+    [['만든 글',P.length],['발행 완료',pub],['발행 전',P.length-pub],['이번 달 남은 횟수',S.me.quota.limit>=9999?'∞':Math.max(S.me.quota.limit-S.me.quota.used,0)]].forEach(function(x){var d=el('div','kpi');var b=el('b','','0');d.appendChild(b);d.appendChild(el('span',null,x[0]));k.appendChild(d);countUp(b,x[1])});
     var box=$('libItems');box.textContent='';
     if(!P.length){box.appendChild(el('p','note','아직 저장한 글이 없어요. "블로그 만들기" 탭에서 시작해 보세요.'));return}
     P.forEach(function(p){
@@ -327,7 +327,7 @@ table.tb{width:100%;border-collapse:collapse;font-size:14px}table.tb td{padding:
   /* ---------- 내 정보 ---------- */
   function drawInfo(){
     var me=S.me,tb=$('infoTb');tb.textContent='';
-    [['매장명',me.store.name],['업종',me.store.bizType||'-'],['지역',me.store.region||'-'],['이용 기간',me.access.start+' ~ '+me.access.end],['남은 기간','D-'+me.access.daysLeft],['이번 달 사용',me.quota.used+' / '+me.quota.limit+'편'],['핵심 키워드',me.keywords.join(', ')||'-'],['로그인 아이디',me.loginId]].forEach(function(r){var tr=el('tr');tr.appendChild(el('td',null,r[0]));tr.appendChild(el('td',null,r[1]||'-'));tb.appendChild(tr)});
+    [['매장명',me.store.name],['업종',me.store.bizType||'-'],['지역',me.store.region||'-'],['이용 기간',me.access.unlimited?'무제한 (관리자)':me.access.start+' ~ '+me.access.end],['남은 기간',me.access.unlimited?'무제한':'D-'+me.access.daysLeft],['이번 달 사용',me.quota.used+' / '+me.quota.limit+'편'],['핵심 키워드',me.keywords.join(', ')||'-'],['로그인 아이디',me.loginId]].forEach(function(r){var tr=el('tr');tr.appendChild(el('td',null,r[0]));tr.appendChild(el('td',null,r[1]||'-'));tb.appendChild(tr)});
   }
   function changePw(){
     $('pwErr').textContent='';api('changePassword',{oldPassword:$('pwOld').value,newPassword:$('pwNew').value}).then(function(){$('pwOld').value='';$('pwNew').value='';toast('비밀번호를 바꿨어요')}).catch(function(e){$('pwErr').textContent=e.message});

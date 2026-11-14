@@ -188,6 +188,9 @@
       <div class="sec" id="aiCheckBox" style="margin-top:18px"><b>AI 글 생성 점검</b>
         <div style="font-size:12px;color:var(--mut);margin:4px 0 8px">고객 블로그 서포터의 AI 연결 상태를 확인해요. 키, 모델 이름, 실제로 글이 만들어지는 시간을 알려 줘요. (몇 초 걸려요)</div>
         <button class="btn small" id="aiCheckBtn">점검하기</button><div id="aiCheckOut" style="margin-top:10px;font-size:13px;line-height:1.7"></div></div>
+      <div class="sec" id="staffBox" style="margin-top:18px"><b>관리자용 블로그 서포터 계정 (무제한)</b>
+        <div style="font-size:12px;color:var(--mut);margin:4px 0 8px">직원이 블로그 서포터를 제한 없이 써 볼 수 있는 계정 3개예요. 이용 기간·월 글 수 제한이 없고, 업체 목록에는 보이지 않아요. 비밀번호는 <b>발급할 때 한 번만</b> 보여요. 잊으면 다시 발급(재발급)하면 돼요.</div>
+        <div id="staffRows" style="display:flex;gap:8px;flex-wrap:wrap"></div><div id="staffOut" style="margin-top:10px;font-size:13px;line-height:1.8"></div></div>
     </section>
 
     <section id="v-list" class="hidden">
@@ -856,6 +859,7 @@
   $('search').oninput=function(){S.q=this.value;renderGroups()};
   $('asgFilter').onchange=function(){S.asg=this.value;renderGroups()};
   $('openAll').onclick=function(){S.statuses.forEach(function(s){S.openGrps[s]=1});persistGrp();renderGroups()};
+  (function(){var rows=$('staffRows');for(var n=1;n<=3;n++)(function(n){var b=el('button','btn small','계정 '+n+' 발급 / 재발급 (liloadmin'+n+')');b.onclick=function(){if(!confirm('liloadmin'+n+' 계정의 비밀번호를 새로 발급할까요? (이미 있으면 이전 비밀번호는 못 써요)'))return;b.disabled=true;api('POST',{action:'staffIssue',n:n,by:S.who}).then(function(r){var a=r.account,o=$('staffOut');o.textContent='';var d=el('div',null,'✅ 아이디: '+a.loginId+'  /  비밀번호: '+a.password+(a.reissued?'  (재발급)':'  (새로 발급)'));d.style.cssText='background:rgba(76,201,122,.12);padding:10px 12px;border-radius:10px;margin-bottom:6px;user-select:all';o.appendChild(d);o.appendChild(el('div',null,'이 비밀번호는 지금만 보여요. 직원에게 전달한 뒤 이 화면은 닫아 주세요. 로그인은 lillo.kr/studio/ 에서 해요.'))}).catch(function(e){$('staffOut').textContent=e.message}).then(function(){b.disabled=false})};rows.appendChild(b)})(n)})();
   $('aiCheckBtn').onclick=function(){
     var b=$('aiCheckBtn'),o=$('aiCheckOut');b.disabled=true;o.textContent='점검 중… (최대 40초)';
     api('POST',{action:'aiCheck',by:S.who}).then(function(r){

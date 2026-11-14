@@ -46,8 +46,8 @@ exports.handler = async (event) => {
   const store = getStore('lilo-leads');
   try {
     if (event.httpMethod === 'GET') {
-      const leads = await L.listLeads(store);
-      return json(200, { leads, ideas: await I.listIdeas(store), postStats: await ST.statsByLead(store), customers: await customerMap(store, leads), ideaTopics: I.TOPICS, ideaStatuses: I.IDEA_STATUSES, statuses: L.STATUSES, admins: L.ADMINS, logTypes: L.LOG_TYPES, payStatuses: L.PAY_STATUSES, now: new Date().toISOString() });
+      const leads = (await L.listLeads(store)).filter((l) => !l.internal);
+      return json(200, { staffCount: ST.STAFF_COUNT, leads, ideas: await I.listIdeas(store), postStats: await ST.statsByLead(store), customers: await customerMap(store, leads), ideaTopics: I.TOPICS, ideaStatuses: I.IDEA_STATUSES, statuses: L.STATUSES, admins: L.ADMINS, logTypes: L.LOG_TYPES, payStatuses: L.PAY_STATUSES, now: new Date().toISOString() });
     }
     if (event.httpMethod !== 'POST') return json(405, { error: 'method not allowed' });
     const req = JSON.parse(event.body || '{}');
@@ -68,6 +68,7 @@ exports.handler = async (event) => {
     if (req.action === 'ideaVote') return json(200, { idea: await I.voteIdea(store, String(req.id || ''), by) });
     if (req.action === 'ideaDelete') { await I.deleteIdea(store, String(req.id || ''), by); return json(200, { ok: true }); }
     if (req.action === 'exposure') return json(200, { lead: await L.toggleExposure(store, String(req.id || ''), req.date, by) });
+    if (req.action === 'staffIssue') return json(200, { account: await ST.issueStaff(store, req.n, by) });
     if (req.action === 'customerCreate') {
       const lead = L.normalizeLead(await store.get('lead:' + String(req.id || ''), { type: 'json' }));
       if (!lead) throw new Error('업체를 찾지 못했어요.');

@@ -51,6 +51,7 @@ function readToken(token) {
 
 /* ---------- 이용 기간 ---------- */
 function accessInfo(lead) {
+  if (lead.internal) return { state: 'active', daysLeft: 99999, start: '', end: '', unlimited: true }; // 릴로 관리자용 무제한 계정
   const t = kstToday();
   const start = lead.contractStart || '', end = lead.contractEnd || '';
   if (!end) return { state: 'no_term', daysLeft: null, start, end };
@@ -73,6 +74,24 @@ async function createCustomer(store, lead, loginId, by) {
   const h = hashPassword(password);
   await store.setJSON('customer:' + id, { loginId: id, leadId: lead.id, salt: h.salt, hash: h.hash, createdAt: new Date().toISOString(), createdBy: by, disabled: false, failCount: 0, lockUntil: 0 });
   return { loginId: id, password };
+}
+/* ---------- 릴로 관리자용 무제한 계정(최대 3개): 계약 기간·월 글 수 제한이 없어요. 업체 목록·통계에는 보이지 않아요 ---------- */
+const STAFF_COUNT = 3;
+async function issueStaff(store, n, by) {
+  n = Number(n);
+  if (!(n >= 1 && n <= STAFF_COUNT)) throw new Error('관리자 계정 번호가 올바르지 않아요.');
+  const leadId = 'staff-' + n, loginId = 'liloadmin' + n;
+  let lead = await store.get('lead:' + leadId, { type: 'json' });
+  const now = new Date().toISOString();
+  if (!lead) {
+    lead = { id: leadId, createdAt: now, form: 'staff', source: '내부', storeName: '릴로 관리자 ' + n, contact: '', bizType: '미용실', region: '서울', status: '완료', internal: true, studioLoginId: loginId, studioQuota: 999,
+      keywords: ['미용실', '헤어', '염색', '펌'].map((k) => ({ k, ranks: [] })), logs: [], history: [], updatedAt: now, updatedBy: by };
+    await store.setJSON('lead:' + leadId, lead);
+  }
+  if (await getCustomer(store, loginId)) return { loginId, password: (await resetCustomer(store, loginId)).password, reissued: true };
+  const password = genPassword(), h = hashPassword(password);
+  await store.setJSON('customer:' + loginId, { loginId, leadId, salt: h.salt, hash: h.hash, createdAt: now, createdBy: by, disabled: false, failCount: 0, lockUntil: 0 });
+  return { loginId, password, reissued: false };
 }
 /* ---------- 계약 고객 직접 가입: 매장명 + 연락처가 계약 업체와 같으면 자동 연결 ---------- */
 const SIGNUP_STATUSES = ['계약', '진행 중', '완료'];
@@ -165,7 +184,8 @@ async function listPosts(store, leadId) {
 }
 function monthOf(iso) { return new Date(new Date(iso).getTime() + 9 * 3600 * 1000).toISOString().slice(0, 7); }
 function usedThisMonth(posts) { const m = kstToday().slice(0, 7); return posts.filter((p) => monthOf(p.createdAt) === m).length; }
-function quotaOf(lead) { const q = Number(lead.studioQuota); return Number.isFinite(q) && q >= 0 ? q : DEFAULT_QUOTA; }
+function quotaOf(lead) {
+  if (lead.internal) return 99999; const q = Number(lead.studioQuota); return Number.isFinite(q) && q >= 0 ? q : DEFAULT_QUOTA; }
 
 function cleanKeywords(k) {
   return (Array.isArray(k) ? k : []).map((x) => cleanStr(x, 40)).filter(Boolean).slice(0, 10);
@@ -259,4 +279,4 @@ async function statsByLead(store) {
   return out;
 }
 
-module.exports = { LOGIN_RE, DEFAULT_QUOTA, kstToday, accessInfo, createCustomer, resetCustomer, setCustomerDisabled, removeCustomer, getCustomer, login, authenticate, changePassword, listPosts, usedThisMonth, quotaOf, createPost, getPhotos, cleanPhotos, getPost, updatePost, markPublished, unpublish, deletePost, statsByLead, refreshStats, signup, validBlogUrl, readToken, signToken };
+module.exports = { STAFF_COUNT, issueStaff, LOGIN_RE, DEFAULT_QUOTA, kstToday, accessInfo, createCustomer, resetCustomer, setCustomerDisabled, removeCustomer, getCustomer, login, authenticate, changePassword, listPosts, usedThisMonth, quotaOf, createPost, getPhotos, cleanPhotos, getPost, updatePost, markPublished, unpublish, deletePost, statsByLead, refreshStats, signup, validBlogUrl, readToken, signToken };

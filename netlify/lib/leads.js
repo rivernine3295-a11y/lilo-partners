@@ -16,7 +16,7 @@ function normalizeLead(l) {
   if (OLD_STATUS[l.status]) l.status = OLD_STATUS[l.status];
   if (!STATUSES.includes(l.status)) l.status = '문의';
   const defaults = { region: '', designerCount: '', quote: '', contractMonths: '', contractStart: '', contractEnd: '',
-    nextContactAt: '', decisionMaker: '', placeLink: '', closedBy: '', closedAt: '', workStart: '', guaranteeDays: 25, exposureDays: [], paymentStatus: '', paidAt: '', studioLoginId: '', studioQuota: 12, keywords: [], logs: [], history: [] };
+    nextContactAt: '', decisionMaker: '', placeLink: '', closedBy: '', closedAt: '', workStart: '', guaranteeDays: 25, exposureDays: [], paymentStatus: '', paidAt: '', studioLoginId: '', studioQuota: 12, internal: false, keywords: [], logs: [], history: [] };
   for (const k of Object.keys(defaults)) if (l[k] === undefined) l[k] = defaults[k];
   return l;
 }

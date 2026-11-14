@@ -58,7 +58,7 @@ exports.handler = async (event) => {
       // 전체 하루 사용 상한(무료 한도를 넘지 않도록). AI_DAILY_CAP 환경변수로 바꿀 수 있어요(기본 150편).
       const capKey = 'aiusage:' + S.kstToday(); const cap = Number(process.env.AI_DAILY_CAP) || 150;
       const usage = (await store.get(capKey, { type: 'json' })) || { n: 0 };
-      if (usage.n >= cap) throw new Error('오늘은 AI 글 만들기를 많이 써서 잠시 쉬어요. 내일 다시 시도하시거나, 직접 쓴 글을 저장해 주세요.');
+      if (!lead.internal && usage.n >= cap) throw new Error('오늘은 AI 글 만들기를 많이 써서 잠시 쉬어요. 내일 다시 시도하시거나, 직접 쓴 글을 저장해 주세요.');
       // 한 번의 요청 안에서 바로 만들어 돌려줘요. (저장소 반영 지연에 영향받지 않도록 따로 상태를 읽지 않아요)
       const photos = S.cleanPhotos(req.photos);
       const g = await AI.generate(lead, { ...req, photos }, { timeoutMs: 9000, retryWaitMs: 800 });
