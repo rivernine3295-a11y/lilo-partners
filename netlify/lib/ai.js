@@ -13,6 +13,14 @@ function providers() {
 }
 function isReady() { return providers().length > 0; }
 
+// 이 글(또는 이 부분)에 들어갈 사진 번호 범위 안내. part.photos = [첫 번호, 끝 번호] (전체 글 기준 번호, 1부터)
+function photoRule(part) {
+  const ph = part && part.photos;
+  if (!ph) return '- 사진이 들어갈 자리는 [사진] 이라고만 표시하세요.';
+  if (!ph[1]) return '- 이 부분에는 사진을 넣지 않으니 [사진] 표시는 쓰지 마세요.';
+  const rng = ph[0] === ph[1] ? '[사진 ' + ph[0] + ']' : '[사진 ' + ph[0] + '] ~ [사진 ' + ph[1] + ']';
+  return '- 첨부된 사진은 ' + rng + ' 입니다(첨부 순서대로). 사진을 실제로 보고 사진에 보이는 내용(스타일, 길이, 색감, 분위기 등)에 맞춰 쓰세요. 각 사진 내용을 설명하는 문단 바로 뒤에 [사진 번호] 를 따로 한 줄로 넣고, 사진에 보이지 않는 것은 지어내지 마세요. 사람 얼굴이나 개인을 특정하는 묘사는 하지 마세요.';
+}
 function buildPrompt(lead, input, part) {
   const tone = TONES.includes(input.tone) ? input.tone : '친근한';
   const lenKey = Object.keys(LENGTHS).find((k) => String(input.length || '').startsWith(k)) || '중간';
@@ -27,16 +35,16 @@ function buildPrompt(lead, input, part) {
     '[이번 글 핵심 키워드] ' + (kws.length ? kws.join(', ') : '(없음)'),
     '[주제] ' + topic,
     extra ? '[추가 요구사항] ' + extra : '',
-    '[톤] ' + tone, '[분량] 한글 기준 약 ' + (part ? Math.round(LENGTHS[lenKey] / part.total) : LENGTHS[lenKey]) + '자' + (part ? ' (전체 글의 ' + part.total + '분의 1 분량)' : ''),
-    part ? '[역할] 이 글은 ' + part.total + '부분으로 나누어 쓰고 있어요. 당신은 ' + part.n + '번째 부분만 쓰세요: ' + part.role + ' 다른 부분의 내용은 반복하지 마세요.' : '',
+    '[톤] ' + tone, '[분량] 한글 기준 약 ' + (part && part.total > 1 ? Math.round(LENGTHS[lenKey] / part.total) : LENGTHS[lenKey]) + '자' + (part && part.total > 1 ? ' (전체 글의 ' + part.total + '분의 1 분량)' : ''),
+    part && part.role ? '[역할] 이 글은 ' + part.total + '부분으로 나누어 쓰고 있어요. 당신은 ' + part.n + '번째 부분만 쓰세요: ' + part.role + ' 다른 부분의 내용은 반복하지 마세요.' : '',
     '',
     '규칙:',
     '- 핵심 키워드를 제목과 본문에 자연스럽게 넣되, 같은 단어를 억지로 반복하지 마세요.',
     '- 주어진 정보에 없는 가격, 할인, 이벤트, 수상 경력, 후기, 통계는 지어내지 마세요.',
     '- "무조건", "100%", "최고", 치료·효과를 보장하는 표현은 쓰지 마세요.',
-    part ? '- 소제목은 1개만 넣고, 문단은 짧게 나누세요.' : '- 소제목을 2~4개 넣고, 문단은 짧게 나누고, 마지막에 방문·예약을 부드럽게 안내하세요.',
+    part && part.total > 1 ? '- 소제목은 1개만 넣고, 문단은 짧게 나누세요.' : '- 소제목을 2~4개 넣고, 문단은 짧게 나누고, 마지막에 방문·예약을 부드럽게 안내하세요.',
     '- 마크다운 기호(#, *, -)는 쓰지 말고 일반 문장과 줄바꿈만 쓰세요.',
-    '- 사진이 들어갈 자리는 [사진] 이라고만 표시하세요.',
+    photoRule(part),
     '',
     part && part.n > 1 ? '반드시 JSON 으로만 답하세요: {"body":"본문"}' : '반드시 JSON 으로만 답하세요: {"title":"글 제목","body":"본문"}',
   ].filter((x) => x !== '').join('\n');
@@ -58,9 +66,9 @@ function parseJson(text) {
 
 /* ---------- 제미나이 ---------- */
 // 모델 종류에 맞게 '생각 시간'을 최소로 줄여 빠르게 받아요. 설정을 받지 않으면(400) 설정 없이 한 번 더 시도해요.
-async function geminiCall(model, prompt, ctl) {
+async function geminiCall(model, prompt, ctl, photos) {
   const url = 'https://generativelanguage.googleapis.com/v1beta/models/' + encodeURIComponent(model) + ':generateContent';
-  const send = (genCfg) => fetch(url, { method: 'POST', signal: ctl.signal, headers: { 'content-type': 'application/json', 'x-goog-api-key': process.env.GEMINI_API_KEY }, body: JSON.stringify({ contents: [{ role: 'user', parts: [{ text: prompt }] }], generationConfig: genCfg }) });
+  const send = (genCfg) => fetch(url, { method: 'POST', signal: ctl.signal, headers: { 'content-type': 'application/json', 'x-goog-api-key': process.env.GEMINI_API_KEY }, body: JSON.stringify({ contents: [{ role: 'user', parts: [{ text: prompt }].concat((photos || []).map((d) => ({ inlineData: { mimeType: 'image/jpeg', data: d.replace(/^data:image\/jpeg;base64,/, '') } }))) }], generationConfig: genCfg }) });
   const base = { temperature: 0.8, maxOutputTokens: 6000, responseMimeType: 'application/json' };
   const think = /2\.5/.test(model) ? { thinkingBudget: 0 } : { thinkingLevel: 'low' };
   let res = await send({ ...base, thinkingConfig: think });
@@ -80,13 +88,13 @@ async function geminiFallbacks(primary) {
   if (!gCache.p) gCache.p = geminiUsable().then((names) => { names.sort((a, b) => gRank(a) - gRank(b)); gCache = { at: Date.now(), list: names, p: null }; return names; }).catch(() => { gCache.p = null; return []; });
   return (await gCache.p).filter((n) => n !== primary).slice(0, 3);
 }
-async function viaGemini(prompt, ctl, wait) {
+async function viaGemini(prompt, ctl, wait, photos) {
   const primary = process.env.GEMINI_MODEL || DEFAULT_MODEL;
   const models = [primary]; const errs = []; let res = null, used = primary;
   for (let mi = 0; mi < models.length; mi++) {
     const model = models[mi];
     for (let attempt = 0; attempt < 2; attempt++) {
-      res = await geminiCall(model, prompt, ctl);
+      res = await geminiCall(model, prompt, ctl, photos);
       if (res.ok) { used = model; break; }
       const raw = (await res.text().catch(() => '')).slice(0, 600); console.error('gemini error', model, res.status, raw);
       errs.push(model + ' (오류 ' + res.status + ': ' + errMsg(raw) + ')');
@@ -151,19 +159,24 @@ async function viaCompat(id, prompt, ctl) {
 }
 
 // 서비스 하나로 글 조각 하나를 써요.
-async function runProvider(id, prompt, ctl, wait) { return id === 'gemini' ? viaGemini(prompt, ctl, wait) : viaCompat(id, prompt, ctl); }
+// 사진을 볼 수 있는 건 제미나이뿐이에요. 다른 서비스로 넘어가면 사진 없이 글만 쓰고 [사진 번호] 자리만 표시해요.
+async function runProvider(id, prompt, ctl, wait, photos) {
+  if (id === 'gemini') return viaGemini(prompt, ctl, wait, photos);
+  const note = photos && photos.length ? '\n\n(참고: 이번에는 사진을 볼 수 없어요. 사진 속 내용은 추측하지 말고, 주제에 맞는 문단 뒤에 위 번호대로 [사진 번호] 자리만 표시하세요.)' : '';
+  return viaCompat(id, prompt + note, ctl);
+}
 const LABEL = { gemini: '제미나이', groq: 'Groq', openrouter: 'OpenRouter' };
 
 // 서비스들을 순서대로 시도해요. 앞에서 성공하면 뒤는 부르지 않아요.
 // 서버 함수가 오래 걸리면 중간에 끊기므로, 서비스마다 쓸 수 있는 시간을 나눠서(앞 서비스가 느리면 포기하고 다음으로) 전체 제한 안에 끝내요.
-async function writePart(prompt, deadline, wait) {
+async function writePart(prompt, deadline, wait, photos) {
   const errs = []; let busy = true; const list = providers();
   for (let i = 0; i < list.length; i++) {
     const id = list[i]; const left = deadline - Date.now();
     if (left < 1200) { errs.push(LABEL[id] + ': 시간이 모자라 건너뜀'); continue; }
     const slice = i === list.length - 1 ? left : Math.max(1500, Math.min(left * 0.6, left - 1500));
     const ctl = new AbortController(); const t = setTimeout(() => ctl.abort(), slice);
-    try { const r = await runProvider(id, prompt, ctl, wait); r.provider = id; return r; }
+    try { const r = await runProvider(id, prompt, ctl, wait, photos); r.provider = id; r.sawPhotos = id === 'gemini'; r.hadPhotos = !!(photos && photos.length); return r; }
     catch (e) {
       if (e.name === 'AbortError') { errs.push(LABEL[id] + ': 응답이 느려 중단(' + Math.round(slice / 1000) + '초)'); }
       else { errs.push(LABEL[id] + ': ' + e.message); busy = busy && e.busy !== false; }
@@ -186,11 +199,18 @@ async function generate(lead, input, opts) {
   if (!isReady()) { const e = new Error('AI 글 생성이 아직 연결되지 않았어요. 담당자에게 문의해 주세요.'); e.notReady = true; throw e; }
   if (clean(input.topic, 500).length < 5) throw new Error('주제를 5글자 이상 적어주세요.');
   const total = partCount(input);
+  const photos = (Array.isArray(input.photos) ? input.photos : []).filter((d) => typeof d === 'string' && /^data:image\/jpeg;base64,/.test(d)).slice(0, 5);
   const deadline = Date.now() + ((opts && opts.timeoutMs) || 9000);
   const wait = (opts && opts.retryWaitMs != null) ? opts.retryWaitMs : 1500;
   let parts;
   try {
-    parts = await Promise.all(ROLES[total].map((role, i) => writePart(total === 1 ? buildPrompt(lead, input) : buildPrompt(lead, input, { n: i + 1, total, role }), deadline, wait)));
+    const n = photos.length;
+    parts = await Promise.all(ROLES[total].map((role, i) => {
+      const a = Math.round(i * n / total), b = Math.round((i + 1) * n / total);
+      const part = { n: i + 1, total, role: total === 1 ? '' : role, photos: n ? [a + 1, b] : null };
+      if (n && b < a + 1) part.photos = [0, 0];
+      return writePart(buildPrompt(lead, input, part), deadline, wait, photos.slice(a, b));
+    }));
   } catch (e) {
     if (/fetch failed|network|ECONN|ENOTFOUND/i.test(String(e.message))) throw new Error('AI 서버에 연결하지 못했어요. 잠시 후 다시 시도해 주세요.');
     throw e;
@@ -198,7 +218,7 @@ async function generate(lead, input, opts) {
   const title = parts[0].title || clean(input.topic, 60);
   const body = parts.map((p) => p.body).join('\n\n');
   if (title.length < 2 || body.length < 10) throw new Error('AI가 글을 제대로 만들지 못했어요. 다시 시도해 주세요. (응답 형식 오류)');
-  return { title, body, parts: total, provider: parts[0].provider, model: parts[0].model };
+  return { title, body, parts: total, provider: parts[0].provider, model: parts[0].model, sawPhotos: photos.length > 0 && parts.every((p) => !p.hadPhotos || p.sawPhotos) };
 }
 
 // 관리자 점검용: 연결된 서비스 각각을 짧게 시험해서 상태와 걸린 시간을 알려줘요. (고객 화면에서는 쓰지 않아요)

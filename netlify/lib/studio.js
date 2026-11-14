@@ -170,6 +170,11 @@ function quotaOf(lead) { const q = Number(lead.studioQuota); return Number.isFin
 function cleanKeywords(k) {
   return (Array.isArray(k) ? k : []).map((x) => cleanStr(x, 40)).filter(Boolean).slice(0, 10);
 }
+// 글에 붙는 사진: 'photo:<업체>:<글>:<번호>' 에 data URL(JPEG) 문자열로 저장해요. 글 목록(post:)과 접두어가 달라 목록 조회에 섞이지 않아요.
+const PHOTO_RE = /^data:image\/jpeg;base64,[A-Za-z0-9+\/=]+$/, MAX_PHOTOS = 5, MAX_PHOTO_CHARS = 420000;
+function cleanPhotos(arr) { return (Array.isArray(arr) ? arr : []).filter((d) => typeof d === 'string' && d.length <= MAX_PHOTO_CHARS && PHOTO_RE.test(d)).slice(0, MAX_PHOTOS); }
+async function savePhotos(store, leadId, postId, photos) { for (let i = 0; i < photos.length; i++) await store.set('photo:' + leadId + ':' + postId + ':' + i, photos[i]); }
+async function getPhotos(store, leadId, postId, count) { const out = []; for (let i = 0; i < Math.min(Number(count) || 0, MAX_PHOTOS); i++) { const d = await store.get('photo:' + leadId + ':' + postId + ':' + i, { type: 'text' }); if (d) out.push(d); } return out; }
 async function createPost(store, lead, input) {
   const title = cleanStr(input.title, 150), body = cleanStr(input.body, 20000);
   if (title.length < 2) throw new Error('제목을 2글자 이상 적어주세요.');
@@ -179,7 +184,9 @@ async function createPost(store, lead, input) {
   if (usedThisMonth(posts) >= q) throw new Error('이번 달 사용 가능한 글 수(' + q + '편)를 모두 사용했어요.');
   const now = new Date().toISOString();
   const id = now.replace(/[^0-9]/g, '') + '-' + Math.random().toString(36).slice(2, 6);
-  const post = { id, leadId: lead.id, createdAt: now, updatedAt: now, title, body, keywords: cleanKeywords(input.keywords), source: cleanStr(input.source, 20) || '직접 작성', status: '초안', publishedUrl: '', publishedAt: '' };
+  const post = { id, leadId: lead.id, createdAt: now, updatedAt: now, title, body, keywords: cleanKeywords(input.keywords), source: cleanStr(input.source, 20) || '직접 작성', status: '초안', publishedUrl: '', publishedAt: '', photoCount: 0 };
+  const photos = cleanPhotos(input.photos);
+  if (photos.length) { await savePhotos(store, lead.id, id, photos); post.photoCount = photos.length; }
   await store.setJSON('post:' + lead.id + ':' + id, post);
   await refreshStats(store, lead.id);
   return post;
@@ -225,6 +232,7 @@ async function deletePost(store, leadId, id) {
   const p = await getPost(store, leadId, id);
   if (p.status === '발행 완료') throw new Error('발행 완료로 기록된 글은 삭제할 수 없어요. 먼저 발행 기록을 취소해 주세요.');
   await store.delete('post:' + leadId + ':' + p.id);
+  for (let i = 0; i < (Number(p.photoCount) || 0); i++) { try { await store.delete('photo:' + leadId + ':' + p.id + ':' + i); } catch (e) { /* 사진 정리 실패는 무시 */ } }
   await refreshStats(store, leadId);
 }
 // 관리자 화면용: 업체별 요약. 글이 바뀔 때마다 그 업체 것만 다시 계산해 'stats:<업체>' 에 저장해 두고,
@@ -251,4 +259,4 @@ async function statsByLead(store) {
   return out;
 }
 
-module.exports = { LOGIN_RE, DEFAULT_QUOTA, kstToday, accessInfo, createCustomer, resetCustomer, setCustomerDisabled, removeCustomer, getCustomer, login, authenticate, changePassword, listPosts, usedThisMonth, quotaOf, createPost, getPost, updatePost, markPublished, unpublish, deletePost, statsByLead, refreshStats, signup, validBlogUrl, readToken, signToken };
+module.exports = { LOGIN_RE, DEFAULT_QUOTA, kstToday, accessInfo, createCustomer, resetCustomer, setCustomerDisabled, removeCustomer, getCustomer, login, authenticate, changePassword, listPosts, usedThisMonth, quotaOf, createPost, getPhotos, cleanPhotos, getPost, updatePost, markPublished, unpublish, deletePost, statsByLead, refreshStats, signup, validBlogUrl, readToken, signToken };

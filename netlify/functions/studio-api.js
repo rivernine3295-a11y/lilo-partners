@@ -45,6 +45,7 @@ exports.handler = async (event) => {
 
     if (req.action === 'listPosts') return json(200, { posts: (await S.listPosts(store, lead.id)).slice(0, 300) });
     if (req.action === 'createPost') return json(200, { post: await S.createPost(store, lead, req.post || {}) });
+    if (req.action === 'getPhotos') { const p = await S.getPost(store, lead.id, req.id); return json(200, { photos: await S.getPhotos(store, lead.id, p.id, p.photoCount) }); }
     if (req.action === 'updatePost') return json(200, { post: await S.updatePost(store, lead.id, req.id, req.fields || {}) });
     if (req.action === 'publish') return json(200, { post: await S.markPublished(store, lead.id, req.id, req.url) });
     if (req.action === 'unpublish') return json(200, { post: await S.unpublish(store, lead.id, req.id) });
@@ -59,11 +60,12 @@ exports.handler = async (event) => {
       const usage = (await store.get(capKey, { type: 'json' })) || { n: 0 };
       if (usage.n >= cap) throw new Error('오늘은 AI 글 만들기를 많이 써서 잠시 쉬어요. 내일 다시 시도하시거나, 직접 쓴 글을 저장해 주세요.');
       // 한 번의 요청 안에서 바로 만들어 돌려줘요. (저장소 반영 지연에 영향받지 않도록 따로 상태를 읽지 않아요)
-      const g = await AI.generate(lead, req, { timeoutMs: 9000, retryWaitMs: 800 });
+      const photos = S.cleanPhotos(req.photos);
+      const g = await AI.generate(lead, { ...req, photos }, { timeoutMs: 9000, retryWaitMs: 800 });
       const kws = Array.isArray(req.keywords) ? req.keywords.slice(0, 10) : [];
-      const post = await S.createPost(store, lead, { title: g.title, body: g.body, keywords: kws, source: 'AI 생성' });
+      const post = await S.createPost(store, lead, { title: g.title, body: g.body, keywords: kws, source: 'AI 생성', photos });
       try { await store.setJSON(capKey, { n: usage.n + 1 }); } catch (e) { /* 집계 실패는 글 생성에 영향 없어요 */ }
-      return json(200, { post });
+      return json(200, { post, photos, sawPhotos: !!g.sawPhotos });
     }
     return json(400, { error: '알 수 없는 요청이에요.' });
   } catch (e) {

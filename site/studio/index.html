@@ -63,7 +63,7 @@ textarea.f{resize:vertical;min-height:90px;line-height:1.7}
 .btn{display:block;width:100%;padding:15px;border:0;border-radius:999px;background:linear-gradient(100deg,var(--accent),var(--accent-2));color:#fff;font-weight:800;font-size:15px;box-shadow:0 10px 30px -10px rgba(138,43,226,.6);text-align:center;cursor:pointer}
 .btn.g{background:transparent;border:1px solid var(--line);box-shadow:none;font-weight:500}.btn.sm{display:inline-block;width:auto;padding:9px 18px;font-size:13px}.btn.bad{color:var(--bad);border-color:rgba(244,106,106,.4)}
 .btn:disabled{opacity:.45;cursor:not-allowed}
-.note{font-size:13px;color:var(--fg-muted);line-height:1.7;margin:0 0 14px}.note.warn{color:var(--warn)}.err{color:var(--bad);font-size:13px;min-height:18px;margin:-6px 0 10px}
+.thumbs{display:flex;gap:10px;flex-wrap:wrap;margin:0 0 14px}.thumb{position:relative;width:96px;height:96px;border-radius:12px;overflow:hidden;border:1px solid var(--line);background:var(--bg)}.thumb img{width:100%;height:100%;object-fit:cover;display:block;cursor:zoom-in}.thumb i{position:absolute;left:5px;top:5px;background:rgba(0,0,0,.65);color:#fff;font:700 11px/1 sans-serif;font-style:normal;padding:4px 7px;border-radius:999px}.thumb button{position:absolute;right:4px;top:4px;width:22px;height:22px;border:0;border-radius:50%;background:rgba(0,0,0,.7);color:#fff;cursor:pointer;font-size:13px;line-height:1}.addph{display:flex;align-items:center;justify-content:center;width:96px;height:96px;border-radius:12px;border:1px dashed var(--line);color:var(--fg-muted);font-size:12px;text-align:center;cursor:pointer;background:transparent}.note{font-size:13px;color:var(--fg-muted);line-height:1.7;margin:0 0 14px}.note.warn{color:var(--warn)}.err{color:var(--bad);font-size:13px;min-height:18px;margin:-6px 0 10px}
 .login{max-width:420px;margin:6vh auto 0;text-align:center}.login .card{text-align:left}
 .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}@media(max-width:640px){.kpis{grid-template-columns:repeat(2,1fr)}}
 .kpi{background:var(--bg-elev);border:1px solid var(--line);border-radius:20px;padding:18px}.kpi b{display:block;font-size:26px}.kpi span{font-size:13px;color:var(--fg-muted)}
@@ -134,8 +134,9 @@ table.tb{width:100%;border-collapse:collapse;font-size:14px}table.tb td{padding:
    <label>주제</label><textarea class="f" id="fTopic" rows="3" placeholder="예: 이번 달 새로 도입한 손상모 케어 클리닉을 소개하고 싶어요"></textarea>
    <div class="g2"><div><label>톤</label><select class="f" id="fTone"><option>전문적</option><option>친근한</option><option>따뜻한</option></select></div><div><label>길이</label><select class="f" id="fLen"><option selected>짧게 (~1,000자)</option><option>중간 (~2,000자)</option><option>길게 (~3,000자)</option></select></div></div>
    <label>추가 요구사항 (선택)</label><input class="f" id="fExtra" placeholder="예: 예약 안내 문구를 마지막에 넣어주세요">
+   <label>사진 (선택, 최대 3장)</label><div class="thumbs" id="phThumbs"></div><input type="file" id="phFile" accept="image/*" multiple class="hid"><p class="note" style="margin:-6px 0 14px">올리면 AI가 사진을 보고 사진에 맞는 글을 써요. 글 안에 <b>[사진 1]</b> 처럼 자리가 표시되고, 보관함에서도 사진이 함께 보여요. (사진은 자동으로 작게 줄여서 올라가요)</p>
    <div class="err" id="gerr"></div><button class="btn" id="genBtn">✨ 블로그 생성</button>
-   <p class="note" style="margin:12px 0 0">완성되면 글이 자동으로 <b>보관함</b>에서 열려요. 짧게는 약 10초, 중간·길게는 더 걸려요. AI가 만든 글은 꼭 한 번 읽어 보고, 사실과 다른 내용이 없는지 확인한 뒤 올려 주세요. 사진은 직접 넣어 주세요.</p></div>
+   <p class="note" style="margin:12px 0 0">완성되면 글이 자동으로 <b>보관함</b>에서 열려요. 짧게는 약 10초, 중간·길게는 더 걸려요. AI가 만든 글은 꼭 한 번 읽어 보고, 사실과 다른 내용이 없는지 확인한 뒤 올려 주세요. 사진을 올렸다면 글의 [사진 번호] 자리에 같은 번호 사진을 넣어 주세요.</p></div>
   <div class="card"><h3>SAVE MY OWN POST</h3><p class="note">이미 써 둔 글이 있다면 여기에 붙여넣어 보관함에 저장하고, 발행 기록까지 관리할 수 있어요. (위에서 고른 키워드가 함께 저장돼요)</p>
    <label>제목</label><input class="f" id="sTitle" maxlength="150"><label>본문</label><textarea class="f" id="sBody" rows="8"></textarea>
    <div class="err" id="serr"></div><button class="btn g" id="sBtn">보관함에 저장</button></div>
@@ -143,6 +144,7 @@ table.tb{width:100%;border-collapse:collapse;font-size:14px}table.tb td{padding:
 
  <section id="t-lib" class="hid"><div class="kpis" id="libKpis"></div><div class="card" id="libList"><h3>LIBRARY</h3><div id="libItems"></div></div>
   <div class="card hid" id="editor"><h3>POST</h3><label>제목</label><input class="f" id="eTitle" maxlength="150"><label>본문</label><textarea class="f" id="eBody" rows="14"></textarea>
+   <div id="ePhotosBox" class="hid"><label>첨부 사진 (본문의 [사진 번호]에 넣어 주세요 · 누르면 크게 보여요)</label><div class="thumbs" id="ePhotos"></div></div>
    <div class="row" style="margin-bottom:14px"><button class="btn sm" id="eSave">수정 저장</button><button class="btn sm g" id="eCopy">📋 본문 복사</button><button class="btn sm g bad" id="eDel">삭제</button><button class="btn sm g" id="eBack">목록으로</button></div>
    <div id="pubBox"></div><div class="err" id="eerr"></div></div></section>
 
@@ -159,7 +161,7 @@ table.tb{width:100%;border-collapse:collapse;font-size:14px}table.tb td{padding:
 (function(){
   var API='/.netlify/functions/studio-api',TK='lilo_studio_token';
   var $=function(i){return document.getElementById(i)};
-  var S={token:'',me:null,posts:[],tab:'create',kw:{},cur:null,cal:null,sel:''};
+  var S={token:'',me:null,posts:[],tab:'create',kw:{},cur:null,ph:{},cal:null,sel:''};
   try{S.token=localStorage.getItem(TK)||''}catch(e){}
   function el(t,c,x){var e=document.createElement(t);if(c)e.className=c;if(x!=null)e.textContent=x;return e}
   function toast(t){var e=$('toast');e.textContent=t;e.classList.remove('hid');clearTimeout(toast._t);toast._t=setTimeout(function(){e.classList.add('hid')},2600)}
@@ -227,6 +229,14 @@ table.tb{width:100%;border-collapse:collapse;font-size:14px}table.tb td{padding:
     if(t==='info')drawInfo();if(t==='lib'){showList();drawLib()}if(t==='cal')drawCal();
   }
 
+
+  /* ---------- 사진 올리기(브라우저에서 작게 줄여서 보내요) ---------- */
+  var PH=[],MAXPH=3;
+  function shrink(file){return new Promise(function(res,rej){var u=URL.createObjectURL(file),im=new Image();im.onload=function(){URL.revokeObjectURL(u);var m=900,r=Math.min(1,m/Math.max(im.width,im.height)),c=document.createElement('canvas');c.width=Math.round(im.width*r);c.height=Math.round(im.height*r);c.getContext('2d').drawImage(im,0,0,c.width,c.height);var d=c.toDataURL('image/jpeg',.72);if(d.length>380000)d=c.toDataURL('image/jpeg',.55);res(d)};im.onerror=function(){URL.revokeObjectURL(u);rej(new Error('사진을 읽지 못했어요. 다른 사진으로 시도해 주세요.'))};im.src=u})}
+  function bigView(src){var o=el('div');o.style.cssText='position:fixed;inset:0;z-index:99;background:rgba(0,0,0,.88);display:flex;align-items:center;justify-content:center;padding:16px;cursor:zoom-out';var i=el('img');i.src=src;i.style.cssText='max-width:100%;max-height:100%;border-radius:12px';o.appendChild(i);o.onclick=function(){o.remove()};document.body.appendChild(o)}
+  function drawThumbs(box,arr,removable){box.textContent='';arr.forEach(function(d,i){var t=el('div','thumb');var im=el('img');im.src=d;im.onclick=function(){bigView(d)};t.appendChild(im);t.appendChild(el('i',null,'사진 '+(i+1)));if(removable){var x=el('button',null,'×');x.type='button';x.onclick=function(){PH.splice(i,1);drawThumbs(box,PH,true)};t.appendChild(x)}box.appendChild(t)});if(removable&&arr.length<MAXPH){var a=el('button','addph','+ 사진 추가');a.type='button';a.onclick=function(){$('phFile').click()};box.appendChild(a)}}
+  function initPh(){drawThumbs($('phThumbs'),PH,true);$('phFile').onchange=function(){var fs=Array.prototype.slice.call(this.files||[]).slice(0,MAXPH-PH.length);this.value='';$('gerr').textContent='';fs.reduce(function(p,f){return p.then(function(){return shrink(f).then(function(d){PH.push(d)})})},Promise.resolve()).then(function(){drawThumbs($('phThumbs'),PH,true)}).catch(function(e){$('gerr').textContent=e.message})}}
+
   /* ---------- 글 생성(준비 중 연출 포함) ---------- */
   var STEPS=[['키워드 분석',1100],['매장 정보 반영',1000],['문장 구성',3500],['사진 배치',1000],['최종 점검',800]];
   function runGen(){
@@ -235,7 +245,7 @@ table.tb{width:100%;border-collapse:collapse;font-size:14px}table.tb td{padding:
     document.body.classList.add('gen');$('genPanel').classList.remove('hid');try{$('genPanel').scrollIntoView({block:'center',behavior:'smooth'})}catch(e){}window.__spin=5;$('formCard').style.opacity='.3';$('formCard').style.pointerEvents='none';
     var box=$('gsteps');box.textContent='';STEPS.forEach(function(s,i){var d=el('div','gs');d.id='gs'+i;d.appendChild(el('span','ic'));d.appendChild(el('span',null,s[0]));box.appendChild(d)});
     var t0=performance.now(),total=STEPS.reduce(function(a,s){return a+s[1]},0),done=false,fail=null,stop=false;
-    var req=api('generate',{topic:$('fTopic').value,keywords:selKw(),tone:$('fTone').value,length:$('fLen').value,extra:$('fExtra').value}).then(function(j){done=true;return j}).catch(function(e){fail=e;done=true});
+    var req=api('generate',{topic:$('fTopic').value,keywords:selKw(),tone:$('fTone').value,length:$('fLen').value,extra:$('fExtra').value,photos:PH.slice()}).then(function(j){done=true;return j}).catch(function(e){fail=e;done=true});
     (function f(n){
       if(stop)return;var el0=n-t0,acc=0,cur=STEPS.length;
       for(var i=0;i<STEPS.length;i++){if(el0<acc+STEPS[i][1]){cur=i;break}acc+=STEPS[i][1]}
@@ -247,7 +257,7 @@ table.tb{width:100%;border-collapse:collapse;font-size:14px}table.tb td{padding:
     function finish(){
       document.body.classList.remove('gen');window.__spin=1;$('genPanel').classList.add('hid');$('formCard').style.opacity='';$('formCard').style.pointerEvents='';
       if(fail){$('gerr').textContent=fail.message;toast(fail.message);return}
-      req.then(function(j){if(j&&j.post){toast('글을 만들었어요. 보관함에서 확인하세요.');loadPosts().then(function(){setTab('lib');openPost(j.post.id)})}});
+      req.then(function(j){if(j&&j.post){var hadPh=PH.length;S.ph[j.post.id]=j.photos||[];PH=[];drawThumbs($('phThumbs'),PH,true);toast(hadPh&&!j.sawPhotos?'글을 만들었어요. 지금은 AI가 사진을 못 읽어서 사진 내용과 맞는지 확인이 필요해요.':'글을 만들었어요. 보관함에서 확인하세요.');loadPosts().then(function(){setTab('lib');openPost(j.post.id)})}});
     }
   }
 
@@ -272,8 +282,9 @@ table.tb{width:100%;border-collapse:collapse;font-size:14px}table.tb td{padding:
   function openPost(id){
     var p=S.posts.filter(function(x){return x.id===id})[0];if(!p)return;setTab('lib');S.cur=p;
     $('libList').classList.add('hid');$('libKpis').classList.add('hid');$('editor').classList.remove('hid');$('eerr').textContent='';
-    $('eTitle').value=p.title;$('eBody').value=p.body;drawPub();window.scrollTo({top:0,behavior:'smooth'});
+    $('eTitle').value=p.title;$('eBody').value=p.body;drawPub();loadEPh(p);window.scrollTo({top:0,behavior:'smooth'});
   }
+  function loadEPh(p){var b=$('ePhotosBox');b.classList.add('hid');if(!p.photoCount)return;function show(a){if(S.cur&&S.cur.id===p.id&&a.length){b.classList.remove('hid');drawThumbs($('ePhotos'),a,false)}}if(S.ph[p.id]&&S.ph[p.id].length)return show(S.ph[p.id]);api('getPhotos',{id:p.id}).then(function(j){S.ph[p.id]=j.photos||[];show(S.ph[p.id])}).catch(function(){})}
   function drawPub(){
     var p=S.cur,box=$('pubBox');box.textContent='';
     var c=el('div');c.style.cssText='border-top:1px solid var(--line);padding-top:16px';
@@ -329,7 +340,7 @@ table.tb{width:100%;border-collapse:collapse;font-size:14px}table.tb td{padding:
   $('lbtn').onclick=doLogin;$('lpw').addEventListener('keydown',function(e){if(e.key==='Enter')doLogin()});
   $('blogout').onclick=logout;$('logoutBtn').onclick=logout;
   document.querySelectorAll('.tab[data-t]').forEach(function(b){b.onclick=function(){setTab(b.dataset.t)}});
-  $('genBtn').onclick=runGen;$('sBtn').onclick=savePost;$('pwBtn').onclick=changePw;
+  initPh();$('genBtn').onclick=runGen;$('sBtn').onclick=savePost;$('pwBtn').onclick=changePw;
   $('eBack').onclick=showList;
   $('eSave').onclick=function(){$('eerr').textContent='';api('updatePost',{id:S.cur.id,fields:{title:$('eTitle').value,body:$('eBody').value}}).then(function(j){replace(j.post);toast('저장했어요')}).catch(function(e){$('eerr').textContent=e.message})};
   $('eCopy').onclick=function(){var t=$('eTitle').value+'\n\n'+$('eBody').value;try{navigator.clipboard.writeText(t).then(function(){toast('본문을 복사했어요. 네이버 블로그에 붙여넣으세요.')},function(){toast('복사하지 못했어요. 본문을 직접 선택해서 복사해 주세요.')})}catch(e){toast('복사하지 못했어요. 본문을 직접 선택해서 복사해 주세요.')}};
