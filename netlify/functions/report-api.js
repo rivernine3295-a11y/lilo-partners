@@ -17,6 +17,7 @@ function authorized(event) {
 }
 const clean = (v, n) => String(v == null ? '' : v).replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f]/g, '').trim().slice(0, n);
 
+const STATUSES = ['작성', '발송', '답장', '계약·완료', '제외'];
 function sanitize(r) {
   const keywords = (Array.isArray(r.keywords) ? r.keywords : []).slice(0, 8).map((k) => ({
     k: clean(k.k, 40), vol: Math.max(0, Math.round(Number(k.vol) || 0)), comp: clean(k.comp, 10),
@@ -28,7 +29,7 @@ function sanitize(r) {
   const mainN = Number(r.main); const main = Number.isInteger(mainN) && mainN >= 0 && mainN < 6 ? mainN : -1;
   return {
     store: clean(r.store, 60), region: clean(r.region, 60), biz: clean(r.biz, 20), checkedAt: clean(r.checkedAt, 40),
-    keywords, checks, main, placeLink: clean(r.placeLink, 300), contact: clean(r.contact, 80),
+    keywords, checks, main, placeLink: clean(r.placeLink, 300), status: STATUSES.includes(r.status) ? r.status : '', contact: clean(r.contact, 80),
   };
 }
 
@@ -55,9 +56,16 @@ exports.handler = async (event) => {
       if (!r.store) return json(400, { error: '매장명을 적어주세요.' });
       const now = new Date().toISOString();
       const id = clean(req.id, 40) || now.replace(/[^0-9]/g, '') + '-' + Math.random().toString(36).slice(2, 6);
-      const rec = { id, ...r, savedAt: now };
+      const prev = clean(req.id, 40) ? await store.get('r:' + id, { type: 'json' }) : null;
+      const rec = { id, ...r, status: r.status || (prev && prev.status) || '작성', savedAt: now };
       await store.setJSON('r:' + id, rec);
       return json(200, { report: rec });
+    }
+    if (req.action === 'setStatus') {
+      const id = clean(req.id, 40); const rec = await store.get('r:' + id, { type: 'json' });
+      if (!rec) return json(404, { error: '진단서를 찾지 못했어요.' });
+      if (!STATUSES.includes(req.status)) return json(400, { error: '상태 값이 올바르지 않아요.' });
+      rec.status = req.status; await store.setJSON('r:' + id, rec); return json(200, { report: rec });
     }
     if (req.action === 'delete') { await store.delete('r:' + clean(req.id, 40)); return json(200, { ok: true }); }
     return json(400, { error: '알 수 없는 요청이에요.' });
