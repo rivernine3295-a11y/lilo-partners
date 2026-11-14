@@ -165,7 +165,8 @@ table.tb{width:100%;border-collapse:collapse;font-size:14px}table.tb td{padding:
   function toast(t){var e=$('toast');e.textContent=t;e.classList.remove('hid');clearTimeout(toast._t);toast._t=setTimeout(function(){e.classList.add('hid')},2600)}
   function api(action,body){
     var h={'content-type':'application/json'};if(S.token)h['x-studio-token']=S.token;
-    return fetch(API,{method:'POST',headers:h,body:JSON.stringify(Object.assign({action:action},body||{}))}).then(function(r){return r.json().catch(function(){var e=new Error('서버 응답이 늦어져 중단됐어요. 잠시 후 다시 시도해 주세요. (HTTP '+r.status+')');e.status=r.status;throw e}).then(function(j){if(!r.ok){var e=new Error(j.error||'오류가 발생했어요.');e.status=r.status;e.data=j;throw e}return j})});
+    var ac=new AbortController(),tm=setTimeout(function(){ac.abort()},45000);
+    return fetch(API,{method:'POST',signal:ac.signal,headers:h,body:JSON.stringify(Object.assign({action:action},body||{}))}).then(function(r){clearTimeout(tm);return r},function(e){clearTimeout(tm);var x=new Error(e&&e.name==='AbortError'?'서버 응답이 45초 넘게 없어 중단했어요. 잠시 후 다시 시도해 주세요.':'서버에 연결하지 못했어요. 인터넷 상태를 확인해 주세요.');x.status=0;throw x}).then(function(r){return r.json().catch(function(){var e=new Error('서버 응답이 늦어져 중단됐어요. 잠시 후 다시 시도해 주세요. (HTTP '+r.status+')');e.status=r.status;throw e}).then(function(j){if(!r.ok){var e=new Error(j.error||'오류가 발생했어요.');e.status=r.status;e.data=j;throw e}return j})});
   }
   function pad(n){return String(n).padStart(2,'0')}
   function fmtD(iso){var d=new Date(iso);return (d.getMonth()+1)+'/'+d.getDate()}

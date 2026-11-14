@@ -155,11 +155,19 @@ async function runProvider(id, prompt, ctl, wait) { return id === 'gemini' ? via
 const LABEL = { gemini: '제미나이', groq: 'Groq', openrouter: 'OpenRouter' };
 
 // 서비스들을 순서대로 시도해요. 앞에서 성공하면 뒤는 부르지 않아요.
-async function writePart(prompt, ctl, wait) {
-  const errs = []; let busy = true;
-  for (const id of providers()) {
+// 서버 함수가 오래 걸리면 중간에 끊기므로, 서비스마다 쓸 수 있는 시간을 나눠서(앞 서비스가 느리면 포기하고 다음으로) 전체 제한 안에 끝내요.
+async function writePart(prompt, deadline, wait) {
+  const errs = []; let busy = true; const list = providers();
+  for (let i = 0; i < list.length; i++) {
+    const id = list[i]; const left = deadline - Date.now();
+    if (left < 1200) { errs.push(LABEL[id] + ': 시간이 모자라 건너뜀'); continue; }
+    const slice = i === list.length - 1 ? left : Math.max(1500, Math.min(left * 0.6, left - 1500));
+    const ctl = new AbortController(); const t = setTimeout(() => ctl.abort(), slice);
     try { const r = await runProvider(id, prompt, ctl, wait); r.provider = id; return r; }
-    catch (e) { if (e.name === 'AbortError') throw e; errs.push(LABEL[id] + ': ' + e.message); busy = busy && e.busy !== false; }
+    catch (e) {
+      if (e.name === 'AbortError') { errs.push(LABEL[id] + ': 응답이 느려 중단(' + Math.round(slice / 1000) + '초)'); }
+      else { errs.push(LABEL[id] + ': ' + e.message); busy = busy && e.busy !== false; }
+    } finally { clearTimeout(t); }
   }
   const detail = '(' + errs.join(' / ') + ')';
   throw new Error((busy ? '지금 AI가 많이 붐벼요. 1~2분 뒤에 다시 시도해 주세요. ' : 'AI가 글을 만들지 못했어요. ') + detail);
@@ -178,16 +186,15 @@ async function generate(lead, input, opts) {
   if (!isReady()) { const e = new Error('AI 글 생성이 아직 연결되지 않았어요. 담당자에게 문의해 주세요.'); e.notReady = true; throw e; }
   if (clean(input.topic, 500).length < 5) throw new Error('주제를 5글자 이상 적어주세요.');
   const total = partCount(input);
-  const ctl = new AbortController(); const timer = setTimeout(() => ctl.abort(), (opts && opts.timeoutMs) || 24000);
+  const deadline = Date.now() + ((opts && opts.timeoutMs) || 9000);
   const wait = (opts && opts.retryWaitMs != null) ? opts.retryWaitMs : 1500;
   let parts;
   try {
-    parts = await Promise.all(ROLES[total].map((role, i) => writePart(total === 1 ? buildPrompt(lead, input) : buildPrompt(lead, input, { n: i + 1, total, role }), ctl, wait)));
+    parts = await Promise.all(ROLES[total].map((role, i) => writePart(total === 1 ? buildPrompt(lead, input) : buildPrompt(lead, input, { n: i + 1, total, role }), deadline, wait)));
   } catch (e) {
-    if (e.name === 'AbortError') throw new Error('AI 응답이 너무 오래 걸려요. 길이를 "짧게"로 바꿔 다시 시도해 주세요.');
     if (/fetch failed|network|ECONN|ENOTFOUND/i.test(String(e.message))) throw new Error('AI 서버에 연결하지 못했어요. 잠시 후 다시 시도해 주세요.');
     throw e;
-  } finally { clearTimeout(timer); }
+  }
   const title = parts[0].title || clean(input.topic, 60);
   const body = parts.map((p) => p.body).join('\n\n');
   if (title.length < 2 || body.length < 10) throw new Error('AI가 글을 제대로 만들지 못했어요. 다시 시도해 주세요. (응답 형식 오류)');

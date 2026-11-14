@@ -59,7 +59,7 @@ exports.handler = async (event) => {
       const usage = (await store.get(capKey, { type: 'json' })) || { n: 0 };
       if (usage.n >= cap) throw new Error('오늘은 AI 글 만들기를 많이 써서 잠시 쉬어요. 내일 다시 시도하시거나, 직접 쓴 글을 저장해 주세요.');
       // 한 번의 요청 안에서 바로 만들어 돌려줘요. (저장소 반영 지연에 영향받지 않도록 따로 상태를 읽지 않아요)
-      const g = await AI.generate(lead, req, { timeoutMs: 25000, retryWaitMs: 1500 });
+      const g = await AI.generate(lead, req, { timeoutMs: 9000, retryWaitMs: 800 });
       const kws = Array.isArray(req.keywords) ? req.keywords.slice(0, 10) : [];
       const post = await S.createPost(store, lead, { title: g.title, body: g.body, keywords: kws, source: 'AI 생성' });
       try { await store.setJSON(capKey, { n: usage.n + 1 }); } catch (e) { /* 집계 실패는 글 생성에 영향 없어요 */ }
