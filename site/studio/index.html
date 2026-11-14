@@ -144,7 +144,7 @@ table.tb{width:100%;border-collapse:collapse;font-size:14px}table.tb td{padding:
 
  <section id="t-lib" class="hid"><div class="kpis" id="libKpis"></div><div class="card" id="libList"><h3>LIBRARY</h3><div id="libItems"></div></div>
   <div class="card hid" id="editor"><h3>POST</h3><label>제목</label><input class="f" id="eTitle" maxlength="150"><label>본문</label><textarea class="f" id="eBody" rows="14"></textarea>
-   <div id="ePhotosBox" class="hid"><label>첨부 사진 (본문의 [사진 번호]에 넣어 주세요 · 누르면 크게 보여요)</label><div class="thumbs" id="ePhotos"></div></div>
+   <div id="ePhotosBox" class="hid"><label>첨부 사진 (누르면 크게 보여요)</label><div class="thumbs" id="ePhotos"></div><div class="row" style="margin-bottom:14px"><button class="btn sm g" id="ePrev" type="button">👀 사진 위치 미리보기</button><button class="btn sm g" id="eDl" type="button">⬇ 사진 저장</button></div><div id="ePrevBox" class="hid" style="border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:14px;background:var(--bg);line-height:1.9"></div></div>
    <div class="row" style="margin-bottom:14px"><button class="btn sm" id="eSave">수정 저장</button><button class="btn sm g" id="eCopy">📋 본문 복사</button><button class="btn sm g bad" id="eDel">삭제</button><button class="btn sm g" id="eBack">목록으로</button></div>
    <div id="pubBox"></div><div class="err" id="eerr"></div></div></section>
 
@@ -284,7 +284,10 @@ table.tb{width:100%;border-collapse:collapse;font-size:14px}table.tb td{padding:
     $('libList').classList.add('hid');$('libKpis').classList.add('hid');$('editor').classList.remove('hid');$('eerr').textContent='';
     $('eTitle').value=p.title;$('eBody').value=p.body;drawPub();loadEPh(p);window.scrollTo({top:0,behavior:'smooth'});
   }
-  function loadEPh(p){var b=$('ePhotosBox');b.classList.add('hid');if(!p.photoCount)return;function show(a){if(S.cur&&S.cur.id===p.id&&a.length){b.classList.remove('hid');drawThumbs($('ePhotos'),a,false)}}if(S.ph[p.id]&&S.ph[p.id].length)return show(S.ph[p.id]);api('getPhotos',{id:p.id}).then(function(j){S.ph[p.id]=j.photos||[];show(S.ph[p.id])}).catch(function(){})}
+
+  function dlAll(arr){arr.forEach(function(d,i){setTimeout(function(){var a=document.createElement('a');a.href=d;a.download='사진'+(i+1)+'.jpg';document.body.appendChild(a);a.click();a.remove()},i*400)})}
+  function drawPrev(){var b=$('ePrevBox'),arr=(S.cur&&S.ph[S.cur.id])||[];b.textContent='';$('eTitle')&&b.appendChild(el('b',null,$('eTitle').value));b.appendChild(el('div'));$('eBody').value.split('\n').forEach(function(line){var m=line.trim().match(/^\[사진\s*(\d+)\]$/);if(m&&arr[Number(m[1])-1]){var im=el('img');im.src=arr[Number(m[1])-1];im.style.cssText='display:block;max-width:100%;border-radius:10px;margin:10px 0';im.onclick=function(){bigView(im.src)};b.appendChild(im)}else if(m){b.appendChild(el('div','note','[사진 '+m[1]+'] (해당 번호 사진이 없어요)'))}else{var d=el('div',null,line);d.style.minHeight='1em';b.appendChild(d)}})}
+  function loadEPh(p){var b=$('ePhotosBox');b.classList.add('hid');$('ePrevBox').classList.add('hid');$('ePrev').textContent='👀 사진 위치 미리보기';if(!p.photoCount)return;function show(a){if(S.cur&&S.cur.id===p.id&&a.length){b.classList.remove('hid');drawThumbs($('ePhotos'),a,false)}}if(S.ph[p.id]&&S.ph[p.id].length)return show(S.ph[p.id]);api('getPhotos',{id:p.id}).then(function(j){S.ph[p.id]=j.photos||[];show(S.ph[p.id])}).catch(function(){})}
   function drawPub(){
     var p=S.cur,box=$('pubBox');box.textContent='';
     var c=el('div');c.style.cssText='border-top:1px solid var(--line);padding-top:16px';
@@ -342,6 +345,7 @@ table.tb{width:100%;border-collapse:collapse;font-size:14px}table.tb td{padding:
   document.querySelectorAll('.tab[data-t]').forEach(function(b){b.onclick=function(){setTab(b.dataset.t)}});
   initPh();$('genBtn').onclick=runGen;$('sBtn').onclick=savePost;$('pwBtn').onclick=changePw;
   $('eBack').onclick=showList;
+  $('ePrev').onclick=function(){var b=$('ePrevBox');if(b.classList.contains('hid')){drawPrev();b.classList.remove('hid');this.textContent='✖ 미리보기 닫기'}else{b.classList.add('hid');this.textContent='👀 사진 위치 미리보기'}};$('eDl').onclick=function(){dlAll((S.cur&&S.ph[S.cur.id])||[])};
   $('eSave').onclick=function(){$('eerr').textContent='';api('updatePost',{id:S.cur.id,fields:{title:$('eTitle').value,body:$('eBody').value}}).then(function(j){replace(j.post);toast('저장했어요')}).catch(function(e){$('eerr').textContent=e.message})};
   $('eCopy').onclick=function(){var t=$('eTitle').value+'\n\n'+$('eBody').value;try{navigator.clipboard.writeText(t).then(function(){toast('본문을 복사했어요. 네이버 블로그에 붙여넣으세요.')},function(){toast('복사하지 못했어요. 본문을 직접 선택해서 복사해 주세요.')})}catch(e){toast('복사하지 못했어요. 본문을 직접 선택해서 복사해 주세요.')}};
   $('eDel').onclick=function(){if(!confirm('이 글을 삭제할까요? 되돌릴 수 없어요.'))return;api('deletePost',{id:S.cur.id}).then(function(){S.posts=S.posts.filter(function(x){return x.id!==S.cur.id});S.me.quota.used=Math.max(S.me.quota.used-0,0);return loadPosts().then(showList)}).catch(function(e){$('eerr').textContent=e.message})};

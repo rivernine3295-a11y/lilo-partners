@@ -182,8 +182,10 @@ async function writePart(prompt, deadline, wait, photos) {
       else { errs.push(LABEL[id] + ': ' + e.message); busy = busy && e.busy !== false; }
     } finally { clearTimeout(t); }
   }
-  const detail = '(' + errs.join(' / ') + ')';
-  throw new Error((busy ? '지금 AI가 많이 붐벼요. 1~2분 뒤에 다시 시도해 주세요. ' : 'AI가 글을 만들지 못했어요. ') + detail);
+  // 서비스 이름·모델 같은 기술 내용은 고객 화면에 보이지 않게 하고(로그와 관리자 점검에서 확인), 쉬운 안내만 보여줘요.
+  console.error('AI 전부 실패:', errs.join(' / '));
+  const e = new Error(busy ? '지금 사용량이 많아 글 만들기가 잠시 어려워요. 1~2분 뒤에 다시 시도해 주세요.' : '글을 만들지 못했어요. 잠시 후 다시 시도해 주세요. 계속되면 담당자에게 알려 주세요.');
+  e.detail = errs.join(' / '); throw e;
 }
 
 // 길이에 따라 나눠서 동시에 써요(한 번에 길게 쓰면 오래 걸려요). 짧게=1번, 중간=2번, 길게=3번 요청해요.
@@ -212,12 +214,12 @@ async function generate(lead, input, opts) {
       return writePart(buildPrompt(lead, input, part), deadline, wait, photos.slice(a, b));
     }));
   } catch (e) {
-    if (/fetch failed|network|ECONN|ENOTFOUND/i.test(String(e.message))) throw new Error('AI 서버에 연결하지 못했어요. 잠시 후 다시 시도해 주세요.');
+    if (/fetch failed|network|ECONN|ENOTFOUND/i.test(String(e.message))) throw new Error('지금 연결이 원활하지 않아요. 1~2분 뒤에 다시 시도해 주세요.');
     throw e;
   }
   const title = parts[0].title || clean(input.topic, 60);
   const body = parts.map((p) => p.body).join('\n\n');
-  if (title.length < 2 || body.length < 10) throw new Error('AI가 글을 제대로 만들지 못했어요. 다시 시도해 주세요. (응답 형식 오류)');
+  if (title.length < 2 || body.length < 10) throw new Error('글이 제대로 만들어지지 않았어요. 다시 한 번 시도해 주세요.');
   return { title, body, parts: total, provider: parts[0].provider, model: parts[0].model, sawPhotos: photos.length > 0 && parts.every((p) => !p.hadPhotos || p.sawPhotos) };
 }
 

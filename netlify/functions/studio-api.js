@@ -69,6 +69,7 @@ exports.handler = async (event) => {
     }
     return json(400, { error: '알 수 없는 요청이에요.' });
   } catch (e) {
+    if (e.detail) console.error('generate detail:', e.detail);
     return json(400, { error: e.message || '처리하지 못했어요.' });
   }
 };
