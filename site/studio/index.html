@@ -106,9 +106,8 @@ table.tb{width:100%;border-collapse:collapse;font-size:14px}table.tb td{padding:
  <p class="sub">계약하신 매장을 위한 블로그 콘텐츠 도구예요.<br>발급받은 아이디로 로그인하세요.</p>
  <div class="card"><label for="lid">아이디</label><input class="f" id="lid" autocomplete="username" autocapitalize="none" placeholder="예: lilo1234"><label for="lpw">비밀번호</label><input class="f" id="lpw" type="password" autocomplete="current-password">
  <div class="err" id="lerr"></div><button class="btn" id="lbtn">로그인</button>
- <p class="note" style="margin:14px 0 0;text-align:center">처음이신가요? <a href="#" id="toSignup" style="color:var(--accent,#8a5cf6);font-weight:700">계약 고객 가입하기</a></p></div>
- <div class="card hid" id="signupCard"><label for="suStore">매장명 (계약 때 알려주신 이름)</label><input class="f" id="suStore" autocomplete="organization">
- <label for="suTel">연락처 (계약 때 알려주신 번호)</label><input class="f" id="suTel" type="tel" autocomplete="tel" placeholder="예: 010-1234-5678">
+ <p class="note" style="margin:14px 0 0;text-align:center">처음이신가요? <a href="#" id="toSignup" style="color:var(--accent,#8a5cf6);font-weight:700">가입 코드로 시작하기</a></p></div>
+ <div class="card hid" id="signupCard"><p class="note" style="margin:0 0 14px">계약 후 담당자에게 받은 <b>가입 코드(6자리)</b>를 적고, 쓰실 아이디와 비밀번호를 정해 주세요.</p><label for="suCode">가입 코드 (6자리)</label><input class="f" id="suCode" maxlength="8" autocomplete="off" autocapitalize="characters" placeholder="예: K7M2QX" style="letter-spacing:.2em;text-transform:uppercase;font-weight:700">
  <label for="suId">사용할 아이디</label><input class="f" id="suId" autocomplete="username" autocapitalize="none" placeholder="영문 소문자·숫자 4자 이상">
  <label for="suPw">사용할 비밀번호</label><input class="f" id="suPw" type="password" autocomplete="new-password" placeholder="8자 이상">
  <div class="err" id="suErr"></div><button class="btn" id="suBtn">가입하고 시작하기</button>
@@ -338,7 +337,7 @@ table.tb{width:100%;border-collapse:collapse;font-size:14px}table.tb td{padding:
   $('toSignup').onclick=function(e){e.preventDefault();swap(true)};$('toLogin').onclick=function(e){e.preventDefault();swap(false)};
   $('suBtn').onclick=function(){
     $('suErr').textContent='';var b=$('suBtn');b.disabled=true;
-    api('signup',{storeName:$('suStore').value,contact:$('suTel').value,loginId:$('suId').value,password:$('suPw').value}).then(function(j){S.token=j.token;try{localStorage.setItem(TK,j.token)}catch(e){}$('suPw').value='';return boot()}).catch(function(e){$('suErr').textContent=e.message}).then(function(){b.disabled=false});
+    api('signup',{code:$('suCode').value,loginId:$('suId').value,password:$('suPw').value}).then(function(j){S.token=j.token;try{localStorage.setItem(TK,j.token)}catch(e){}$('suPw').value='';return boot()}).catch(function(e){$('suErr').textContent=e.message}).then(function(){b.disabled=false});
   };
   $('lbtn').onclick=doLogin;$('lpw').addEventListener('keydown',function(e){if(e.key==='Enter')doLogin()});
   $('navLogout').onclick=logout;$('blogout').onclick=logout;$('logoutBtn').onclick=logout;

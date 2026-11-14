@@ -587,6 +587,14 @@
       var xb=el('button','btn ghost small','닫기');xb.onclick=function(){S.newAccount=null;render()};r.appendChild(cb);r.appendChild(xb);nb.appendChild(r);sec.appendChild(nb);
     }
     if(!cu){
+      var ib=el('div');ib.style.cssText='background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-bottom:10px;font-size:13px;line-height:1.7';
+      ib.appendChild(el('div',null,'가입 코드 (추천): 고객에게 코드만 전달하면, 고객이 /studio/ 에서 코드와 아이디·비밀번호만 적어 직접 가입해요. 코드는 한 번만 쓸 수 있어요.'));
+      if(l.inviteCode){var cd=el('div',null,l.inviteCode);cd.style.cssText='font-size:22px;font-weight:800;letter-spacing:.25em;margin:8px 0;user-select:all';ib.appendChild(cd);
+        var rr=el('div','row');var cb2=el('button','btn small','안내문 복사');cb2.onclick=function(){copyText('[릴로 블로그 서포터 가입 안내]\n1) '+location.origin+'/studio/ 접속\n2) "가입 코드로 시작하기" 선택\n3) 가입 코드: '+l.inviteCode+'\n4) 쓰실 아이디와 비밀번호(8자 이상)를 정해서 가입')};
+        var rg=el('button','btn ghost small','코드 다시 만들기');rg.onclick=function(){if(confirm('새 코드를 만들면 이전 코드는 쓸 수 없어요. 만들까요?'))studioCall(l,'inviteIssue')};rr.appendChild(cb2);rr.appendChild(rg);ib.appendChild(rr)}
+      else{var mkc=el('button','btn small','가입 코드 만들기');mkc.style.marginTop='6px';mkc.onclick=function(){studioCall(l,'inviteIssue')};ib.appendChild(mkc)}
+      if(!l.contractEnd)ib.appendChild(el('div',null,'⚠ 계약 종료일이 비어 있어요. 아래 계약 정보에 시작일·종료일을 넣어야 고객이 이용할 수 있어요.')).style.color='var(--warn)';
+      sec.appendChild(ib);
       var row=el('div','row');var li=el('input','field');li.placeholder='고객 아이디 (영문 소문자·숫자 4~24자)';li.value='lilo'+Math.floor(1000+Math.random()*9000);li.style.minWidth='220px';
       var mk=el('button','btn small','계정 만들기');mk.onclick=function(){studioCall(l,'customerCreate',{loginId:li.value.trim()})};
       row.appendChild(li);row.appendChild(mk);sec.appendChild(row);

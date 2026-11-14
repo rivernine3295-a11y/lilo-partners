@@ -16,7 +16,7 @@ function normalizeLead(l) {
   if (OLD_STATUS[l.status]) l.status = OLD_STATUS[l.status];
   if (!STATUSES.includes(l.status)) l.status = '문의';
   const defaults = { region: '', designerCount: '', quote: '', contractMonths: '', contractStart: '', contractEnd: '',
-    nextContactAt: '', decisionMaker: '', placeLink: '', closedBy: '', closedAt: '', workStart: '', guaranteeDays: 25, exposureDays: [], paymentStatus: '', paidAt: '', studioLoginId: '', studioQuota: 12, internal: false, keywords: [], logs: [], history: [] };
+    nextContactAt: '', decisionMaker: '', placeLink: '', closedBy: '', closedAt: '', workStart: '', guaranteeDays: 25, exposureDays: [], paymentStatus: '', paidAt: '', studioLoginId: '', studioQuota: 12, inviteCode: '', internal: false, keywords: [], logs: [], history: [] };
   for (const k of Object.keys(defaults)) if (l[k] === undefined) l[k] = defaults[k];
   return l;
 }
@@ -123,6 +123,15 @@ async function updateLead(store, id, fields, by) {
   if (changes.status === '계약' && lead.status !== '계약') {
     if (!lead.closedBy && !('closedBy' in changes)) changes.closedBy = by;
     if (!lead.closedAt && !('closedAt' in changes)) changes.closedAt = now.slice(0, 10);
+  }
+  // 계약 단계로 처음 넘어갈 때 계약 기간이 비어 있으면, 시작일=오늘 · 종료일=계약 개월 수 뒤로 자동 입력해요(개월 수를 아는 경우만).
+  if (changes.status === '계약' && lead.status !== '계약') {
+    const months = Number('contractMonths' in changes ? changes.contractMonths : lead.contractMonths);
+    const hasStart = ('contractStart' in changes ? changes.contractStart : lead.contractStart), hasEnd = ('contractEnd' in changes ? changes.contractEnd : lead.contractEnd);
+    if (!hasStart && !hasEnd && months > 0) {
+      const st = kstToday(), d = new Date(st + 'T00:00:00Z'); d.setUTCMonth(d.getUTCMonth() + months);
+      changes.contractStart = st; changes.contractEnd = d.toISOString().slice(0, 10);
+    }
   }
   // 진행 중으로 처음 넘어가면 작업 시작일을 오늘로 자동 기록한다(보장 일수 계산의 기준).
   if (changes.status === '진행 중' && lead.status !== '진행 중' && !lead.workStart && !('workStart' in changes)) changes.workStart = kstToday();

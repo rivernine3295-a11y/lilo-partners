@@ -125,6 +125,44 @@ async function signup(store, input, ip, listLeads) {
   return { token: signToken({ l: id, lid: lead.id, exp: Date.now() + TOKEN_DAYS * 86400000 }), loginId: id };
 }
 
+/* ---------- 가입 코드: 관리자가 업체별 6자리 코드를 만들어 전달하면, 고객은 코드+아이디+비밀번호만으로 가입해요 ---------- */
+const CODE_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // 헷갈리는 글자(0/O, 1/I) 제외
+const normCode = (v) => String(v == null ? '' : v).toUpperCase().replace(/[^A-Z0-9]/g, '');
+function genCode() { const b = crypto.randomBytes(6); let o = ''; for (let i = 0; i < 6; i++) o += CODE_CHARS[b[i] % CODE_CHARS.length]; return o; }
+async function issueInviteCode(store, lead, by, listLeads) {
+  if (lead.studioLoginId) throw new Error('이미 가입한 업체예요. 비밀번호가 필요하면 "비밀번호 재발급"을 사용해 주세요.');
+  const used = new Set((await listLeads(store)).map((l) => l.inviteCode).filter(Boolean));
+  let code; do { code = genCode(); } while (used.has(code));
+  const fresh = await store.get('lead:' + lead.id, { type: 'json' }), now = new Date().toISOString();
+  fresh.history = (fresh.history || []).concat([{ at: now, by, field: 'inviteCode', from: fresh.inviteCode ? '(이전 코드)' : '', to: '(새 코드 발급)' }]).slice(-80);
+  fresh.inviteCode = code; fresh.updatedAt = now; fresh.updatedBy = by;
+  await store.setJSON('lead:' + lead.id, fresh);
+  return { code, lead: fresh };
+}
+async function signupByCode(store, input, ip, listLeads) {
+  const key = 'signupfail:' + crypto.createHash('sha256').update(String(ip || 'unknown')).digest('hex').slice(0, 24);
+  const fail = (await store.get(key, { type: 'json' })) || { n: 0, until: 0 };
+  if (fail.until && fail.until > Date.now()) throw new Error('시도가 너무 많아요. 잠시 후 다시 시도해 주세요.');
+  const id = cleanStr(input.loginId, 24).toLowerCase(), pw = String(input.password == null ? '' : input.password), code = normCode(input.code);
+  if (code.length !== 6) throw new Error('가입 코드는 6자리예요. 안내받은 코드를 그대로 적어주세요.');
+  if (!LOGIN_RE.test(id)) throw new Error('아이디는 영문 소문자·숫자·-_ 4~24자로 적어주세요.');
+  if (pw.length < 8 || pw.length > 100) throw new Error('비밀번호는 8자 이상으로 적어주세요.');
+  const lead = (await listLeads(store)).find((l) => l.inviteCode && l.inviteCode === code);
+  if (!lead) {
+    fail.n += 1; if (fail.n >= SIGNUP_MAX_FAILS) { fail.until = Date.now() + SIGNUP_LOCK_MIN * 60000; fail.n = 0; }
+    await store.setJSON(key, fail); throw new Error('가입 코드가 맞지 않거나 이미 사용된 코드예요. 담당자에게 코드를 다시 요청해 주세요.');
+  }
+  if (lead.studioLoginId) throw new Error('이미 가입된 업체예요. 로그인해 주세요.');
+  if (await getCustomer(store, id)) throw new Error('이미 사용 중인 아이디예요. 다른 아이디를 적어주세요.');
+  const h = hashPassword(pw), now = new Date().toISOString();
+  await store.setJSON('customer:' + id, { loginId: id, leadId: lead.id, salt: h.salt, hash: h.hash, createdAt: now, createdBy: '가입 코드', disabled: false, failCount: 0, lockUntil: 0 });
+  const fresh = await store.get('lead:' + lead.id, { type: 'json' });
+  fresh.history = (fresh.history || []).concat([{ at: now, by: '고객 본인(가입 코드)', field: 'studioAccount', from: '', to: id }]).slice(-80);
+  fresh.studioLoginId = id; fresh.inviteCode = ''; fresh.updatedAt = now; fresh.updatedBy = '고객 본인';
+  await store.setJSON('lead:' + lead.id, fresh);
+  return { token: signToken({ l: id, lid: lead.id, exp: Date.now() + TOKEN_DAYS * 86400000 }), loginId: id };
+}
+
 async function resetCustomer(store, loginId) {
   const c = await getCustomer(store, loginId);
   if (!c) throw new Error('고객 계정을 찾지 못했어요.');
@@ -279,4 +317,4 @@ async function statsByLead(store) {
   return out;
 }
 
-module.exports = { STAFF_COUNT, issueStaff, LOGIN_RE, DEFAULT_QUOTA, kstToday, accessInfo, createCustomer, resetCustomer, setCustomerDisabled, removeCustomer, getCustomer, login, authenticate, changePassword, listPosts, usedThisMonth, quotaOf, createPost, getPhotos, cleanPhotos, getPost, updatePost, markPublished, unpublish, deletePost, statsByLead, refreshStats, signup, validBlogUrl, readToken, signToken };
+module.exports = { issueInviteCode, signupByCode, STAFF_COUNT, issueStaff, LOGIN_RE, DEFAULT_QUOTA, kstToday, accessInfo, createCustomer, resetCustomer, setCustomerDisabled, removeCustomer, getCustomer, login, authenticate, changePassword, listPosts, usedThisMonth, quotaOf, createPost, getPhotos, cleanPhotos, getPost, updatePost, markPublished, unpublish, deletePost, statsByLead, refreshStats, signup, validBlogUrl, readToken, signToken };

@@ -68,6 +68,12 @@ exports.handler = async (event) => {
     if (req.action === 'ideaVote') return json(200, { idea: await I.voteIdea(store, String(req.id || ''), by) });
     if (req.action === 'ideaDelete') { await I.deleteIdea(store, String(req.id || ''), by); return json(200, { ok: true }); }
     if (req.action === 'exposure') return json(200, { lead: await L.toggleExposure(store, String(req.id || ''), req.date, by) });
+    if (req.action === 'inviteIssue') {
+      const lead = L.normalizeLead(await store.get('lead:' + String(req.id || ''), { type: 'json' }));
+      if (!lead) throw new Error('업체를 찾지 못했어요.');
+      const r = await ST.issueInviteCode(store, lead, by, L.listLeads);
+      return json(200, { invite: { code: r.code }, lead: r.lead });
+    }
     if (req.action === 'staffIssue') return json(200, { account: await ST.issueStaff(store, req.n, by) });
     if (req.action === 'customerCreate') {
       const lead = L.normalizeLead(await store.get('lead:' + String(req.id || ''), { type: 'json' }));
