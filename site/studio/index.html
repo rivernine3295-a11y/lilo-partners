@@ -123,7 +123,7 @@ table.tb{width:100%;border-collapse:collapse;font-size:14px}table.tb td{padding:
  <div class="eyebrow">Blog Supporter</div>
  <h1 class="h"><span id="hStore">-</span><br><span class="grad" id="hTab">블로그 만들기</span></h1>
  <p class="sub" id="hSub"></p>
- <div class="status"><span class="pill ok" id="pTerm"><span class="live">이용 기간</span></span><span class="pill" id="pQuota">이번 달 사용 -</span></div>
+ <div class="status"><span class="pill ok" id="pTerm"><span class="live">이용 기간</span></span><span class="pill" id="pQuota">이번 달 사용 -</span><button class="pill" id="topLogout" type="button" style="cursor:pointer;background:transparent;font:inherit">↩ 로그아웃 · 다른 계정으로</button></div>
  <div class="tabs"><button class="tab on" data-t="create">✍ 블로그 만들기</button><button class="tab" data-t="lib">📚 보관함</button><button class="tab" data-t="cal">📅 캘린더</button><button class="tab" data-t="info">👤 내 정보</button></div>
 
  <section id="t-create">
@@ -177,7 +177,7 @@ table.tb{width:100%;border-collapse:collapse;font-size:14px}table.tb td{padding:
   function countUp(node,to){if(typeof to!=='number'){node.textContent=String(to);return}var t0=performance.now(),D=900;node.textContent='0';(function f(n){var k=Math.min(1,(n-t0)/D);node.textContent=String(Math.round(to*(1-Math.pow(1-k,3))));if(k<1)requestAnimationFrame(f)})(t0)}
 
   /* ---------- 로그인 ---------- */
-  function logout(){try{localStorage.removeItem(TK)}catch(e){}S.token='';S.me=null;$('lpw').value='';show('loginView');hud('● STANDBY','- / -','QUOTA - / -','TERM -')}
+  function logout(){try{localStorage.removeItem(TK)}catch(e){}S.token='';S.me=null;S.posts=[];S.ph={};S.cur=null;PH=[];try{drawThumbs($('phThumbs'),PH,true);$('lid').value='';$('fTopic').value='';$('fExtra').value='';$('editor').classList.add('hid');$('libList').classList.remove('hid');window.scrollTo(0,0)}catch(e){}$('lpw').value='';show('loginView');hud('● STANDBY','- / -','QUOTA - / -','TERM -')}
   function doLogin(){
     $('lerr').textContent='';var b=$('lbtn');b.disabled=true;
     api('login',{loginId:$('lid').value,password:$('lpw').value}).then(function(j){S.token=j.token;try{localStorage.setItem(TK,j.token)}catch(e){}return boot()}).catch(function(e){$('lerr').textContent=e.message}).then(function(){b.disabled=false});
@@ -341,7 +341,7 @@ table.tb{width:100%;border-collapse:collapse;font-size:14px}table.tb td{padding:
     api('signup',{storeName:$('suStore').value,contact:$('suTel').value,loginId:$('suId').value,password:$('suPw').value}).then(function(j){S.token=j.token;try{localStorage.setItem(TK,j.token)}catch(e){}$('suPw').value='';return boot()}).catch(function(e){$('suErr').textContent=e.message}).then(function(){b.disabled=false});
   };
   $('lbtn').onclick=doLogin;$('lpw').addEventListener('keydown',function(e){if(e.key==='Enter')doLogin()});
-  $('blogout').onclick=logout;$('logoutBtn').onclick=logout;
+  $('topLogout').onclick=logout;$('blogout').onclick=logout;$('logoutBtn').onclick=logout;
   document.querySelectorAll('.tab[data-t]').forEach(function(b){b.onclick=function(){setTab(b.dataset.t)}});
   initPh();$('genBtn').onclick=runGen;$('sBtn').onclick=savePost;$('pwBtn').onclick=changePw;
   $('eBack').onclick=showList;
