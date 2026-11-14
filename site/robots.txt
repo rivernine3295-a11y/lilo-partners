@@ -1,8 +1,8 @@
 User-agent: *
 Allow: /
-Disallow: /admin/
-Disallow: /studio/
-Disallow: /report/
-Disallow: /.netlify/
+Disallow: /admin
+Disallow: /studio
+Disallow: /report
+Disallow: /.netlify
 
 Sitemap: https://lillo.kr/sitemap.xml
