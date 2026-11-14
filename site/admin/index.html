@@ -184,6 +184,10 @@
       <div class="kpis" id="kpis"></div>
       <div class="charts" id="charts"></div>
       <div class="todo" id="todo"></div>
+    
+      <div class="sec" id="aiCheckBox" style="margin-top:18px"><b>AI 글 생성 점검</b>
+        <div style="font-size:12px;color:var(--mut);margin:4px 0 8px">고객 블로그 서포터의 AI 연결 상태를 확인해요. 키, 모델 이름, 실제로 글이 만들어지는 시간을 알려 줘요. (몇 초 걸려요)</div>
+        <button class="btn small" id="aiCheckBtn">점검하기</button><div id="aiCheckOut" style="margin-top:10px;font-size:13px;line-height:1.7"></div></div>
     </section>
 
     <section id="v-list" class="hidden">
@@ -852,6 +856,21 @@
   $('search').oninput=function(){S.q=this.value;renderGroups()};
   $('asgFilter').onchange=function(){S.asg=this.value;renderGroups()};
   $('openAll').onclick=function(){S.statuses.forEach(function(s){S.openGrps[s]=1});persistGrp();renderGroups()};
+  $('aiCheckBtn').onclick=function(){
+    var b=$('aiCheckBtn'),o=$('aiCheckOut');b.disabled=true;o.textContent='점검 중… (최대 40초)';
+    api('POST',{action:'aiCheck',by:S.who}).then(function(r){
+      o.textContent='';function line(t,ok){var d=el('div',null,(ok===true?'✅ ':ok===false?'❌ ':'· ')+t);o.appendChild(d)}
+      line('키 등록: '+(r.keySet?'있음':'없음'),r.keySet);
+      line('기본 모델: '+r.primary+(r.primaryExists===true?' (사용 가능)':r.primaryExists===false?' (이 키로는 목록에 없음)':''),r.primaryExists);
+      line('예비 모델: '+r.fallback+(r.fallbackExists===true?' (사용 가능)':r.fallbackExists===false?' (이 키로는 목록에 없음)':''),r.fallbackExists);
+      if(r.listError)line('모델 목록 조회 실패: '+r.listError,false);
+      if(r.flashModels&&r.flashModels.length)line('사용 가능한 flash 모델: '+r.flashModels.join(', '));
+      if(r.genOk===true)line('글 생성 성공: "'+r.title+'" ('+r.chars+'자, '+(r.genMs/1000).toFixed(1)+'초)',true);
+      else if(r.genOk===false)line('글 생성 실패: '+r.error+' ('+(r.genMs/1000).toFixed(1)+'초)',false);
+      else if(r.error)line(r.error,false);
+      if(r.genMs>8000)line('생성이 8초 넘게 걸려요. 서버 응답 제한(약 10초)에 걸릴 수 있어요.',false);
+    }).catch(function(e){o.textContent=e.message}).then(function(){b.disabled=false});
+  };
   $('closeAll').onclick=function(){S.statuses.forEach(function(s){S.openGrps[s]=0});S.openLeads={};persistGrp();renderGroups()};
   $('aCancel').onclick=function(){go('dash')};
   $('aSave').onclick=function(){

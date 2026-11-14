@@ -91,4 +91,28 @@ async function generate(lead, input, opts) {
   return { title, body };
 }
 
-module.exports = { isReady, generate, buildPrompt };
+// 관리자 점검용: 키·모델 이름·실제 생성 시간을 한 번에 확인해요. (고객 화면에서는 쓰지 않아요)
+async function diagnose() {
+  const out = { keySet: isReady(), primary: process.env.GEMINI_MODEL || DEFAULT_MODEL, fallback: process.env.GEMINI_FALLBACK_MODEL || FALLBACK_MODEL };
+  if (!out.keySet) { out.error = 'GEMINI_API_KEY 환경변수가 서버에 없어요.'; return out; }
+  const t0 = Date.now();
+  try {
+    const r = await fetch('https://generativelanguage.googleapis.com/v1beta/models?pageSize=200', { headers: { 'x-goog-api-key': process.env.GEMINI_API_KEY } });
+    out.listStatus = r.status;
+    if (r.ok) {
+      const names = ((await r.json()).models || []).filter((m) => (m.supportedGenerationMethods || []).includes('generateContent')).map((m) => String(m.name).replace(/^models\//, ''));
+      out.primaryExists = names.includes(out.primary); out.fallbackExists = names.includes(out.fallback);
+      out.flashModels = names.filter((n) => /flash/.test(n) && !/image|tts|live|audio|embedding/.test(n)).slice(0, 12);
+    } else { out.listError = (await r.text().catch(() => '')).replace(/\s+/g, ' ').slice(0, 160); }
+  } catch (e) { out.listError = e.message; }
+  out.listMs = Date.now() - t0;
+  const t1 = Date.now();
+  try {
+    const g = await generate({ storeName: '점검 헤어살롱', region: '서울 강남구', bizType: '미용실' }, { topic: '이번 달 손상모 케어 클리닉 소개', keywords: ['강남 미용실'], tone: '친근한', length: '짧게 (~1,000자)' }, { timeoutMs: 40000, retryWaitMs: 1500 });
+    out.genOk = true; out.title = g.title; out.chars = g.body.length;
+  } catch (e) { out.genOk = false; out.error = e.message; }
+  out.genMs = Date.now() - t1;
+  return out;
+}
+
+module.exports = { isReady, generate, buildPrompt, diagnose };

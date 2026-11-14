@@ -5,6 +5,7 @@ const L = require('../lib/leads');
 const I = require('../lib/ideas');
 const ST = require('../lib/studio');
 const KW = require('../lib/keywords');
+const AI = require('../lib/ai');
 
 function json(code, obj) {
   return { statusCode: code, headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' }, body: JSON.stringify(obj) };
@@ -57,6 +58,7 @@ exports.handler = async (event) => {
     }
     const by = L.ADMINS.includes(req.by) ? req.by : '';
     if (!by) return json(400, { error: '누가 수정하는지 선택해주세요.' });
+    if (req.action === 'aiCheck') return json(200, await AI.diagnose());
     if (req.action === 'kwSuggest') {
       try { return json(200, { items: await KW.suggest(req.hints) }); } catch (e) { return json(e.notReady ? 503 : 400, { error: e.message, notReady: !!e.notReady }); }
     }
