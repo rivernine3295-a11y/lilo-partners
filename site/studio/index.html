@@ -231,7 +231,7 @@ table.tb{width:100%;border-collapse:collapse;font-size:14px}table.tb td{padding:
   function runGen(){
     $('gerr').textContent='';if(!selKw().length&&S.me.keywords.length){$('gerr').textContent='키워드를 한 개 이상 선택해 주세요.';return}
     if(($('fTopic').value||'').trim().length<5){$('gerr').textContent='주제를 5글자 이상 적어주세요.';return}
-    document.body.classList.add('gen');$('genPanel').classList.remove('hid');window.__spin=5;$('formCard').style.opacity='.3';$('formCard').style.pointerEvents='none';
+    document.body.classList.add('gen');$('genPanel').classList.remove('hid');try{$('genPanel').scrollIntoView({block:'center',behavior:'smooth'})}catch(e){}window.__spin=5;$('formCard').style.opacity='.3';$('formCard').style.pointerEvents='none';
     var box=$('gsteps');box.textContent='';STEPS.forEach(function(s,i){var d=el('div','gs');d.id='gs'+i;d.appendChild(el('span','ic'));d.appendChild(el('span',null,s[0]));box.appendChild(d)});
     var t0=performance.now(),total=STEPS.reduce(function(a,s){return a+s[1]},0),done=false,fail=null,stop=false;
     var req=api('generate',{topic:$('fTopic').value,keywords:selKw(),tone:$('fTone').value,length:$('fLen').value,extra:$('fExtra').value}).then(function(j){done=true;return j}).catch(function(e){fail=e;done=true});
@@ -267,7 +267,7 @@ table.tb{width:100%;border-collapse:collapse;font-size:14px}table.tb td{padding:
       var b=el('button','post');b.appendChild(el('b',null,p.title));var s=el('small');s.appendChild(el('span','tag '+(p.status==='발행 완료'?'ok':'w'),p.status));s.appendChild(document.createTextNode(fmtD(p.createdAt)+' 작성'+(p.keywords.length?' · '+p.keywords.join(', '):'')));b.appendChild(s);b.onclick=function(){openPost(p.id)};box.appendChild(b);
     });
   }
-  function showList(){$('editor').classList.add('hid');$('libList').classList.remove('hid');$('libKpis').classList.remove('hid');S.cur=null}
+  function showList(){$('editor').classList.add('hid');$('libList').classList.remove('hid');$('libKpis').classList.remove('hid');S.cur=null;drawLib();drawCal()}
   function openPost(id){
     var p=S.posts.filter(function(x){return x.id===id})[0];if(!p)return;setTab('lib');S.cur=p;
     $('libList').classList.add('hid');$('libKpis').classList.add('hid');$('editor').classList.remove('hid');$('eerr').textContent='';
