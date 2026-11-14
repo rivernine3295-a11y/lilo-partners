@@ -1018,7 +1018,7 @@
   </div>
 </div>
 
-<button class="floating-cta" id="floatingCta" data-goto="#contact">
+<button class="floating-cta show" id="floatingCta" data-goto="#contact">
   <span>무료 진단 신청</span>
   <span class="fc-arrow">→</span>
 </button>
@@ -1452,31 +1452,9 @@
   }
 
   function initFloatingCta(){
+    // 어느 스크롤 위치에서도(맨 위·문의 구역 포함) 항상 보이게 해요.
     var btn=document.getElementById('floatingCta');
-    var hero=document.getElementById('hero');
-    var contact=document.getElementById('contact');
-    if(!btn) return;
-    if(!hero || !contact || !('IntersectionObserver' in window)){
-      btn.classList.add('show');
-      return;
-    }
-    var dx=document.getElementById('diagnose');
-    var heroVisible=true, contactVisible=false, dxVisible=false;
-    function update(){
-      if(heroVisible || contactVisible || dxVisible){ btn.classList.remove('show'); }
-      else{ btn.classList.add('show'); }
-    }
-    var io=new IntersectionObserver(function(entries){
-      entries.forEach(function(entry){
-        if(entry.target===hero) heroVisible=entry.isIntersecting;
-        if(entry.target===contact) contactVisible=entry.isIntersecting;
-        if(entry.target===dx) dxVisible=entry.isIntersecting;
-      });
-      update();
-    }, {threshold:0.15});
-    io.observe(hero);
-    io.observe(contact);
-    if(dx) io.observe(dx);
+    if(btn) btn.classList.add('show');
   }
 
   /* 자가진단: 네이버 공개 4대 기준 중 사장님이 바꿀 수 있는 3개(유사도·정보 충실도·인기도)만 점수화 */
