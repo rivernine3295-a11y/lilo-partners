@@ -4,6 +4,7 @@
 const DEFAULT_MODEL = 'gemini-3.8-flash';
 const LENGTHS = { '짧게': 1000, '중간': 2000, '길게': 3000 };
 const TONES = ['전문적', '친근한', '따뜻한'];
+const TONE_GUIDE = { '전문적': '믿음 가는 전문가지만 딱딱하지 않게, 쉬운 단어로 설명하듯', '친근한': '단골 손님에게 카페에서 이야기하듯 편하고 가볍게', '따뜻한': '고민을 들어주는 언니·누나처럼 다정하고 공감하며' };
 
 function clean(v, max) { return String(v == null ? '' : v).replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f]/g, '').trim().slice(0, max); }
 const PROVIDER_KEYS = { gemini: 'GEMINI_API_KEY', groq: 'GROQ_API_KEY', openrouter: 'OPENROUTER_API_KEY' };
@@ -28,14 +29,14 @@ function buildPrompt(lead, input, part) {
   const store = clean(lead.storeName, 60), area = clean([lead.region, lead.bizType].filter(Boolean).join(' '), 80);
   const topic = clean(input.topic, 500), extra = clean(input.extra, 300);
   return [
-    '당신은 동네 매장의 네이버 블로그를 대신 써주는 한국어 작가입니다.',
+    '당신은 동네 매장 사장님이 직접 쓴 것처럼 네이버 블로그를 써주는 한국어 블로거입니다. 보고서나 광고 문구가 아니라, 사람이 말하듯 읽히는 글을 씁니다.',
     '아래 정보로 네이버 블로그에 올릴 글 한 편을 쓰세요.',
     '',
     '[매장 정보]', '매장명: ' + (store || '(미입력)'), '업종·지역: ' + (area || '(미입력)'),
     '[이번 글 핵심 키워드] ' + (kws.length ? kws.join(', ') : '(없음)'),
     '[주제] ' + topic,
     extra ? '[추가 요구사항] ' + extra : '',
-    '[톤] ' + tone, '[분량] 한글 기준 약 ' + (part && part.total > 1 ? Math.round(LENGTHS[lenKey] / part.total) : LENGTHS[lenKey]) + '자' + (part && part.total > 1 ? ' (전체 글의 ' + part.total + '분의 1 분량)' : ''),
+    '[톤] ' + tone + ' — ' + (TONE_GUIDE[tone] || ''), '[분량] 한글 기준 약 ' + (part && part.total > 1 ? Math.round(LENGTHS[lenKey] / part.total) : LENGTHS[lenKey]) + '자' + (part && part.total > 1 ? ' (전체 글의 ' + part.total + '분의 1 분량)' : ''),
     part && part.role ? '[역할] 이 글은 ' + part.total + '부분으로 나누어 쓰고 있어요. 당신은 ' + part.n + '번째 부분만 쓰세요: ' + part.role + ' 다른 부분의 내용은 반복하지 마세요.' : '',
     '',
     '규칙:',
@@ -43,6 +44,10 @@ function buildPrompt(lead, input, part) {
     '- 주어진 정보에 없는 가격, 할인, 이벤트, 수상 경력, 후기, 통계는 지어내지 마세요.',
     '- "무조건", "100%", "최고", 치료·효과를 보장하는 표현은 쓰지 마세요.',
     part && part.total > 1 ? '- 소제목은 1개만 넣고, 문단은 짧게 나누세요.' : '- 소제목을 2~4개 넣고, 문단은 짧게 나누고, 마지막에 방문·예약을 부드럽게 안내하세요.',
+    '- 문체: "~해요/~이에요" 같은 부드러운 해요체로 쓰세요. "~합니다/~입니다"를 연달아 쓰는 딱딱한 문체, 논문·기사 같은 표현("~에 대한 관심이 이어지고 있습니다", "~를 제공합니다")은 피하세요.',
+    '- 한 문장은 짧게(두 줄 안쪽), 한 문단은 2~3문장으로 끊고 문단 사이를 비우세요. 어려운 한자어·영어 단어(structure 같은 외국어 포함)는 쉬운 우리말로 바꾸세요.',
+    '- 첫 문장은 손님이 실제로 할 법한 고민이나 질문으로 시작하고(예: "요즘 머리 끝이 푸석해서 고민이시죠?"), 중간에 독자에게 말을 거는 문장을 한두 번 넣으세요. 이모지는 전체에서 2~4개만 자연스럽게 쓰세요.',
+    '- "안녕하세요, 테스트입니다" 같은 어색한 인사나 매장명을 매번 반복하는 광고식 표현은 쓰지 마세요. 인사는 짧게 한 번만 하세요.',
     '- 마크다운 기호(#, *, -)는 쓰지 말고 일반 문장과 줄바꿈만 쓰세요.',
     photoRule(part),
     '',
