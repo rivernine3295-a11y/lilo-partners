@@ -63,22 +63,26 @@ const ROLES = {
 };
 function partCount(input) { const k = Object.keys(LENGTHS).find((x) => String(input.length || '').startsWith(x)) || '중간'; return k === '짧게' ? 1 : k === '길게' ? 3 : 2; }
 
-// 이 키로 실제 쓸 수 있는 flash 모델 하나를 골라요(예비용). 결과는 10분 동안 기억해요.
-let fbCache = { at: 0, name: '', p: null };
+// 이 키로 실제 쓸 수 있는 flash 모델 목록에서 예비 후보를 순서대로 골라요. 결과는 10분 동안 기억해요.
+// (목록에 있어도 "신규 사용자에게는 종료" 같은 모델이 있어서, 실패하면 다음 후보로 계속 넘어가요)
+let fbCache = { at: 0, list: [], p: null };
 async function listUsableFlash() {
   const r = await fetch('https://generativelanguage.googleapis.com/v1beta/models?pageSize=200', { headers: { 'x-goog-api-key': process.env.GEMINI_API_KEY } });
   if (!r.ok) return [];
-  return ((await r.json()).models || []).filter((m) => (m.supportedGenerationMethods || []).includes('generateContent')).map((m) => String(m.name).replace(/^models\//, '')).filter((n) => /flash/.test(n) && !/image|tts|live|audio|embedding|thinking|preview-\d/.test(n));
+  return ((await r.json()).models || []).filter((m) => (m.supportedGenerationMethods || []).includes('generateContent')).map((m) => String(m.name).replace(/^models\//, '')).filter((n) => /flash/.test(n) && !/image|tts|live|audio|embedding|thinking|robotics|computer|preview|exp|-\d{3}$/.test(n));
 }
-async function pickFallback(primary) {
-  if (process.env.GEMINI_FALLBACK_MODEL) return process.env.GEMINI_FALLBACK_MODEL;
-  if (fbCache.name && Date.now() - fbCache.at < 600000 && fbCache.name !== primary) return fbCache.name;
+function rank(n) { // 낮을수록 먼저: 깔끔한 정식 이름 > lite > 그 외, 2.x 는 뒤로, 버전 높은 것 먼저
+  const v = (n.match(/gemini-(\d+(?:\.\d+)?)/) || [0, 0])[1];
+  return (/lite/.test(n) ? 100 : 0) + (Number(v) < 3 ? 50 : 0) - Number(v);
+}
+async function pickFallbacks(primary) {
+  if (process.env.GEMINI_FALLBACK_MODEL) return [process.env.GEMINI_FALLBACK_MODEL];
+  if (fbCache.list.length && Date.now() - fbCache.at < 600000) return fbCache.list.filter((n) => n !== primary).slice(0, 3);
   if (!fbCache.p) fbCache.p = listUsableFlash().then((names) => {
-    const c = names.filter((n) => n !== primary);
-    c.sort((a, b) => (/lite/.test(a) ? 1 : 0) - (/lite/.test(b) ? 1 : 0)); // lite 는 뒤로
-    fbCache = { at: Date.now(), name: c[0] || '', p: null }; return fbCache.name;
-  }).catch(() => { fbCache.p = null; return ''; });
-  return fbCache.p;
+    names.sort((a, b) => rank(a) - rank(b));
+    fbCache = { at: Date.now(), list: names, p: null }; return names;
+  }).catch(() => { fbCache.p = null; return []; });
+  return (await fbCache.p).filter((n) => n !== primary).slice(0, 3);
 }
 
 async function writePart(primary, prompt, ctl, wait) {
@@ -98,7 +102,8 @@ async function writePart(primary, prompt, ctl, wait) {
       if (attempt === 0) await sleep(wait);
     }
     if (res.ok) break;
-    if (mi === 0 && [404, 429, 500, 502, 503, 504].includes(res.status)) { const fb = await pickFallback(primary); if (fb && fb !== primary) models.push(fb); }
+    if (mi === 0 && [404, 429, 500, 502, 503, 504].includes(res.status)) { const fbs = await pickFallbacks(primary); fbs.forEach((f) => { if (!models.includes(f)) models.push(f); }); }
+    if (!res.ok && ![404, 429, 500, 502, 503, 504].includes(res.status)) break;
   }
   if (!res.ok) {
     const detail = '(' + errs.join(' → ') + ')';
