@@ -13,7 +13,7 @@ input,select,textarea{width:100%;background:#0b0a09;border:1px solid var(--line)
 .btn{background:linear-gradient(100deg,var(--ac),var(--ac2));border:0;color:#fff;font-weight:700;border-radius:999px;padding:11px 22px;font:inherit;font-size:15px;cursor:pointer}
 .btn.g{background:transparent;border:1px solid var(--line);color:var(--fg)}.btn.s{padding:7px 14px;font-size:13px}.btn:disabled{opacity:.5}
 .err{color:var(--bad);font-size:14px;margin-top:8px;min-height:18px}.note{color:var(--mut);font-size:13px}
-.kw{display:grid;grid-template-columns:1.3fr .8fr .8fr .7fr auto;gap:8px;align-items:center;margin-top:8px}.kw .t{font-weight:700}.kw small{color:var(--mut)}
+.kw{display:grid;grid-template-columns:1.1fr .7fr .6fr 1.7fr auto;gap:8px;align-items:center;margin-top:8px}.kw .t{font-weight:700}.kw small{color:var(--mut)}
 .sug{margin-top:10px;max-height:260px;overflow:auto}.sug div{display:flex;justify-content:space-between;gap:10px;padding:8px 4px;border-bottom:1px solid var(--line);font-size:14px}
 .grid2{display:grid;grid-template-columns:minmax(0,420px) 1fr;gap:18px}@media(max-width:900px){.grid2{grid-template-columns:1fr}}
 .pv{position:relative;background:#000;border-radius:14px;overflow:hidden;border:1px solid var(--line);width:100%;min-height:200px}.pv iframe{border:0;width:1080px;height:1600px;position:absolute;left:0;top:0;transform-origin:0 0}
@@ -32,7 +32,9 @@ input,select,textarea{width:100%;background:#0b0a09;border:1px solid var(--line)
    <label>보내는 사람 이름 (선택, 톡톡 문구에 들어가요)</label><input id="fSender" placeholder="예: 강현구">
    <label>보내는 사람 문의 방법 (선택, 진단서 맨 아래와 톡톡 문구에 들어가요)</label><input id="fContact" placeholder="예: 010-0000-0000 · 카카오톡 ID"></div>
   <div class="card"><b>2. 키워드</b><div class="note" style="margin:6px 0 8px">검색어를 넣으면 월 검색량과 경쟁도를 가져와요. 순위는 직접 확인한 숫자를 넣어 주세요(안 넣으면 "미확인"으로 나와요).</div>
+   <div class="note" id="dayCnt" style="margin:0 0 8px"></div>
    <div class="row"><button class="btn nf" id="autoKw" type="button">⚡ 지역·업종으로 자동 채우기</button><span class="note" style="flex:1 1 200px">위 1번의 지역을 보고 동네+시술 키워드 3개를 자동으로 넣어요</span></div>
+   <div class="row" style="margin-top:8px"><button class="btn g s nf" id="ncOpen" type="button">엔체커 열기</button><span class="note" style="flex:1 1 220px">엔체커에서 순위를 조회한 뒤 결과(<b>226개 업체 중 18위</b>)를 아래 키워드 칸에 그대로 붙여넣으세요. 하루 10곳, 같은 장소는 하루 1번이라 진단서도 하루 10곳까지가 좋아요.</span></div>
    <div class="row" style="margin-top:8px"><input id="hint" placeholder="직접 검색: 예) 역삼미용실, 강남헤어"><button class="btn g s nf" id="sBtn">검색량 가져오기</button></div><div class="err" id="serr"></div><div class="sug" id="sug"></div>
    <div id="kws"></div>
    <div class="row" style="margin-top:10px"><input id="manual" placeholder="직접 키워드 추가"><button class="btn g s nf" id="mBtn">추가</button></div></div>
@@ -64,6 +66,14 @@ var ITEMS=[
  {k:'review',noun:'리뷰에 사장님 답글이 거의 없는 점',label:'리뷰·사장님 답글',short:'리뷰·답글',fact:'리뷰에 사장님 답글이 거의 달려 있지 않아요',impact:'답글이 있으면 관리되는 매장이라는 인상을 줘서 예약 결정에 도움이 돼요. 없으면 그 기회를 놓쳐요.',fix:'리뷰에 정성스러운 답글을 꾸준히 달고, 새 리뷰가 쌓이는 흐름을 만들면 신뢰를 보여 줄 수 있어요.'},
  {k:'news',noun:'최근 석 달 안에 올라온 소식이 없는 점',label:'소식 업데이트',short:'소식 업데이트',fact:'최근 석 달 안에 올라온 소식이 없어요',impact:'소식이 멈춰 있으면 영업 중인지 확신하기 어려워요.',fix:'이벤트와 시술 소식을 정기적으로 올리면 운영 중인 매장이라는 신호를 꾸준히 줄 수 있어요.'}
 ];
+function parseNchecker(t){var o={rank:null,total:null};t=String(t||'');if(!t.trim())return o;
+ var m=t.match(/(\d+)\s*개\s*(?:업체)?\s*중\s*(\d+)\s*위/);if(m){o.total=Number(m[1]);o.rank=Number(m[2]);return o}
+ if(/밖/.test(t)){o.rank=301;var t1=t.match(/(\d+)\s*개/)||t.match(/\/\s*(\d+)/);if(t1)o.total=Number(t1[1]);return o}
+ var a=t.match(/(\d+)\s*위/);if(a)o.rank=Number(a[1]);else{var n=t.match(/^\s*(\d+)/);if(n)o.rank=Number(n[1])}
+ var b=t.match(/(\d+)\s*개/)||t.match(/\/\s*(\d+)/);if(b)o.total=Number(b[1]);return o}
+function rankTxt(k){return k.rank>=301?'300위 밖':k.rank+'위'}
+function rankFull(k){return (k.total?k.total.toLocaleString()+'개 업체 중 ':'')+rankTxt(k)}
+function usableKws(r){return (r.keywords||[]).filter(function(k){return !(k.total!=null&&k.total<30)})}
 function issuesOf(r){var on=[];(r.checks||[]).forEach(function(v,i){if(v&&ITEMS[i])on.push(i)});var m=r.main;if(m!=null&&m>=0&&on.indexOf(m)>-1){on.splice(on.indexOf(m),1);on.unshift(m)}return on}
 function itemsDraw(){var box=$('items');box.textContent='';ITEMS.forEach(function(it,i){var d=document.createElement('div');d.className='chk';d.style.justifyContent='space-between';
   var l=document.createElement('label');l.style.cssText='margin:0;color:var(--fg);display:flex;gap:8px;align-items:center;flex:1;cursor:pointer';var c=document.createElement('input');c.type='checkbox';c.id='c'+i;c.checked=!!S.checks[i];c.onchange=function(){S.checks[i]=c.checked;if(!c.checked&&S.main===i)S.main=-1;itemsDraw();pvRender()};
@@ -84,10 +94,10 @@ var CSS="*{box-sizing:border-box;margin:0}body,.s{font-family:'Malgun Gothic','A
 +".ft{margin-top:34px;display:flex;justify-content:space-between;align-items:flex-end}.logo{font-size:42px;font-weight:900;letter-spacing:.05em}.logo span{color:#b58cff}.ct{font-size:22px;color:#a89a86;text-align:right;line-height:1.5}";
 CSS+=".lead{margin-top:20px;font-size:27px;color:#d9d2c6;line-height:1.55}.lead b{color:#fff}.sub{font-size:22px;color:#a89a86;margin:-6px 0 16px}.rk.mid{color:#ffcf7a}.tag{display:inline-block;font-size:18px;font-weight:800;padding:3px 12px;border-radius:999px;margin-bottom:10px;background:rgba(255,157,138,.16);color:#ffb3a3;border:1px solid rgba(255,157,138,.4)}.p.lock{background:repeating-linear-gradient(135deg,#14110d,#14110d 14px,#17140f 14px,#17140f 28px);border-style:dashed}.p.lock .n{background:#2a2620;color:#a89a86}.p.lock strong{color:#d9d2c6}.steps{display:flex;gap:14px}.st{flex:1;background:#14110d;border:1px solid rgba(245,241,234,.16);border-radius:22px;padding:22px}.st small{font-size:19px;color:#b58cff;font-weight:800;letter-spacing:.12em}.st b{display:block;font-size:25px;margin:8px 0 6px;font-weight:900}.st span{font-size:21px;color:#a89a86;line-height:1.5}.note2{margin-top:20px;font-size:19px;color:#8f8372;line-height:1.6}";
 function data(){
-  return {store:$('fStore').value.trim(),region:$('fRegion').value.trim(),biz:$('fBiz').value,checkedAt:$('fAt').value,contact:$('fContact').value.trim(),placeLink:$('fLink').value.trim(),keywords:S.kws.map(function(k){return {k:k.k,vol:k.vol,comp:k.comp,rank:k.rank}}),checks:S.checks.slice(),main:S.main};
+  return {store:$('fStore').value.trim(),region:$('fRegion').value.trim(),biz:$('fBiz').value,checkedAt:$('fAt').value,contact:$('fContact').value.trim(),placeLink:$('fLink').value.trim(),keywords:S.kws.map(function(k){return {k:k.k,vol:k.vol,comp:k.comp,rank:k.rank,total:k.total==null?null:k.total}}),checks:S.checks.slice(),main:S.main};
 }
 function reportBody(r){
-  var ks=r.keywords||[];
+  var ks=usableKws(r);
   var ranked=ks.filter(function(k){return k.rank!=null});var top=ranked.length?ranked[0]:null;var topK=top||ks.filter(function(k){return k.vol})[0]||null;
   var h='<div class="s"><div class="eb">RILO · PLACE DIAGNOSIS</div><h1>네이버 플레이스<br/><span class="g">진단서</span></h1>';
   h+='<div class="lead"><b>손님이 검색했을 때</b> 이 매장이 어떻게 보이는지<br/>직접 확인해서 정리했어요.</div>';
@@ -96,9 +106,9 @@ function reportBody(r){
   h+='<div class="ir"><span>확인 기준</span><b>네이버 검색 순위(담당자 직접 확인) · 월 검색량(네이버 검색광고 키워드 도구)</b></div></div>';
   if(ks.length){
     h+='<h2>지금 손님에게 보이는 모습</h2>'+(topK?'<div class="sub">\''+esc(topK.k)+'\'을 검색하면 이렇게 보여요</div>':'');
-    h+='<div class="kpi"><div class="k hl"><small>현재 순위</small><b>'+(top?top.rank+'<i>위</i>':'<i>미확인</i>')+'</b></div><div class="k"><small>월 검색량</small><b>'+((topK&&topK.vol)?topK.vol.toLocaleString()+'<i>회</i>':'<i>-</i>')+'</b></div><div class="k"><small>1페이지 노출 목표</small><b>1<i>페이지</i></b></div></div>';
+    h+='<div class="kpi"><div class="k hl"><small>현재 순위</small><b>'+(top?(top.rank>=301?'300<i>위 밖</i>':top.rank+'<i>위</i>'):'<i>미확인</i>')+'</b></div><div class="k"><small>월 검색량</small><b>'+((topK&&topK.vol)?topK.vol.toLocaleString()+'<i>회</i>':'<i>-</i>')+'</b></div><div class="k"><small>1페이지 노출 목표</small><b>1<i>페이지</i></b></div></div>';
     h+='<h2>동네 + 시술 키워드 현황</h2><div class="sub">손님은 시술 이름으로도 많이 찾아요</div><table><tr><th>키워드</th><th>월 검색량</th><th>경쟁도</th><th>현재 순위</th></tr>';
-    ks.forEach(function(k){var c=k.rank==null?'<td class="rk na">미확인</td>':(k.rank>20?'<td class="rk bad">20위 밖</td>':(k.rank>10?'<td class="rk mid">'+k.rank+'위</td>':'<td class="rk">'+k.rank+'위</td>'));h+='<tr><td>'+esc(k.k)+'</td><td>'+(k.vol?k.vol.toLocaleString()+'회':'-')+'</td><td>'+esc(k.comp||'-')+'</td>'+c+'</tr>'});h+='</table>';
+    ks.forEach(function(k){var sm=k.total?'<br/><small style="font-size:18px;font-weight:400;color:#a89a86">'+k.total.toLocaleString()+'개 업체 중</small>':'';var c=k.rank==null?'<td class="rk na">미확인</td>':(k.rank>=301?'<td class="rk bad">300위 밖'+sm+'</td>':(k.rank>20?'<td class="rk bad">'+k.rank+'위'+sm+'</td>':(k.rank>10?'<td class="rk mid">'+k.rank+'위'+sm+'</td>':'<td class="rk">'+k.rank+'위'+sm+'</td>')));h+='<tr><td>'+esc(k.k)+'</td><td>'+(k.vol?k.vol.toLocaleString()+'회':'-')+'</td><td>'+esc(k.comp||'-')+'</td>'+c+'</tr>'});h+='</table>';
   }
   var iss=issuesOf(r);
   if(iss.length){
@@ -106,7 +116,7 @@ function reportBody(r){
     iss.slice(0,2).forEach(function(i,n){var it=ITEMS[i];h+='<div class="p"><div class="n">'+(n+1)+'</div><div><span class="tag">직접 확인</span><strong>'+esc(it.fact)+'</strong><div>'+esc(it.impact)+'</div></div></div>'});
     if(iss.length>2){var rest=iss.slice(2).map(function(i){return ITEMS[i].short});h+='<div class="p lock"><div class="n">3</div><div><strong>그 외 확인된 '+rest.length+'가지는 상담에서 안내해 드려요</strong><div>'+esc(rest.join(', '))+' 부분이에요. 매장 상황에 맞춰 방법을 말씀드릴게요.</div></div></div>'}
   }
-  if(top&&top.vol)h+='<div class="gap">월 <b>'+top.vol.toLocaleString()+'회</b> 검색되는 키워드에서 지금은 <b>'+top.rank+'위</b>예요. 검색 결과에서 위쪽에 보이는 매장이 손님을 먼저 만나요.</div>';
+  if(top&&top.vol)h+='<div class="gap">월 <b>'+top.vol.toLocaleString()+'회</b> 검색되는 키워드에서 지금은 <b>'+(top.total?top.total.toLocaleString()+'개 업체 중 ':'')+rankTxt(top)+'</b>예요. 검색 결과에서 위쪽에 보이는 매장이 손님을 먼저 만나요.</div>';
   h+='<h2>이렇게 진행돼요</h2><div class="sub">부담 없이 이야기부터 들어 보세요</div><div class="steps"><div class="st"><small>STEP 1</small><b>무료 상담</b><span>진단 내용을 함께 보고 궁금한 점을 말씀 나눠요</span></div><div class="st"><small>STEP 2</small><b>개선 방법·견적 안내</b><span>매장에 맞는 방법과 비용을 말씀드려요</span></div><div class="st"><small>STEP 3</small><b>노출 확인 후 비용</b><span>총 25일 노출이 확인된 뒤에 청구해요</span></div></div>';
   h+='<div class="offer">결과가 확인된 뒤에 비용을 받아요.<br/>먼저 진단서 내용이 맞는지 이야기 나눠 보시겠어요?</div>';
   h+='<div class="note2">※ 순위와 검색량은 확인한 시점의 값이며 시간이 지나면 달라질 수 있어요. 이 문서의 어떤 내용도 특정 순위를 보장하지 않아요.</div>';
@@ -118,11 +128,11 @@ function reportBody(r){
 var tEdited=false;
 function jong(w,a,b){var c=String(w||'').trim().slice(-1).charCodeAt(0);if(c>=0xAC00&&c<=0xD7A3)return (c-0xAC00)%28?a:b;return b}
 function talk(r,type,ad,opt){
-  var ks=r.keywords||[],rk=ks.filter(function(k){return k.rank!=null&&k.vol}),k0=rk[0]||ks.filter(function(k){return k.vol})[0]||ks[0];
+  var ks=usableKws(r),rk=ks.filter(function(k){return k.rank!=null&&k.vol}),k0=rk[0]||ks.filter(function(k){return k.vol})[0]||ks[0];
   var when=fmtAt(r.checkedAt).replace(' 기준','');var who=($('fSender').value.trim()||'담당자');var st=r.store||'사장님 매장';
   var iss=issuesOf(r),main=iss.length?ITEMS[iss[0]]:null,n=iss.length;
   var rankLine='';
-  if(k0&&k0.vol&&k0.rank!=null)rankLine='\''+k0.k+'\'은 한 달에 '+k0.vol.toLocaleString()+'회 검색되는데, 지금은 '+k0.rank+'위로 보여요.';
+  if(k0&&k0.vol&&k0.rank!=null)rankLine='\''+k0.k+'\'은 한 달에 '+k0.vol.toLocaleString()+'회 검색되는데, '+(k0.total?k0.total.toLocaleString()+'개 업체 중 ':'')+'지금은 '+rankTxt(k0)+(k0.rank>=301?'으로':'로')+' 보여요.';
   else if(k0&&k0.vol)rankLine='\''+k0.k+'\'은 한 달에 '+k0.vol.toLocaleString()+'회 검색돼요.';
   var ct=r.contact?'문의: '+r.contact:'';
   var head=(ad?'(광고) ':'');
@@ -163,15 +173,20 @@ function kwDraw(){
   var box=$('kws');box.textContent='';
   S.kws.forEach(function(k,i){var row=document.createElement('div');row.className='kw';
    row.innerHTML='<div class="t">'+esc(k.k)+'</div><div><small>월 검색량</small><br/>'+(k.vol?k.vol.toLocaleString()+'회':'-')+'</div><div><small>경쟁도</small><br/>'+esc(k.comp||'-')+'</div>';
-   var inp=document.createElement('input');inp.type='number';inp.min='1';inp.placeholder='현재 순위';inp.value=k.rank==null?'':k.rank;inp.oninput=function(){k.rank=inp.value===''?null:Number(inp.value);pvRender()};
+   var inp=document.createElement('input');inp.type='text';inp.placeholder='엔체커 결과 붙여넣기 (예: 226개 업체 중 18위)';inp.value=k.rank==null?'':((k.total?k.total+'개 업체 중 ':'')+rankTxt(k));
+   var hint=document.createElement('small');hint.className='note';hint.style.display='block';hint.style.marginTop='3px';
+   function sh(){hint.textContent=k.total!=null&&k.total<30?'⚠ 업체 수 30개 미만이라 진단서에서 제외돼요':(k.rank==null?'':'→ '+rankFull(k))}
+   inp.oninput=function(){var o=parseNchecker(inp.value);k.rank=o.rank;k.total=o.total;sh();pvRender()};sh();
    var d=document.createElement('button');d.className='btn g s';d.textContent='삭제';d.onclick=function(){S.kws.splice(i,1);kwDraw();pvRender()};
-   var c=document.createElement('div');c.appendChild(inp);row.appendChild(c);row.appendChild(d);box.appendChild(row)});
+   var c=document.createElement('div');c.appendChild(inp);c.appendChild(hint);row.appendChild(c);row.appendChild(d);box.appendChild(row)});
 }
-function addKw(k){if(S.kws.some(function(x){return x.k===k.k})||S.kws.length>=8)return;S.kws.push({k:k.k,vol:k.total||k.vol||0,comp:k.comp||'',rank:null});kwDraw();pvRender()}
+function addKw(k){if(S.kws.some(function(x){return x.k===k.k})||S.kws.length>=8)return;S.kws.push({k:k.k,vol:k.total||k.vol||0,comp:k.comp||'',rank:null,total:null});kwDraw();pvRender()}
 function reset(){S.kws=[];S.editId='';['fStore','fRegion','fContact','fLink','hint','manual'].forEach(function(i){$(i).value=''});$('fAt').value=nowLocal();S.checks=[false,false,false,false,false,false];S.main=-1;$('sug').textContent='';itemsDraw();kwDraw();pvRender()}
-function hist(){call('list').then(function(j){var b=$('hist');b.textContent='';if(!j.reports.length){b.innerHTML='<div class="note">아직 저장한 진단서가 없어요.</div>';return}
+function kstDay(iso){var d=new Date(new Date(iso).getTime()+9*3600*1000);return d.toISOString().slice(0,10)}
+function dayCount(list){var t=kstDay(new Date().toISOString());var n=(list||[]).filter(function(r){return r.savedAt&&kstDay(r.savedAt)===t}).length;var e=$('dayCnt');e.textContent='오늘 저장한 진단서 '+n+'곳 / 하루 10곳 (엔체커 한도 기준)'+(n>=10?' — 한도에 도달했어요. 내일 이어서 해 주세요.':'');e.style.color=n>=10?'#ff8f8f':''}
+function hist(){call('list').then(function(j){dayCount(j.reports);var b=$('hist');b.textContent='';if(!j.reports.length){b.innerHTML='<div class="note">아직 저장한 진단서가 없어요.</div>';return}
   j.reports.forEach(function(r){var d=document.createElement('div');d.innerHTML='<span>'+esc(r.store)+' <span class="note">'+esc(fmtAt(r.checkedAt)||'')+'</span></span>';var w=document.createElement('span');
-   var o=document.createElement('button');o.className='btn g s';o.textContent='열기';o.onclick=function(){S.editId=r.id;$('fStore').value=r.store;$('fRegion').value=r.region;$('fBiz').value=r.biz||'미용실';$('fAt').value=r.checkedAt;$('fContact').value=r.contact||'';S.kws=(r.keywords||[]).map(function(k){return {k:k.k,vol:k.vol,comp:k.comp,rank:k.rank}});$('fLink').value=r.placeLink||'';var ck=r.checks||[];if(ck.length<=3){var m=[2,3,1];S.checks=[false,false,false,false,false,false];ck.forEach(function(v,i){if(v)S.checks[m[i]]=true});S.main=-1}else{S.checks=[0,1,2,3,4,5].map(function(i){return !!ck[i]});S.main=(r.main==null?-1:r.main)}itemsDraw();kwDraw();pvRender();window.scrollTo(0,0)};
+   var o=document.createElement('button');o.className='btn g s';o.textContent='열기';o.onclick=function(){S.editId=r.id;$('fStore').value=r.store;$('fRegion').value=r.region;$('fBiz').value=r.biz||'미용실';$('fAt').value=r.checkedAt;$('fContact').value=r.contact||'';S.kws=(r.keywords||[]).map(function(k){return {k:k.k,vol:k.vol,comp:k.comp,rank:k.rank,total:k.total==null?null:k.total}});$('fLink').value=r.placeLink||'';var ck=r.checks||[];if(ck.length<=3){var m=[2,3,1];S.checks=[false,false,false,false,false,false];ck.forEach(function(v,i){if(v)S.checks[m[i]]=true});S.main=-1}else{S.checks=[0,1,2,3,4,5].map(function(i){return !!ck[i]});S.main=(r.main==null?-1:r.main)}itemsDraw();kwDraw();pvRender();window.scrollTo(0,0)};
    var x=document.createElement('button');x.className='btn g s';x.style.marginLeft='6px';x.textContent='삭제';x.onclick=function(){if(confirm('이 진단서 기록을 지울까요?'))call('delete',{id:r.id}).then(hist)};w.appendChild(o);w.appendChild(x);d.appendChild(w);b.appendChild(d)})}).catch(function(){});
 }
 function toPng(){
@@ -194,6 +209,7 @@ $('mBtn').onclick=function(){var v=$('manual').value.trim();if(v){addKw({k:v,tot
 $('dl').onclick=function(){$('gerr').textContent='';var b=$('dl');b.disabled=true;toPng().then(function(blob){var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='진단서_'+(($('fStore').value||'매장').replace(/[^\w가-힣]/g,'_'))+'.png';document.body.appendChild(a);a.click();a.remove()}).catch(function(e){$('gerr').textContent=(e.message||'')+' 미리보기를 화면 캡처해서 쓰셔도 돼요.'}).then(function(){b.disabled=false})};
 $('save').onclick=function(){$('gerr').textContent='';call('save',{id:S.editId,report:data()}).then(function(j){S.editId=j.report.id;hist();$('gerr').style.color='#8ee59a';$('gerr').textContent='저장했어요.';setTimeout(function(){$('gerr').textContent='';$('gerr').style.color=''},1800)}).catch(function(e){$('gerr').textContent=e.message})};
 
+$('ncOpen').onclick=function(){window.open('https://www.nchecker.kr/','_blank','noopener')};
 $('lOpen').onclick=function(){var v=$('fLink').value.trim();if(!v)return;if(!/^https?:\/\//i.test(v))v='https://'+v;window.open(v,'_blank','noopener')};
 $('autoKw').onclick=function(){
   $('serr').textContent='';var rg=$('fRegion').value.trim();if(!rg){$('serr').textContent='위 1번의 지역(예: 서울 강남구 역삼동)을 먼저 적어주세요.';return}
