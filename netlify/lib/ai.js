@@ -1,6 +1,7 @@
 // AI 글 생성 (Google Gemini). 환경변수 GEMINI_API_KEY 가 있어야 동작하고, 모델은 GEMINI_MODEL 로 바꿀 수 있어요.
 const DEFAULT_MODEL = 'gemini-3.8-flash';
-const FALLBACK_MODEL = 'gemini-2.5-flash'; // 기본 모델이 붐빌 때 쓰는 예비 모델(GEMINI_FALLBACK_MODEL 로 바꿀 수 있어요)
+// 예비 모델은 환경변수 GEMINI_FALLBACK_MODEL 이 있으면 그걸 쓰고, 없으면 이 키로 실제 쓸 수 있는 flash 모델을 목록에서 골라요.
+const FALLBACK_MODEL = '';
 const LENGTHS = { '짧게': 1000, '중간': 2000, '길게': 3000 };
 const TONES = ['전문적', '친근한', '따뜻한'];
 
@@ -62,25 +63,47 @@ const ROLES = {
 };
 function partCount(input) { const k = Object.keys(LENGTHS).find((x) => String(input.length || '').startsWith(x)) || '중간'; return k === '짧게' ? 1 : k === '길게' ? 3 : 2; }
 
-async function writePart(models, prompt, ctl, wait) {
-  let res = null, lastErr = '';
-  outer: for (const model of models) {
+// 이 키로 실제 쓸 수 있는 flash 모델 하나를 골라요(예비용). 결과는 10분 동안 기억해요.
+let fbCache = { at: 0, name: '', p: null };
+async function listUsableFlash() {
+  const r = await fetch('https://generativelanguage.googleapis.com/v1beta/models?pageSize=200', { headers: { 'x-goog-api-key': process.env.GEMINI_API_KEY } });
+  if (!r.ok) return [];
+  return ((await r.json()).models || []).filter((m) => (m.supportedGenerationMethods || []).includes('generateContent')).map((m) => String(m.name).replace(/^models\//, '')).filter((n) => /flash/.test(n) && !/image|tts|live|audio|embedding|thinking|preview-\d/.test(n));
+}
+async function pickFallback(primary) {
+  if (process.env.GEMINI_FALLBACK_MODEL) return process.env.GEMINI_FALLBACK_MODEL;
+  if (fbCache.name && Date.now() - fbCache.at < 600000 && fbCache.name !== primary) return fbCache.name;
+  if (!fbCache.p) fbCache.p = listUsableFlash().then((names) => {
+    const c = names.filter((n) => n !== primary);
+    c.sort((a, b) => (/lite/.test(a) ? 1 : 0) - (/lite/.test(b) ? 1 : 0)); // lite 는 뒤로
+    fbCache = { at: Date.now(), name: c[0] || '', p: null }; return fbCache.name;
+  }).catch(() => { fbCache.p = null; return ''; });
+  return fbCache.p;
+}
+
+async function writePart(primary, prompt, ctl, wait) {
+  let res = null; const errs = [];
+  let models = [primary], tried = 0;
+  for (let mi = 0; mi < models.length; mi++) {
+    const model = models[mi]; tried++;
     for (let attempt = 0; attempt < 2; attempt++) {
       res = await callModel(model, prompt, ctl);
-      if (res.ok) break outer;
+      if (res.ok) break;
       const raw = (await res.text().catch(() => '')).slice(0, 600);
       console.error('gemini error', model, res.status, raw);
       let msg = ''; try { msg = (JSON.parse(raw).error || {}).message || ''; } catch (e) { msg = raw; }
-      lastErr = '(오류 ' + res.status + (msg ? ': ' + String(msg).replace(/\s+/g, ' ').slice(0, 110) : '') + ')';
-      if (res.status === 404) break; // 모델 이름이 없다는 뜻이라 예비 모델로 넘어가요
-      if (!BUSY.includes(res.status)) break outer; // 키 문제 등은 다시 해도 같아요
-      if (res.status === 429 || res.status === 503) break; // 이 모델은 지금 막혔으니 바로 예비 모델로 넘어가요(시간 아끼기)
+      errs.push(model + ' (오류 ' + res.status + (msg ? ': ' + String(msg).replace(/\s+/g, ' ').slice(0, 90) : '') + ')');
+      if (res.status === 404 || res.status === 429 || res.status === 503) break; // 이 모델은 지금 안 되니 바로 예비 모델로
+      if (!BUSY.includes(res.status)) break; // 키 문제 등은 다시 해도 같아요
       if (attempt === 0) await sleep(wait);
     }
+    if (res.ok) break;
+    if (mi === 0 && [404, 429, 500, 502, 503, 504].includes(res.status)) { const fb = await pickFallback(primary); if (fb && fb !== primary) models.push(fb); }
   }
   if (!res.ok) {
-    if (BUSY.includes(res.status)) throw new Error('지금 AI가 많이 붐벼요. 1~2분 뒤에 다시 시도해 주세요. ' + lastErr);
-    throw new Error('AI가 글을 만들지 못했어요. ' + lastErr);
+    const detail = '(' + errs.join(' → ') + ')';
+    if (BUSY.includes(res.status)) throw new Error('지금 AI가 많이 붐벼요. 1~2분 뒤에 다시 시도해 주세요. ' + detail);
+    throw new Error('AI가 글을 만들지 못했어요. ' + detail);
   }
   const data = await res.json();
   const text = (((data.candidates || [])[0] || {}).content || {}).parts;
@@ -93,13 +116,13 @@ async function writePart(models, prompt, ctl, wait) {
 async function generate(lead, input, opts) {
   if (!isReady()) { const e = new Error('AI 글 생성이 아직 연결되지 않았어요. 담당자에게 문의해 주세요.'); e.notReady = true; throw e; }
   if (clean(input.topic, 500).length < 5) throw new Error('주제를 5글자 이상 적어주세요.');
-  const models = [process.env.GEMINI_MODEL || DEFAULT_MODEL, process.env.GEMINI_FALLBACK_MODEL || FALLBACK_MODEL].filter((m, i, a) => m && a.indexOf(m) === i);
+  const primary = process.env.GEMINI_MODEL || DEFAULT_MODEL;
   const total = partCount(input);
   const ctl = new AbortController(); const timer = setTimeout(() => ctl.abort(), (opts && opts.timeoutMs) || 24000);
   const wait = (opts && opts.retryWaitMs != null) ? opts.retryWaitMs : 1500;
   let parts;
   try {
-    parts = await Promise.all(ROLES[total].map((role, i) => writePart(models, total === 1 ? buildPrompt(lead, input) : buildPrompt(lead, input, { n: i + 1, total, role }), ctl, wait)));
+    parts = await Promise.all(ROLES[total].map((role, i) => writePart(primary, total === 1 ? buildPrompt(lead, input) : buildPrompt(lead, input, { n: i + 1, total, role }), ctl, wait)));
   } catch (e) {
     if (e.name === 'AbortError') throw new Error('AI 응답이 너무 오래 걸려요. 길이를 "짧게"로 바꿔 다시 시도해 주세요.');
     if (/fetch failed|network|ECONN|ENOTFOUND/i.test(String(e.message))) throw new Error('AI 서버에 연결하지 못했어요. 잠시 후 다시 시도해 주세요.');
@@ -113,7 +136,7 @@ async function generate(lead, input, opts) {
 
 // 관리자 점검용: 키·모델 이름·실제 생성 시간을 한 번에 확인해요. (고객 화면에서는 쓰지 않아요)
 async function diagnose() {
-  const out = { keySet: isReady(), primary: process.env.GEMINI_MODEL || DEFAULT_MODEL, fallback: process.env.GEMINI_FALLBACK_MODEL || FALLBACK_MODEL };
+  const out = { keySet: isReady(), primary: process.env.GEMINI_MODEL || DEFAULT_MODEL, fallback: process.env.GEMINI_FALLBACK_MODEL || '(자동 선택)' };
   if (!out.keySet) { out.error = 'GEMINI_API_KEY 환경변수가 서버에 없어요.'; return out; }
   const t0 = Date.now();
   try {
@@ -121,7 +144,7 @@ async function diagnose() {
     out.listStatus = r.status;
     if (r.ok) {
       const names = ((await r.json()).models || []).filter((m) => (m.supportedGenerationMethods || []).includes('generateContent')).map((m) => String(m.name).replace(/^models\//, ''));
-      out.primaryExists = names.includes(out.primary); out.fallbackExists = names.includes(out.fallback);
+      out.primaryExists = names.includes(out.primary); out.fallbackExists = process.env.GEMINI_FALLBACK_MODEL ? names.includes(out.fallback) : undefined;
       out.flashModels = names.filter((n) => /flash/.test(n) && !/image|tts|live|audio|embedding/.test(n)).slice(0, 12);
     } else { out.listError = (await r.text().catch(() => '')).replace(/\s+/g, ' ').slice(0, 160); }
   } catch (e) { out.listError = e.message; }
