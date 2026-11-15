@@ -91,7 +91,7 @@ function parseNchecker(t){var o={rank:null,total:null};t=String(t||'');if(!t.tri
  var b=t.match(/(\d+)\s*개/)||t.match(/\/\s*(\d+)/);if(b)o.total=Number(b[1]);return o}
 function rankTxt(k){return k.rank>=301?'300위 밖':k.rank+'위'}
 function rankFull(k){return (k.total?k.total.toLocaleString()+'개 업체 중 ':'')+rankTxt(k)}
-function usableKws(r){return (r.keywords||[]).filter(function(k){return !(k.total!=null&&k.total<30)})}
+function usableKws(r){return (r.keywords||[]).filter(function(k){return k.rank!=null&&!(k.total!=null&&k.total<30)})}
 var ORDER=[2,4,5,3,0,1];/* 화면 순서·자동 우선순위: 검색어 반영 → 리뷰·답글 → 소식 → 사진 → 메뉴·가격 → 예약 (메뉴·가격과 예약은 대부분 이미 돼 있어요) */
 function issuesOf(r){var on=[];var ck=r.checks||[];ORDER.forEach(function(i){if(ck[i]&&ITEMS[i])on.push(i)});var m=r.main;if(m!=null&&m>=0&&on.indexOf(m)>-1){on.splice(on.indexOf(m),1);on.unshift(m)}return on}
 function itemsDraw(){var box=$('items');box.textContent='';ORDER.forEach(function(i,pos){var it=ITEMS[i];var d=document.createElement('div');d.className='chk';d.style.justifyContent='space-between';
@@ -210,6 +210,15 @@ function rkBulk(){var lines=$('rkTxt').value.split(/\n+/).map(function(x){return
 function regionBase(){var rg=$('fRegion').value.trim();if(!rg)return '';var toks=rg.split(/\s+/),dong=toks.filter(function(t){return /[동읍면리]$/.test(t)}).pop()||toks[toks.length-1];var base=dong.replace(/(동|읍|면|리)$/,'').replace(/[0-9]+가?$/,'');return base.length>=2?base:dong}
 var BIZK={'미용실':{terms:['미용실','펌','염색'],re:/(미용|헤어|펌|염색|컷|커트|클리닉|탈색|두피|살롱|매직|볼륨|앞머리|레이어|염모|뿌리)/,not:/네일|피부|속눈썹|왁싱|마사지/},'네일샵':{terms:['네일','젤네일','네일아트'],re:/(네일|젤|아트|패디|손톱|발톱)/,not:/미용실|헤어|펌|염색|피부|속눈썹/},'에스테틱':{terms:['에스테틱','피부관리','관리'],re:/(에스테틱|피부|관리|경락|마사지|스킨|왁싱|바디|여드름|모공|속눈썹)/,not:/미용실|헤어|펌|염색|네일/}};
 function bizK(){return BIZK[$('fBiz').value]||BIZK['미용실']}
+function dongFull(){var rg=$('fRegion').value.trim(),t=rg.split(/\s+/).filter(Boolean),d=t.filter(function(x){return /[동읍면리]$/.test(x)}).pop();return d||regionBase()}
+function pickKws(list){var base=regionBase(),b=bizK();var SH=/(펌|염색|컷|커트|클리닉|탈색|두피|매직|볼륨|앞머리|레이어|염모|뿌리|네일|젤|패디|아트|피부|관리|왁싱|속눈썹)/;
+ var ok=(list||[]).filter(function(x){var k=String(x).replace(/\s/g,'');return !b.not.test(k)&&b.re.test(k)});
+ var local=ok.filter(function(x){return base&&String(x).replace(/\s/g,'').indexOf(base)>=0});
+ var out=[];function add(x){if(x&&out.indexOf(x)<0&&out.length<5)out.push(x)}
+ add(local.filter(function(x){return !SH.test(x)})[0]);
+ var dong=dongFull();if(dong)b.terms.slice(1).forEach(function(t){add(dong+' '+t)});
+ add(ok.filter(function(x){return local.indexOf(x)<0&&!SH.test(x)})[0]);
+ local.concat(ok).forEach(add);return out}
 function relKw(it){var key=String(it.k||'').replace(/\s/g,'');var base=regionBase();if(base&&key.indexOf(base)<0)return false;var b=bizK();return b.re.test(key)&&!b.not.test(key)}
 function addKw(k){if(S.kws.some(function(x){return x.k===k.k})||S.kws.length>=8)return;S.kws.push({k:k.k,vol:k.total||k.vol||0,comp:k.comp||'',rank:null,total:null});kwDraw();pvRender()}
 function reset(){S.kws=[];S.editId='';['fStore','fRegion','fLink','hint','manual'].forEach(function(i){$(i).value=''});$('fAt').value=nowLocal();S.checks=[false,false,false,false,false,false];S.main=-1;$('sug').textContent='';itemsDraw();kwDraw();pvRender()}
@@ -342,20 +351,29 @@ $('autoRun').onclick=async function(){var o=$('autoOut'),btn=$('autoRun'),link=$
   if(!region){region=prompt('지역(동)을 읽지 못했어요. 예: 서울 강동구 천호동')||'';if(!region){o.textContent='지역이 없어 중단했어요.';btn.disabled=false;stepsShow(-1);return}}
   reset();$('fStore').value=store;$('fRegion').value=region;$('fBiz').value=biz;$('fLink').value=link;$('fAt').value=nowLocal();
   S.checks=[false,false,false,false,false,false];S.checks[1]=booking;itemsDraw();
-  stepsShow(0);var base=regionBase();var rec=await extCall('recommend',{link:link,region:base},60000);
+  stepsShow(0);var base=regionBase();var rec=await extCall('recommend',{link:link,region:base},90000);
   if(rec&&rec.error==='login'){o.textContent='엔체커에 로그인이 안 되어 있어요. 엔체커 탭에서 로그인한 뒤 다시 눌러 주세요.';btn.disabled=false;stepsShow(-1);return}
-  var rk=((rec&&rec.keywords)||[]).filter(function(x){return relKw({k:x})}).slice(0,3);
+  var rk=pickKws((rec&&rec.keywords)||[]);
   if(rk.length){rk.forEach(function(x){addKw({k:x})})}else{$('autoKw').click();await sleepMs(500);for(var w=0;w<24&&$('autoKw').disabled;w++)await sleepMs(500)}
   if(!S.kws.length){o.textContent='키워드를 정하지 못했어요. 고급 설정에서 키워드를 추가한 뒤 다시 시도해 주세요.';btn.disabled=false;stepsShow(-1);return}
-  var fail=0,dbg=[];
-  for(var i=0;i<S.kws.length;i++){var k=S.kws[i];$('autoSteps').textContent='⏳ 엔체커 확인 중 ('+(i+1)+'/'+S.kws.length+') '+k.k;
-   var r=await extCall('rank',{kw:k.k,link:link},70000);
-   if(r&&r.error==='login'){o.textContent='엔체커에 로그인이 안 되어 있어요. 엔체커 탭에서 로그인한 뒤 다시 눌러 주세요.';btn.disabled=false;stepsShow(-1);return}
-   if(r&&r.error==='limit'){o.textContent='엔체커 하루 한도에 도달한 것 같아요. 내일 이어서 해 주세요.';btn.disabled=false;stepsShow(-1);return}
-   if(r&&r.rank!=null){k.rank=r.rank;k.total=r.total;kwDraw();pvRender()}else{fail++;dbg.push({kw:k.k,r:r})}}
+  var dbg=[];
+  $('autoSteps').textContent='⏳ 엔체커 확인 중 (키워드 '+S.kws.length+'개를 한 번에 조회)';
+  var mr=await extCall('rankmulti',{link:link,kws:S.kws.map(function(k){return k.k})},150000);
+  function stopErr(r){if(r&&r.error==='login'){o.textContent='엔체커에 로그인이 안 되어 있어요. 엔체커 탭에서 로그인한 뒤 다시 눌러 주세요.';return true}if(r&&r.error==='limit'){o.textContent='엔체커 하루 한도에 도달한 것 같아요. 내일 이어서 해 주세요.';return true}return false}
+  if(stopErr(mr)){btn.disabled=false;stepsShow(-1);return}
+  var got={};((mr&&mr.results)||[]).forEach(function(x){got[x.k]=x});
+  if(!(mr&&mr.results))dbg.push({step:'rankmulti',r:mr});
+  for(var i=0;i<S.kws.length;i++){var k=S.kws[i],x=got[k.k];
+   if(!x||x.rank==null){$('autoSteps').textContent='⏳ 엔체커 다시 확인 중 · '+k.k;var r2=await extCall('rank',{kw:k.k,link:link},110000);if(stopErr(r2)){btn.disabled=false;stepsShow(-1);return}x=(r2&&r2.rank!=null)?r2:null;if(!x)dbg.push({kw:k.k,r:r2})}
+   if(x&&x.rank!=null){k.rank=x.rank;k.total=x.total}}
+  kwDraw();pvRender();
+  try{var sg=await call('suggest',{hints:S.kws.map(function(k){return k.k.replace(/\s/g,'')}).slice(0,5)});(sg.items||[]).forEach(function(it){var key=String(it.k||'').replace(/\s/g,'');S.kws.forEach(function(k){if(k.k.replace(/\s/g,'')===key){k.vol=it.total;k.comp=it.comp}})})}catch(e3){}
+  var fail=S.kws.filter(function(k){return k.rank==null}).length;if(S.kws.length>=3)fail=0;
+  S.kws=S.kws.filter(function(k){return k.rank!=null&&!(k.total!=null&&k.total<30)}).slice(0,3);
+  if(!S.kws.length){lastDbg=JSON.stringify(dbg,null,1);$('autoDbg').classList.remove('hid');o.style.color='#ffcf7a';o.textContent='엔체커에서 순위를 읽지 못해 진단서를 만들지 않았어요. 아래 "화면 정보 복사"를 눌러 대화에 붙여넣어 주세요.';btn.disabled=false;stepsShow(-1);kwDraw();pvRender();return}
   stepsShow(2);S.kws=S.kws.filter(function(k){return !(k.total!=null&&k.total<30)});kwDraw();pvRender();
   var rep=data();var sv=await call('save',{id:'',report:rep});S.editId=sv.report.id;hist();simpleShow();stepsShow(3);
-  var msg=[];if(fail){lastDbg=JSON.stringify(dbg,null,1);$('autoDbg').classList.remove('hid');msg.push('순위 '+fail+'개는 확인 못 함으로 표시했어요')}
+  var msg=[];if(fail){lastDbg=JSON.stringify(dbg,null,1);$('autoDbg').classList.remove('hid');msg.push('순위를 읽지 못한 키워드 '+fail+'개는 진단서에서 뺐어요')}
   if(unknown.length)msg.push('플레이스 항목은 일부만 확인했어요');msg.push('점검 항목(메뉴·사진·리뷰·소식)은 자동 확인이 어려워 직접 체크가 필요하면 고급 설정에서 체크해 주세요');
   o.style.color='#8ee59a';o.textContent='✅ 진단서와 영업 문구를 만들었어요. 아래 버튼으로 복사하세요.\n'+msg.join(' · ')
  }catch(e){o.style.color='';o.textContent=(e&&e.message)||'처리하지 못했어요.'}

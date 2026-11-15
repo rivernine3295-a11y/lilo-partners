@@ -38,25 +38,27 @@ async function getNcTab() {
   return tab;
 }
 
-// ───────── 엔체커 페이지 안에서 실행되는 함수들 (서로 독립적으로 동작해야 해서 공통 코드를 각각 넣어 둠) ─────────
-
-// 공통 준비: 로그인 확인 → 플레이스 칸에 입력 → "확인됨"이 뜰 때까지 기다림
-function ncPrepare(link) {
+// ───────── 엔체커 페이지 안에서 실행되는 함수 (하나로 묶어야 화면 안에서 공통 코드가 함께 실행됨) ─────────
+// op: 'recommend' | 'rank' | 'rankmulti'
+function ncRun(op, link, kws) {
   function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
   function vis(el) { var r = el.getBoundingClientRect(); return r.width > 0 && r.height > 0; }
   function txt() { return document.body.innerText || ''; }
+  function num(s) { return Number(String(s).replace(/,/g, '')); }
   function setVal(el, v) {
     var proto = el.tagName === 'TEXTAREA' ? HTMLTextAreaElement.prototype : HTMLInputElement.prototype;
     Object.getOwnPropertyDescriptor(proto, 'value').set.call(el, v);
     el.dispatchEvent(new Event('input', { bubbles: true }));
     el.dispatchEvent(new Event('change', { bubbles: true }));
   }
-  return (async function () {
+  function btns() { return Array.prototype.slice.call(document.querySelectorAll('button')).filter(vis); }
+
+  // 로그인 확인 → 플레이스 칸 입력 → "확인됨" 대기
+  async function prepare() {
     if (/\/login/.test(location.pathname) || document.querySelector('input[type="password"]')) return { error: 'login' };
     var inp = Array.prototype.slice.call(document.querySelectorAll('input')).filter(vis).filter(function (e) { return /플레이스/.test(e.placeholder || ''); })[0];
     if (!inp) return { error: 'noinput', text: txt().slice(0, 800) };
-    var already = inp.value === link && /확인됨/.test(txt());
-    if (!already) {
+    if (!(inp.value === link && /확인됨/.test(txt()))) {
       setVal(inp, link);
       var t0 = Date.now(), ok = false;
       while (Date.now() - t0 < 25000) {
@@ -68,80 +70,33 @@ function ncPrepare(link) {
     }
     var m = txt().match(/✓\s*([^\n]+?)\s*\((\d+)\)\s*확인됨/);
     return { ok: true, name: m ? m[1] : '', id: m ? m[2] : '' };
-  })();
-}
-
-// 순위 조회: 키워드 1개
-function ncRank(kw, link) {
-  function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
-  function vis(el) { var r = el.getBoundingClientRect(); return r.width > 0 && r.height > 0; }
-  function txt() { return document.body.innerText || ''; }
-  function setVal(el, v) {
-    var proto = el.tagName === 'TEXTAREA' ? HTMLTextAreaElement.prototype : HTMLInputElement.prototype;
-    Object.getOwnPropertyDescriptor(proto, 'value').set.call(el, v);
-    el.dispatchEvent(new Event('input', { bubbles: true }));
-    el.dispatchEvent(new Event('change', { bubbles: true }));
   }
-  function num(s) { return Number(String(s).replace(/,/g, '')); }
-  // 결과 칸에서 "키워드 / 14 / 위 / … / 1,068개 업체 중" 순서로 읽는다
+
+  // 결과 칸에서 "키워드 / 14 / 위 / … / 1,068개 업체 중" 순서로 읽기 (띄어쓰기 차이는 무시)
   function readBlock(k, storeName) {
     var root = document.querySelector('main') || document.body;
     var t = root.innerText || '';
     var i = t.indexOf('조회 결과');
     if (i < 0) return null;
     var lines = t.slice(i).split('\n').map(function (s) { return s.trim(); }).filter(Boolean);
+    var key = String(k).replace(/\s/g, '');
     for (var j = 0; j < lines.length; j++) {
-      if (lines[j] !== k) continue;
+      if (lines[j].replace(/\s/g, '') !== key) continue;
       var chunk = lines.slice(j + 1, j + 12);
       var joined = chunk.join('\n');
-      if (storeName && joined.indexOf(storeName) < 0) continue; // 다른 매장의 이전 결과는 건너뜀
+      if (storeName && joined.indexOf(storeName) < 0) continue;
       var tm = joined.match(/([\d,]+)\s*개\s*업체\s*중/);
       var rm = /^[\d,]+$/.test(chunk[0] || '') && chunk[1] === '위' ? num(chunk[0]) : null;
       if (rm == null && /밖|미노출|없음/.test(chunk.slice(0, 4).join(' '))) rm = 301;
       if (rm == null && !tm) continue;
-      return { rank: rm, total: tm ? num(tm[1]) : null, raw: chunk.slice(0, 6).join(' ') };
+      return { rank: rm, total: tm ? num(tm[1]) : null };
     }
     return null;
   }
-  return (async function () {
-    var p = await ncPrepare(link);
-    if (!p.ok) return p;
-    var ta = Array.prototype.slice.call(document.querySelectorAll('textarea')).filter(vis)[0];
-    if (!ta) return { error: 'noinput', text: txt().slice(0, 800) };
-    setVal(ta, kw);
-    await sleep(400);
-    function findBtn() {
-      return Array.prototype.slice.call(document.querySelectorAll('button')).filter(vis).filter(function (b) {
-        return /^순위 조회(\s*\(\d+개\))?$/.test((b.innerText || '').trim()) && !b.disabled;
-      })[0];
-    }
-    var btn = null;
-    for (var w = 0; w < 10 && !btn; w++) { btn = findBtn(); if (!btn) await sleep(500); }
-    if (!btn) return { error: 'nobutton', buttons: Array.prototype.slice.call(document.querySelectorAll('button')).filter(vis).map(function (b) { return (b.innerText || '').trim(); }).slice(0, 20) };
-    btn.click();
-    var start = Date.now();
-    await sleep(3000);
-    while (Date.now() - start < 70000) {
-      var t = txt();
-      if (/한도|초과|제한/.test(t) && /(오늘|하루|일일)/.test(t) && !/조회 결과/.test(t)) return { error: 'limit', text: t.slice(0, 800) };
-      if (!/조회 중/.test(t)) {
-        var r = readBlock(kw, p.name);
-        if (r) return { rank: r.rank, total: r.total, raw: r.raw, store: p.name };
-      }
-      await sleep(1000);
-    }
-    return { error: 'noresult', text: txt().slice(0, 1500) };
-  })();
-}
 
-// AI 추천 키워드: 플레이스 확인 후 나타나는 "AI 추천 키워드" 버튼을 눌러 카드 제목을 읽는다
-function ncRecommend(link) {
-  function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
-  function vis(el) { var r = el.getBoundingClientRect(); return r.width > 0 && r.height > 0; }
-  function txt() { return document.body.innerText || ''; }
-  function collect() {
+  function collectCards() {
     var out = [];
-    Array.prototype.slice.call(document.querySelectorAll('button')).filter(vis).forEach(function (b) {
+    btns().forEach(function (b) {
       var tx = (b.innerText || '').replace(/\s+/g, ' ').trim();
       if (!/^\+?\s*조회$/.test(tx)) return;
       var p = b.parentElement, name = '';
@@ -153,26 +108,57 @@ function ncRecommend(link) {
     });
     return out;
   }
+
   return (async function () {
-    var p = await ncPrepare(link);
+    var p = await prepare();
     if (!p.ok) return p;
-    var btn = null;
-    for (var w = 0; w < 20 && !btn; w++) {
-      btn = Array.prototype.slice.call(document.querySelectorAll('button')).filter(vis).filter(function (b) { return /AI\s*추천\s*키워드/.test(b.innerText || '') && !b.disabled; })[0];
-      if (!btn) await sleep(500);
-    }
-    if (!btn) return { keywords: [], note: 'norecommend', store: p.name };
-    var cards = collect();
-    if (!cards.length) {
-      btn.click();
-      var t1 = Date.now();
-      while (Date.now() - t1 < 55000) {
-        await sleep(1000);
-        cards = collect();
-        if (cards.length) break;
+
+    if (op === 'recommend') {
+      var btn = null;
+      for (var w = 0; w < 20 && !btn; w++) {
+        btn = btns().filter(function (b) { return /AI\s*추천\s*키워드/.test(b.innerText || '') && !b.disabled; })[0];
+        if (!btn) await sleep(500);
       }
+      if (!btn) return { keywords: [], note: 'norecommend', store: p.name };
+      var cards = collectCards();
+      if (!cards.length) {
+        btn.click();
+        var t1 = Date.now();
+        while (Date.now() - t1 < 55000) { await sleep(1000); cards = collectCards(); if (cards.length) break; }
+      }
+      return { keywords: cards.slice(0, 12), store: p.name };
     }
-    return { keywords: cards.slice(0, 12), store: p.name };
+
+    // rank / rankmulti
+    var list = (op === 'rank' ? [kws] : kws).map(function (x) { return String(x || '').trim(); }).filter(Boolean).slice(0, 5);
+    if (!list.length) return { error: 'nokw' };
+    var ta = Array.prototype.slice.call(document.querySelectorAll('textarea')).filter(vis)[0];
+    if (!ta) return { error: 'noinput', text: txt().slice(0, 800) };
+    setVal(ta, list.join('\n'));
+    await sleep(500);
+    var run = null;
+    for (var w2 = 0; w2 < 10 && !run; w2++) {
+      run = btns().filter(function (b) { return /^순위 조회(\s*\(\d+개\))?$/.test((b.innerText || '').trim()) && !b.disabled; })[0];
+      if (!run) await sleep(500);
+    }
+    if (!run) return { error: 'nobutton', buttons: btns().map(function (b) { return (b.innerText || '').trim(); }).slice(0, 20) };
+    run.click();
+    var start = Date.now();
+    await sleep(3000);
+    var res = null;
+    while (Date.now() - start < 110000) {
+      var t = txt();
+      if (/한도|초과|제한/.test(t) && /(오늘|하루|일일)/.test(t) && !/조회 결과/.test(t)) return { error: 'limit', text: t.slice(0, 800) };
+      var h = t.match(/조회 결과\s*(\d+)\s*\/\s*(\d+)/);
+      if (h && Number(h[1]) >= list.length && Number(h[2]) === list.length) {
+        res = list.map(function (k) { var r = readBlock(k, p.name); return r ? { k: k, rank: r.rank, total: r.total } : { k: k, rank: null, total: null }; });
+        break;
+      }
+      await sleep(1000);
+    }
+    if (!res) return { error: 'noresult', text: txt().slice(0, 1200) };
+    if (op === 'rank') return { rank: res[0].rank, total: res[0].total, store: p.name };
+    return { results: res, store: p.name };
   })();
 }
 
@@ -266,17 +252,17 @@ chrome.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
     (async function () {
       try {
         var tab = await getNcTab();
-        var res = await chrome.scripting.executeScript({ target: { tabId: tab.id }, func: ncRecommend, args: [ncLink(msg.link)] });
+        var res = await chrome.scripting.executeScript({ target: { tabId: tab.id }, func: ncRun, args: ['recommend', ncLink(msg.link), null] });
         sendResponse((res && res[0] && res[0].result) || { keywords: [] });
       } catch (e) { sendResponse({ error: 'ext', detail: String(e && e.message || e) }); }
     })();
     return true;
   }
-  if (msg.type !== 'rank') return;
+  if (msg.type !== 'rank' && msg.type !== 'rankmulti') return;
   (async function () {
     try {
       var tab = await getNcTab();
-      var res = await chrome.scripting.executeScript({ target: { tabId: tab.id }, func: ncRank, args: [msg.kw, ncLink(msg.link)] });
+      var res = await chrome.scripting.executeScript({ target: { tabId: tab.id }, func: ncRun, args: [msg.type === 'rankmulti' ? 'rankmulti' : 'rank', ncLink(msg.link), msg.type === 'rankmulti' ? msg.kws : msg.kw] });
       sendResponse((res && res[0] && res[0].result) || { error: 'empty' });
     } catch (e) {
       sendResponse({ error: 'ext', detail: String(e && e.message || e) });
