@@ -34,10 +34,16 @@ async function suggest(hintList) {
     throw new Error('키워드 정보를 가져오지 못했어요. (오류 ' + res.status + (msg ? ': ' + String(msg).slice(0, 80) : '') + ')');
   }
   const data = await res.json();
-  return (data.keywordList || []).map((x) => {
+  const all = (data.keywordList || []).map((x) => {
     const pc = count(x.monthlyPcQcCnt), mobile = count(x.monthlyMobileQcCnt);
     return { k: clean(x.relKeyword, 60), pc, mobile, total: pc + mobile, comp: clean(x.compIdx, 10) };
-  }).filter((x) => x.k).sort((a, b) => b.total - a.total).slice(0, 40);
+  }).filter((x) => x.k).sort((a, b) => b.total - a.total);
+  // 요청한 키워드 자체는 검색량이 작아도 잘리지 않게 먼저 담는다
+  const norm = (t) => String(t || '').replace(/\s+/g, '');
+  const want = new Set(hints.map(norm));
+  const exact = all.filter((x) => want.has(norm(x.k)));
+  const rest = all.filter((x) => !want.has(norm(x.k)));
+  return exact.concat(rest).slice(0, 40);
 }
 
 module.exports = { isReady, suggest, sign };
