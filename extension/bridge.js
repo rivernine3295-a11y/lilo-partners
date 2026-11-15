@@ -6,8 +6,8 @@ window.addEventListener('message', function (e) {
     window.postMessage({ source: 'lilo-ext', id: d.id, result: { ok: true } }, '*');
     return;
   }
-  if (d.type === 'rank' || d.type === 'place' || d.type === 'recommend' || d.type === 'placedump' || d.type === 'rankmulti') {
-    chrome.runtime.sendMessage({ type: d.type, kw: String(d.kw || ''), kws: Array.isArray(d.kws) ? d.kws.map(String) : [], link: String(d.link || ''), region: String(d.region || '') }, function (res) {
+  if (d.type === 'rank' || d.type === 'place' || d.type === 'recommend' || d.type === 'placedump' || d.type === 'rankmulti' || d.type === 'psmulti') {
+    chrome.runtime.sendMessage({ type: d.type, kw: String(d.kw || ''), kws: Array.isArray(d.kws) ? d.kws.map(String) : [], link: String(d.link || ''), region: String(d.region || ''), store: String(d.store || '') }, function (res) {
       var err = chrome.runtime.lastError;
       window.postMessage({ source: 'lilo-ext', id: d.id, result: err ? { error: 'ext', detail: err.message } : res }, '*');
     });
