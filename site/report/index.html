@@ -119,10 +119,10 @@ function reportBody(r){
   var ks=usableKws(r);
   var ranked=ks.filter(function(k){return k.rank!=null});var top=ranked.length?ranked[0]:null;var topK=top||ks.filter(function(k){return k.vol})[0]||null;
   var h='<div class="s"><div class="eb">RILO · PLACE DIAGNOSIS</div><h1>네이버 플레이스<br/><span class="g">진단서</span></h1>';
-  h+='<div class="lead"><b>손님이 검색했을 때</b> 이 매장이 어떻게 보이는지<br/>직접 확인해서 정리했어요.</div>';
+  h+='<div class="lead"><b>손님이 검색했을 때</b> 이 매장이 어떻게 보이는지<br/>'+(ks.length?'직접 확인해서 정리했어요.':'알아보고 정리했어요.')+'</div>';
   h+='<div class="info"><div class="ir"><span>진단 매장</span><b>'+esc(r.store||'매장명')+(r.region||r.biz?' <em>'+esc([r.region,r.biz].filter(Boolean).join(' · '))+'</em>':'')+'</b></div>';
   h+='<div class="ir"><span>진단 시점</span><b>'+esc(fmtAt(r.checkedAt)||'미입력')+'</b></div>';
-  h+='<div class="ir"><span>확인 기준</span><b>네이버 검색 순위(담당자 직접 확인) · 월 검색량(네이버 검색광고 키워드 도구)</b></div></div>';
+  h+='<div class="ir"><span>확인 기준</span><b>'+(ks.length?'네이버 검색 순위(담당자 직접 확인) · 월 검색량(네이버 검색광고 키워드 도구)':'네이버 플레이스 화면')+'</b></div></div>';
   if(ks.length){
     h+='<h2>지금 손님에게 보이는 모습</h2>'+(topK?'<div class="sub">\''+esc(topK.k)+'\'을 검색하면 이렇게 보여요</div>':'');
     h+='<div class="kpi"><div class="k hl"><small>현재 순위</small><b>'+(top?(top.rank>=301?'300<i>위 밖</i>':top.rank+'<i>위</i>'):'<i>미확인</i>')+'</b></div><div class="k"><small>월 검색량</small><b>'+((topK&&topK.vol)?topK.vol.toLocaleString()+'<i>회</i>':'<i>-</i>')+'</b></div><div class="k"><small>1페이지 노출 목표</small><b>1<i>페이지</i></b></div></div>';
@@ -157,6 +157,7 @@ function talk(r,type,ad,opt){
   else if(k0&&k0.vol)rankLine='참고로 \''+k0.k+'\'은 한 달에 '+k0.vol.toLocaleString()+'번 검색돼요.';
   var wk=ks.filter(function(k){return k.rank!=null&&k!==k0}).sort(function(a,b){return b.rank-a.rank})[0];
   var weakLine=(wk&&k0&&wk.rank>k0.rank)?'반면 \''+wk.k+'\'은 '+(wk.total?wk.total.toLocaleString()+'곳 중 ':'')+rankTxt(wk)+(wk.rank>=301?'으로':'로')+' 보여서 아쉬웠어요.':'';
+  if(!rankLine&&!main)rankLine='네이버에서 우리 매장이 손님에게 어떻게 보이는지, 상위 노출에 도움이 될 부분을 정리해 봤어요.';
   var ct=['홈페이지: https://lillo.kr',r.contact?'문의: '+r.contact:''].filter(Boolean).join('\n');
   var head=(ad?'(광고) ':'');
   var seen=when?'오늘('+when+') '+st+' 네이버 플레이스를 한번 쭉 둘러봤어요.':st+' 네이버 플레이스를 한번 쭉 둘러봤어요.';
@@ -381,11 +382,12 @@ $('autoRun').onclick=async function(){var o=$('autoOut'),btn=$('autoRun'),link=$
   kwDraw();pvRender();
   var fail=S.kws.filter(function(k){return k.rank==null}).length;if(S.kws.length>=3)fail=0;
   S.kws=S.kws.filter(function(k){return k.rank!=null&&!(k.total!=null&&k.total<30)}).slice(0,3);
-  if(!S.kws.length){lastDbg=JSON.stringify(dbg,null,1);$('autoDbg').classList.remove('hid');o.style.color='#ffcf7a';o.textContent='엔체커에서 순위를 읽지 못해 진단서를 만들지 않았어요. 아래 "화면 정보 복사"를 눌러 대화에 붙여넣어 주세요.';btn.disabled=false;stepsShow(-1);kwDraw();pvRender();return}
+  var noRank=!S.kws.length;if(noRank){lastDbg=JSON.stringify(dbg,null,1);$('autoDbg').classList.remove('hid')}
   stepsShow(2);S.kws=S.kws.filter(function(k){return !(k.total!=null&&k.total<30)});kwDraw();pvRender();
   var rep=data();var sv=await call('save',{id:'',report:rep});S.editId=sv.report.id;hist();simpleShow();stepsShow(3);
   var msg=[];if(fail){lastDbg=JSON.stringify(dbg,null,1);$('autoDbg').classList.remove('hid');msg.push('순위를 읽지 못한 키워드 '+fail+'개는 진단서에서 뺐어요')}
   if(unknown.length)msg.push('플레이스 항목은 일부만 확인했어요');if(volNote)msg.unshift(volNote);msg.push('점검 항목(메뉴·사진·리뷰·소식)은 자동 확인이 어려워 직접 체크가 필요하면 고급 설정에서 체크해 주세요');
+  if(noRank)msg.unshift('엔체커 순위를 읽지 못해 순위 없이 기본 진단서로 만들었어요. 나중에 순위를 확인하면 고급 설정 키워드 칸에 넣어 주세요');
   o.style.color='#8ee59a';o.textContent='✅ 진단서와 영업 문구를 만들었어요. 아래 버튼으로 복사하세요.\n'+msg.join(' · ')
  }catch(e){o.style.color='';o.textContent=(e&&e.message)||'처리하지 못했어요.'}
  btn.disabled=false};
