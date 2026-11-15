@@ -291,8 +291,21 @@ chrome.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
       var tab = null;
       try {
         tab = await openTab(ncLink(msg.link));
-        var res = await chrome.scripting.executeScript({ target: { tabId: tab.id }, func: readPlace });
-        sendResponse((res && res[0] && res[0].result) || { error: 'empty' });
+        var out = null;
+        for (var t = 0; t < 4; t++) {
+          var res = await chrome.scripting.executeScript({ target: { tabId: tab.id }, func: readPlace });
+          out = (res && res[0] && res[0].result) || null;
+          var bad = !out || !out.name || /^네이버(\s*지도|\s*플레이스)?$/.test(out.name) || !out.loaded;
+          if (!bad) break;
+          var cur = await chrome.tabs.get(tab.id);
+          var pid = placeIdOf((out && out.url) || cur.url || '');
+          if (pid && String(cur.url || '').indexOf('m.place.naver.com') < 0) {
+            await chrome.tabs.update(tab.id, { url: 'https://m.place.naver.com/place/' + pid + '/home' });
+            await waitComplete(tab.id, 40);
+          }
+          await sleep(2500);
+        }
+        sendResponse(out || { error: 'empty' });
       } catch (e) { sendResponse({ error: 'ext', detail: String(e && e.message || e) }); }
       try { if (tab) chrome.tabs.remove(tab.id); } catch (e2) {}
     })();
