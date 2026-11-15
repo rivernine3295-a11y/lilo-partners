@@ -343,8 +343,9 @@ $('sImg').onclick=function(){$('dl').click()};
 $('autoRun').onclick=async function(){var o=$('autoOut'),btn=$('autoRun'),link=$('autoLink').value.trim().split(/\n/)[0].trim();o.style.color='';$('autoDbg').classList.add('hid');$('autoSteps').textContent='';
  if(!link){o.textContent='플레이스 링크를 먼저 넣어 주세요.';return}
  var pid=placeIdOf(link),today=kstDay(new Date().toISOString());
- var same=(S.recs||[]).map(function(r,i){return {r:r,i:i}}).filter(function(x){return x.r.savedAt&&kstDay(x.r.savedAt)===today&&pid&&placeIdOf(x.r.placeLink)===pid&&usableKws(x.r).length>0})[0];
- if(same){var row=$('hist').children[same.i];if(row){var ob=row.querySelector('button');if(ob)ob.click()}await sleepMs(300);simpleShow();o.style.color='#8ee59a';o.textContent='오늘 이미 조회한 매장이라 저장된 결과를 보여 드려요. (같은 주소는 하루 1번만 조회해요)';return}
+ var dupMsg='이미 영업했던 곳입니다. (저장한 진단서에 있는 매장이라 진행하지 않아요)';
+ var dup=pid?(S.recs||[]).filter(function(x){return placeIdOf(x.placeLink)===pid})[0]:null;
+ if(dup){o.style.color='#ffcf7a';o.textContent='⚠ '+(dup.store||'이 매장')+' — '+dupMsg;alert((dup.store?dup.store+'\n':'')+dupMsg);return}
  if(todayCount()>=10){o.textContent='오늘 10곳을 모두 사용했어요. 내일 이어서 해 주세요.';return}
  var ping=await extCall('ping',{},900);if(!ping){o.textContent='확장 프로그램이 연결되지 않았어요. 아래 "처음 한 번만" 설치 방법을 따라 설치한 뒤 이 페이지를 새로고침해 주세요.';return}
  btn.disabled=true;$('autoRes').classList.add('hid');
@@ -354,6 +355,8 @@ $('autoRun').onclick=async function(){var o=$('autoOut'),btn=$('autoRun'),link=$
   if(pl&&!pl.error&&pl.loaded){store=pl.name||'';region=regionFromAddr(pl.addr);biz=pl.biz||'미용실';booking=!!pl.booking}else{unknown.push('플레이스 화면')}
   if(!store){store=prompt('플레이스에서 매장명을 읽지 못했어요. 매장명을 입력해 주세요.')||'';if(!store){o.textContent='매장명이 없어 중단했어요.';btn.disabled=false;stepsShow(-1);return}}
   if(!region){region=prompt('지역(동)을 읽지 못했어요. 예: 서울 강동구 천호동')||'';if(!region){o.textContent='지역이 없어 중단했어요.';btn.disabled=false;stepsShow(-1);return}}
+  var nk0=nameKey({store:store,region:region}),dup2=(S.recs||[]).filter(function(x){return nameKey(x)===nk0})[0];
+  if(dup2){o.style.color='#ffcf7a';o.textContent='⚠ '+store+' — '+dupMsg;btn.disabled=false;stepsShow(-1);alert(store+'\n'+dupMsg);return}
   reset();$('fStore').value=store;$('fRegion').value=region;$('fBiz').value=biz;$('fLink').value=link;$('fAt').value=nowLocal();
   S.checks=[false,false,false,false,false,false];S.checks[1]=booking;itemsDraw();
   stepsShow(0);var base=regionBase();var rec=await extCall('recommend',{link:link,region:base},90000);
