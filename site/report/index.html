@@ -143,7 +143,6 @@ function talk(r,type,ad,opt){
   else if(k0&&k0.vol)rankLine='참고로 \''+k0.k+'\'은 한 달에 '+k0.vol.toLocaleString()+'번 검색돼요.';
   var ct=['홈페이지: https://lillo.kr',r.contact?'문의: '+r.contact:''].filter(Boolean).join('\n');
   var head=(ad?'(광고) ':'');
-  var rej=opt?'\n원치 않으시면 "수신 거부"라고 답장 주세요. 바로 중단할게요.':'';
   var seen=when?'오늘('+when+') '+st+' 네이버 플레이스를 한번 쭉 둘러봤어요.':st+' 네이버 플레이스를 한번 쭉 둘러봤어요.';
   var more=n>1?'그 외 '+(n-1)+'가지도 진단서에 정리해서 함께 보내드려요 📄':'정리한 진단서를 함께 보내드려요 📄';
   var ask='진단서 한번 살펴봐 주시고, 우리 매장이 더 위에 보일 수 있는 방법을 같이 상담해 보면 어떨까요?\n바쁘실 땐 천천히 답 주셔도 괜찮아요.';
@@ -167,7 +166,7 @@ function talk(r,type,ad,opt){
       main?main.fix:null,more,main?rankLine||null:null,'',ask,pay,ct];
   }
   var out=L.filter(function(x){return x!==null&&x!==false&&x!==undefined}).join('\n').replace(/\n{3,}/g,'\n\n').trim();
-  return out+rej;
+  return out;
 }
 function tRender(force){if(tEdited&&!force)return;$('tTxt').value=talk(data(),$('tType').value,$('tAd').checked,$('tOpt').checked);tEdited=false}
 function pvRender(){tRender();
