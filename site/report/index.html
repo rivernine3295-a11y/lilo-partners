@@ -338,7 +338,7 @@ $('sImg').onclick=function(){$('dl').click()};
 $('autoRun').onclick=async function(){var o=$('autoOut'),btn=$('autoRun'),link=$('autoLink').value.trim().split(/\n/)[0].trim();o.style.color='';$('autoDbg').classList.add('hid');$('autoSteps').textContent='';
  if(!link){o.textContent='플레이스 링크를 먼저 넣어 주세요.';return}
  var pid=placeIdOf(link),today=kstDay(new Date().toISOString());
- var same=(S.recs||[]).map(function(r,i){return {r:r,i:i}}).filter(function(x){return x.r.savedAt&&kstDay(x.r.savedAt)===today&&pid&&placeIdOf(x.r.placeLink)===pid})[0];
+ var same=(S.recs||[]).map(function(r,i){return {r:r,i:i}}).filter(function(x){return x.r.savedAt&&kstDay(x.r.savedAt)===today&&pid&&placeIdOf(x.r.placeLink)===pid&&usableKws(x.r).length>0})[0];
  if(same){var row=$('hist').children[same.i];if(row){var ob=row.querySelector('button');if(ob)ob.click()}await sleepMs(300);simpleShow();o.style.color='#8ee59a';o.textContent='오늘 이미 조회한 매장이라 저장된 결과를 보여 드려요. (같은 주소는 하루 1번만 조회해요)';return}
  if(todayCount()>=10){o.textContent='오늘 10곳을 모두 사용했어요. 내일 이어서 해 주세요.';return}
  var ping=await extCall('ping',{},900);if(!ping){o.textContent='확장 프로그램이 연결되지 않았어요. 아래 "처음 한 번만" 설치 방법을 따라 설치한 뒤 이 페이지를 새로고침해 주세요.';return}
