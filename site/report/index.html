@@ -126,7 +126,7 @@ function reportBody(r){
   h+='<h2>이렇게 진행돼요</h2><div class="sub">부담 없이 이야기부터 들어 보세요</div><div class="steps"><div class="st"><small>STEP 1</small><b>무료 상담</b><span>진단 내용을 함께 보고 궁금한 점을 말씀 나눠요</span></div><div class="st"><small>STEP 2</small><b>개선 방법·견적 안내</b><span>매장에 맞는 방법과 비용을 말씀드려요</span></div><div class="st"><small>STEP 3</small><b>노출 확인 후 비용</b><span>총 25일 노출이 확인된 뒤에 청구해요</span></div></div>';
   h+='<div class="offer">결과가 확인된 뒤에 비용을 받아요.<br/>먼저 진단서 내용이 맞는지 이야기 나눠 보시겠어요?</div>';
   h+='<div class="note2">※ 순위와 검색량은 확인한 시점의 값이며 시간이 지나면 달라질 수 있어요. 이 문서의 어떤 내용도 특정 순위를 보장하지 않아요.</div>';
-  h+='<div class="ft"><div class="logo">RILO<span>.</span></div><div class="ct">'+(r.contact?esc(r.contact):'')+'</div></div></div>';
+  h+='<div class="ft"><div class="logo">RILO<span>.</span></div><div class="ct">lillo.kr'+(r.contact?'<br/>'+esc(r.contact):'')+'</div></div></div>';
   return h;
 }
 
@@ -141,7 +141,7 @@ function talk(r,type,ad,opt){
   var rankLine='';
   if(k0&&k0.vol&&k0.rank!=null)rankLine='참고로 \''+k0.k+'\'은 한 달에 '+k0.vol.toLocaleString()+'번 검색되는데, '+(k0.total?k0.total.toLocaleString()+'곳 중 ':'')+'지금은 '+rankTxt(k0)+(k0.rank>=301?'으로':'로')+' 보여요.';
   else if(k0&&k0.vol)rankLine='참고로 \''+k0.k+'\'은 한 달에 '+k0.vol.toLocaleString()+'번 검색돼요.';
-  var ct=r.contact?'문의: '+r.contact:'';
+  var ct=['홈페이지: https://lillo.kr',r.contact?'문의: '+r.contact:''].filter(Boolean).join('\n');
   var head=(ad?'(광고) ':'');
   var rej=opt?'\n원치 않으시면 "수신 거부"라고 답장 주세요. 바로 중단할게요.':'';
   var seen=when?'오늘('+when+') '+st+' 네이버 플레이스를 한번 쭉 둘러봤어요.':st+' 네이버 플레이스를 한번 쭉 둘러봤어요.';
