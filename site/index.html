@@ -139,14 +139,19 @@
     -webkit-background-clip:text; background-clip:text; color:transparent;
   }
   .target-chips{
-    display:flex; justify-content:center; gap:8px; flex-wrap:wrap;
-    margin:0 0 22px;
+    display:flex; overflow:hidden; margin:0 auto 22px; max-width:560px;
+    -webkit-mask-image:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent);
+            mask-image:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent);
   }
+  .chips-track{display:flex; flex:none; gap:8px; padding-right:8px; animation:chipsMarquee 18s linear infinite;}
+  .target-chips:hover .chips-track{animation-play-state:paused;}
+  @keyframes chipsMarquee{from{transform:translateX(0);}to{transform:translateX(-100%);}}
   .target-chips span{
     font-family:var(--font-display); font-size:12px; font-weight:500; letter-spacing:.05em;
     padding:7px 16px; border-radius:999px; border:1px solid var(--line);
-    color:var(--fg-muted);
+    color:var(--fg-muted); white-space:nowrap;
   }
+  @media (prefers-reduced-motion:reduce){.chips-track{animation:none;}.chips-track[aria-hidden="true"]{display:none;}.target-chips{justify-content:center;flex-wrap:wrap;overflow:visible;-webkit-mask-image:none;mask-image:none;}.chips-track{flex-wrap:wrap;justify-content:center;}}
   .benefit{
     font-size:clamp(18px,2.6vw,23px);
     font-weight:700;
@@ -740,7 +745,7 @@
       <span class="line"><span class="word accent">가장</span> <span class="word accent">먼저</span> <span class="word">보이게.</span></span>
     </h1>
     <div class="target-chips">
-      <span>뷰티샵 (미용실 · 네일샵 · 에스테틱)</span><span>병원</span><span>음식점</span>
+      <div class="chips-track"><span>뷰티샵 (미용실 · 네일샵 · 에스테틱)</span><span>병원</span><span>음식점</span></div><div class="chips-track" aria-hidden="true"><span>뷰티샵 (미용실 · 네일샵 · 에스테틱)</span><span>병원</span><span>음식점</span></div>
     </div>
     <p class="benefit">우리 동네 사장님들의 <b>네이버 플레이스</b>를<br>1페이지로 올립니다.</p>
     <p class="subcopy">과장된 약속 대신, 결과를 확인한 뒤에 비용을 받아요.</p>
