@@ -353,6 +353,7 @@ $('sImg').onclick=function(){$('dl').click()};
 $('autoRun').onclick=async function(){var o=$('autoOut'),btn=$('autoRun'),link=$('autoLink').value.trim().split(/\n/)[0].trim();o.style.color='';$('autoDbg').classList.add('hid');$('autoSteps').textContent='';
  if(!link){o.textContent='플레이스 링크를 먼저 넣어 주세요.';return}
  var pid=placeIdOf(link),today=kstDay(new Date().toISOString());
+ if(!pid&&!/naver\.me\//.test(link)){o.style.color='#ffcf7a';o.textContent='플레이스 링크가 아닌 것 같아요. 매장 페이지의 주소(map.naver.com/p/entry/place/숫자… 또는 naver.me/…)를 넣어 주세요.';return}
  var dupMsg='이미 영업했던 곳입니다. (저장한 진단서에 있는 매장이라 진행하지 않아요)';
  var dup=pid?(S.recs||[]).filter(function(x){return placeIdOf(x.placeLink)===pid})[0]:null;
  if(dup){o.style.color='#ffcf7a';o.textContent='⚠ '+(dup.store||'이 매장')+' — '+dupMsg;alert((dup.store?dup.store+'\n':'')+dupMsg);return}
@@ -368,7 +369,7 @@ $('autoRun').onclick=async function(){var o=$('autoOut'),btn=$('autoRun'),link=$
   if(dup2){o.style.color='#ffcf7a';o.textContent='⚠ '+store+' — '+dupMsg;btn.disabled=false;stepsShow(-1);alert(store+'\n'+dupMsg);return}
   reset();$('fStore').value=store;$('fRegion').value=region;$('fBiz').value=biz;$('fLink').value=link;$('fAt').value=nowLocal();
   S.checks=[false,false,false,false,false,false];S.checks[1]=booking;itemsDraw();
-  stepsShow(0);var base=regionBase();var rec=await extCall('recommend',{link:link,region:base},90000);
+  stepsShow(0);var base=regionBase();var rec=null;
     var rkAI=(rec&&rec.keywords)||[];
   var dg=dongFromKw(rkAI);
   if(dg&&!/[동읍면리]$/.test(areaTok())){var rt=$('fRegion').value.split(/\s+/).filter(Boolean);var gu=rt.filter(function(t){return /[구군시]$/.test(t)})[0]||'';$('fRegion').value=[rt[0]&&!/[구군시]$/.test(rt[0])?rt[0]:'',gu,dg].filter(Boolean).join(' ')}
@@ -412,7 +413,7 @@ $('autoRun').onclick=async function(){var o=$('autoOut'),btn=$('autoRun'),link=$
   }
   try{var need=S.kws.filter(function(k){return k.rank!=null&&(k.cap||k.total==null)}).slice(0,5);
    if(need.length&&!aborted){$('autoSteps').textContent='⏳ 전체 업체 수·20위 밖 순위 확인 중';
-    var m2=await extCall('rankmulti',{link:link,kws:need.map(function(k){return k.k})},150000);
+    var m2=await extCall('rankmulti',{link:link,kws:need.map(function(k){return k.k})},60000);
     ((m2&&m2.results)||[]).forEach(function(x){var k=x&&need.filter(function(n){return n.k===x.k})[0];if(!k)return;if(x.total!=null)k.total=x.total;if(k.cap&&x.rank!=null){k.rank=x.rank;k.cap=0}});kwDraw();pvRender()}}catch(e){}
   if(aborted){btn.disabled=false;stepsShow(-1);return}
   kwDraw();pvRender();
