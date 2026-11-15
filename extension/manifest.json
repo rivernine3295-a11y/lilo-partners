@@ -1,0 +1,16 @@
+{
+  "manifest_version": 3,
+  "name": "릴로 진단서 도우미 (엔체커 자동 조회)",
+  "version": "0.1.0",
+  "description": "릴로 진단서 도구의 실행 버튼을 누르면, 로그인된 엔체커에서 키워드 순위를 대신 조회해 진단서에 채워 줍니다.",
+  "permissions": ["tabs", "scripting"],
+  "host_permissions": ["https://www.nchecker.kr/*", "https://nchecker.kr/*"],
+  "background": { "service_worker": "background.js" },
+  "content_scripts": [
+    {
+      "matches": ["https://lillo.kr/report*", "https://www.lillo.kr/report*"],
+      "js": ["bridge.js"],
+      "run_at": "document_idle"
+    }
+  ]
+}
