@@ -299,7 +299,8 @@ chrome.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
     return true;
   }
   if (msg.type === 'psmulti') {
-    Promise.all((msg.kws || []).slice(0, 8).map(function (k) { return psOne(k, msg.store || ''); })).then(function (r) { sendResponse({ results: r }); }, function (e) { sendResponse({ error: 'ext', detail: String(e && e.message || e) }); });
+    var kl = (msg.kws || []).slice(0, 8);
+    Promise.race([Promise.all(kl.map(function (k) { return psOne(k, msg.store || ''); })), new Promise(function (res) { setTimeout(function () { res(kl.map(function (k) { return { k: k, error: 'timeout' }; })); }, 70000); })]).then(function (r) { sendResponse({ results: r }); }, function (e) { sendResponse({ error: 'ext', detail: String(e && e.message || e) }); });
     return true;
   }
   if (msg.type === 'placedump') {

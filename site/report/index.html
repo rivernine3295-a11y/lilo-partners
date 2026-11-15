@@ -389,7 +389,7 @@ $('autoRun').onclick=async function(){var o=$('autoOut'),btn=$('autoRun'),link=$
   async function psBatch(list){
    var bt=list.map(function(c){return {k:c.k,vol:c.vol,comp:c.comp,rank:null,total:null}});bt.forEach(function(k){S.kws.push(k)});kwDraw();
    $('autoSteps').textContent='⏳ 순위 확인 중 (검색량 많은 키워드 '+bt.length+'개)';
-   var pr=await extCall('psmulti',{store:store,kws:bt.map(function(k){return k.k})},120000);
+   var pr=await extCall('psmulti',{store:store,kws:bt.map(function(k){return k.k})},85000);
    var res=(pr&&pr.results)||[];if(!res.length)dbg.push({step:'psmulti',r:pr});
    bt.forEach(function(k,i){var x=res[i];if(!x||x.error||!x.rows||!x.rows.length){dbg.push({ps:k.k,r:x&&x.error});return}
     k.rank=x.mine||301;if(!x.mine)k.cap=20;if(x.vol)k.vol=x.vol;if(x.comp)k.comp=x.comp;
