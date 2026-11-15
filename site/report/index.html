@@ -30,24 +30,30 @@ input,select,textarea{width:100%;background:#0b0a09;border:1px solid var(--line)
    <div class="row" style="margin-top:8px"><button class="btn nf" id="autoRun" type="button">진단하기</button></div>
    <div class="note" id="dayCnt" style="margin:8px 0 0"></div>
    <div class="note" id="autoSteps" style="margin-top:6px"></div><div class="err" id="autoOut" style="white-space:pre-line"></div>
-   <div id="autoRes" class="hid" style="margin-top:12px"><label>영업 문구 (톡톡에 붙여넣기)</label><textarea id="simpleTxt" rows="8"></textarea>
+   <div id="autoRes" class="hid" style="margin-top:12px"><textarea id="simpleTxt" class="hid" rows="2"></textarea>
     <div class="row" style="margin-top:10px"><button class="btn nf" id="sCopyTalk" type="button">영업 문구 복사</button><button class="btn g nf" id="sCopyRep" type="button">진단서 글 복사</button><button class="btn g nf" id="sImg" type="button">진단서 이미지 저장</button></div>
-    <div class="note" style="margin-top:8px">미리보기와 점검 항목 수정은 아래 <b>고급 설정</b>에서 할 수 있어요.</div></div>
+    <div class="note" style="margin-top:8px">영업 멘트는 아래 <b>네이버 톡톡 영업 멘트</b>에서 확인·수정할 수 있어요.</div></div>
    <details style="margin-top:10px"><summary class="note" style="cursor:pointer">처음 한 번만: 확장 프로그램 설치 · 다른 방법</summary><div class="note" style="margin-top:6px">1) <a href="/report/lilo-extension.zip" download style="color:#b58cff">확장 프로그램 받기</a> → zip 압축 풀기<br>2) Chrome 주소창에 <b>chrome://extensions</b> → 오른쪽 위 <b>개발자 모드</b> 켜기<br>3) <b>압축해제된 확장 프로그램을 로드합니다</b> → 풀어 둔 폴더 선택<br>4) 엔체커에 로그인해 두고 이 페이지를 새로고침<br>(바뀐 확장 프로그램을 받았다면 chrome://extensions에서 새로고침 아이콘을 눌러 주세요)</div>
     <div class="row" style="margin-top:8px"><button class="btn g s nf" id="autoCopy" type="button">코워크용 작업 문구 복사</button><button class="btn g s nf hid" id="autoDbg" type="button">화면 정보 복사</button><button class="btn g s nf" id="placeDump" type="button">플레이스 화면 정보 복사</button></div></details></div>
-  <details id="adv" class="card"><summary style="cursor:pointer;font-weight:700">고급 설정 · 직접 입력·수정</summary><div style="margin-top:10px">
+  <div class="card"><b>💬 네이버 톡톡 영업 멘트</b><div class="note" style="margin:6px 0 8px">진단 결과로 만든 영업 멘트예요. 복사해서 톡톡에 붙여넣으세요. 입력하지 않은 숫자는 문구에 넣지 않아요.</div>
+   <div class="row"><select id="tType"><option value="0">흐름형: 부실한 점 → 해결 → 다정하게 (기본)</option><option value="1">질문으로 시작 (같은 흐름)</option><option value="2">짧게</option></select></div>
+   <div class="chk"><input type="checkbox" id="tAd" checked><label for="tAd" style="margin:0;color:var(--fg)">맨 앞에 (광고) 표시</label></div>
+   <textarea id="tTxt" rows="11" style="margin-top:10px"></textarea>
+   <div class="row" style="margin-top:10px"><button class="btn nf" id="tCopy">문구 복사</button><button class="btn g nf" id="tNew">문구 새로 만들기</button></div><div class="err" id="terr"></div></div>
+  <div class="row"><button class="btn nf" id="prep" type="button">📤 발송 준비 (저장 + 이미지 + 문구 복사)</button><button class="btn g nf" id="dl">이미지로 저장</button><button class="btn g nf" id="save">기록에 저장</button><button class="btn g nf" id="reset">새로 쓰기</button></div><div class="err" id="gerr"></div>
+  <details id="adv" class="card"><summary style="cursor:pointer;font-weight:700">고급 설정 · 키워드·점검 항목 직접 수정</summary><div style="margin-top:10px">
   <details class="card" id="bulk"><summary style="cursor:pointer;font-weight:700">⚡ 여러 매장 한 번에 가져오기 (일괄)</summary>
    <div class="note" style="margin:8px 0">다른 창(브라우저를 조작할 수 있는 쪽)에 <b>매장 플레이스 주소 목록</b>과 <b>작업 문구</b>를 주면, 순위와 점검 결과가 JSON으로 나와요. 그 결과를 아래에 붙여넣으면 <b>매장 수만큼 진단서가 저장</b>돼요. 월 검색량은 여기서 자동으로 채워요.</div>
    <textarea id="reqAddr" class="hid"></textarea><button class="hid" id="reqCopy" type="button"></button>
    <textarea id="bulkTxt" rows="7" style="margin-top:10px" placeholder="다른 창이 돌려준 결과(JSON)를 처음부터 끝까지 붙여넣으세요"></textarea>
    <div class="row" style="margin-top:10px"><button class="btn nf" id="bulkGo" type="button">가져와서 저장</button></div><div class="err" id="bulkOut" style="white-space:pre-line"></div></details>
-  <div class="card"><b>1. 매장</b>
+  <div class="card hid" id="storeCard"><b>1. 매장</b>
    <label>매장명</label><input id="fStore"><div class="row"><div><label>지역</label><input id="fRegion" placeholder="예: 서울 강남구 역삼동"></div><div><label>업종</label><select id="fBiz"><option>미용실</option><option>네일샵</option><option>에스테틱</option><option>기타</option></select></div></div>
    <label>매장 플레이스 링크 (선택 · 확인할 때 바로 열어 봐요)</label><div class="row"><input id="fLink" placeholder="https://naver.me/... 또는 플레이스 주소"><button class="btn g s nf" id="lOpen" type="button">열기</button></div>
    <label>확인 시각 (순위를 직접 확인한 시각)</label><input id="fAt" type="datetime-local">
    <label>보내는 사람 이름 (선택, 톡톡 문구에 들어가요)</label><input id="fSender" placeholder="예: 강현구">
    <label>보내는 사람 문의 방법 (선택, 진단서 맨 아래와 톡톡 문구에 들어가요)</label><input id="fContact" placeholder="예: 010-0000-0000 · 카카오톡 ID"></div>
-  <div class="card"><b>2. 키워드</b><div class="note" style="margin:6px 0 8px">검색어를 넣으면 월 검색량과 경쟁도를 가져와요. 순위는 직접 확인한 숫자를 넣어 주세요(안 넣으면 "미확인"으로 나와요).</div>
+  <div class="card"><b>1. 키워드</b><div class="note" style="margin:6px 0 8px">검색어를 넣으면 월 검색량과 경쟁도를 가져와요. 순위는 직접 확인한 숫자를 넣어 주세요(안 넣으면 "미확인"으로 나와요).</div>
    <div class="row"><button class="btn nf" id="autoKw" type="button">⚡ 지역·업종으로 자동 채우기</button><span class="note" style="flex:1 1 200px">위 1번의 지역을 보고 동네+시술 키워드 3개를 자동으로 넣어요</span></div>
    <div class="row" style="margin-top:8px"><button class="btn g s nf" id="ncOpen" type="button">엔체커 열기</button><span class="note" style="flex:1 1 220px">엔체커에서 순위를 조회한 뒤 결과(<b>226개 업체 중 18위</b>)를 아래 키워드 칸에 그대로 붙여넣으세요. 하루 10곳, 같은 장소는 하루 1번이라 진단서도 하루 10곳까지가 좋아요.</span></div>
    <div class="row" style="margin-top:8px"><input id="hint" placeholder="직접 검색: 예) 역삼미용실, 강남헤어"><button class="btn g s nf" id="sBtn">검색량 가져오기</button></div><div class="err" id="serr"></div><div class="sug" id="sug"></div>
@@ -57,14 +63,8 @@ input,select,textarea{width:100%;background:#0b0a09;border:1px solid var(--line)
     <div class="row" style="margin-top:8px"><button class="btn nf" id="rkGo" type="button">순위 채우기</button></div><div class="err" id="rkOut" style="white-space:pre-line"></div></details>
    <div id="kws"></div>
    <div class="row" style="margin-top:10px"><input id="manual" placeholder="직접 키워드 추가"><button class="btn g s nf" id="mBtn">추가</button></div></div>
-  <div class="card"><b>3. 점검에서 확인한 개선 가능 항목 (미용실)</b><div class="note" style="margin:6px 0 4px">플레이스 화면을 보고 <b>문제가 실제로 확인된 것만 체크</b>하세요. 체크한 것만 진단서와 톡톡 문구에 나와요. <b>★</b>를 누르면 그 항목이 "가장 부실한 부분"으로 먼저 나가요(안 누르면 위에서부터 자동). 메뉴·가격과 예약 연결은 대부분 되어 있어서 아래쪽에 있어요.</div>
+  <div class="card"><b>2. 점검에서 확인한 개선 가능 항목 (미용실)</b><div class="note" style="margin:6px 0 4px">플레이스 화면을 보고 <b>문제가 실제로 확인된 것만 체크</b>하세요. 체크한 것만 진단서와 톡톡 문구에 나와요. <b>★</b>를 누르면 그 항목이 "가장 부실한 부분"으로 먼저 나가요(안 누르면 위에서부터 자동). 메뉴·가격과 예약 연결은 대부분 되어 있어서 아래쪽에 있어요.</div>
    <div id="items"></div></div>
-  <div class="card"><b>4. 네이버 톡톡 문구</b><div class="note" style="margin:6px 0 8px">위에 넣은 내용으로 붙여넣을 문구를 만들어요. 입력하지 않은 숫자는 문구에 넣지 않아요.</div>
-   <div class="row"><select id="tType"><option value="0">흐름형: 부실한 점 → 해결 → 다정하게 (기본)</option><option value="1">질문으로 시작 (같은 흐름)</option><option value="2">짧게</option></select></div>
-   <div class="chk"><input type="checkbox" id="tAd" checked><label for="tAd" style="margin:0;color:var(--fg)">맨 앞에 (광고) 표시</label></div>
-   <textarea id="tTxt" rows="11" style="margin-top:10px"></textarea>
-   <div class="row" style="margin-top:10px"><button class="btn nf" id="tCopy">문구 복사</button><button class="btn g nf" id="tNew">문구 새로 만들기</button></div><div class="err" id="terr"></div></div>
-  <div class="row"><button class="btn nf" id="prep" type="button">📤 발송 준비 (저장 + 이미지 + 문구 복사)</button><button class="btn g nf" id="dl">이미지로 저장</button><button class="btn g nf" id="save">기록에 저장</button><button class="btn g nf" id="reset">새로 쓰기</button></div><div class="err" id="gerr"></div>
   </div></details>
  </div><div><div class="note" style="margin-bottom:8px">미리보기</div><div class="pv" id="pvBox"><iframe id="pv" title="미리보기"></iframe></div><div class="card hist" style="margin-top:16px"><b>저장한 진단서</b><div id="hist"></div></div></div></div>
 </div>
@@ -337,7 +337,7 @@ function stepsShow(n){var T=['엔체커 확인 중','플레이스 확인 중','�
 function todayCount(){var t=kstDay(new Date().toISOString());return (S.recs||[]).filter(function(r){return r.savedAt&&kstDay(r.savedAt)===t}).length}
 function simpleShow(){tRender(true);$('simpleTxt').value=$('tTxt').value;$('autoRes').classList.remove('hid')}
 $('simpleTxt').addEventListener('input',function(){$('tTxt').value=$('simpleTxt').value;tEdited=true});
-$('sCopyTalk').onclick=function(){copyTxt($('simpleTxt').value,function(){$('autoOut').style.color='#8ee59a';$('autoOut').textContent='영업 문구를 복사했어요. 톡톡에 붙여넣으세요.'})};
+$('sCopyTalk').onclick=function(){copyTxt($('tTxt').value,function(){$('autoOut').style.color='#8ee59a';$('autoOut').textContent='영업 문구를 복사했어요. 톡톡에 붙여넣으세요.'})};
 $('sCopyRep').onclick=function(){copyTxt(reportText(data()),function(){$('autoOut').style.color='#8ee59a';$('autoOut').textContent='진단서 글을 복사했어요.'})};
 $('sImg').onclick=function(){$('dl').click()};
 $('autoRun').onclick=async function(){var o=$('autoOut'),btn=$('autoRun'),link=$('autoLink').value.trim().split(/\n/)[0].trim();o.style.color='';$('autoDbg').classList.add('hid');$('autoSteps').textContent='';
