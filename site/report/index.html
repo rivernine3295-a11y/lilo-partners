@@ -28,7 +28,7 @@ input,select,textarea{width:100%;background:#0b0a09;border:1px solid var(--line)
 <div id="app" class="hid">
  <div class="row" style="justify-content:space-between;margin-bottom:6px"><div><h1>진단서 만들기</h1><p class="sub" style="margin:0">매장 정보와 확인한 순위를 넣으면 진단서 이미지가 만들어져요.</p></div><button class="btn g s nf" id="out">나가기</button></div>
  <div class="grid2"><div>
-  <div class="card" id="auto"><b>⚡ 플레이스 진단하기</b><div class="note" style="margin:6px 0 8px">영업할 매장의 <b>네이버 플레이스 링크</b>를 넣고 [진단하기]를 누르세요. 엔체커에서 순위를 확인해 <b>진단서와 영업 문구를 자동으로</b> 만들어요.</div>
+  <div class="card" id="auto"><b>⚡ 플레이스 진단하기</b><div class="note" style="margin:6px 0 8px">영업할 매장의 <b>네이버 플레이스 링크</b>를 넣고 [진단하기]를 누르세요. 네이버 검색 순위를 자동으로 확인해 <b>진단서와 영업 문구를 자동으로</b> 만들어요.</div>
    <textarea id="autoLink" rows="2" placeholder="플레이스 링크를 붙여넣으세요"></textarea>
    <div class="row" style="margin-top:8px"><button class="btn nf" id="autoRun" type="button">진단하기</button></div>
    <div class="note" id="dayCnt" style="margin:8px 0 0"></div>
@@ -236,7 +236,7 @@ var STN=[];function relKw(it){var key=String(it.k||'').replace(/\s/g,'');var bas
 function addKw(k){if(S.kws.some(function(x){return x.k===k.k})||S.kws.length>=8)return;S.kws.push({k:k.k,vol:k.total||k.vol||0,comp:k.comp||'',rank:null,total:null});kwDraw();pvRender()}
 function reset(){S.kws=[];S.rivals=[];S.intro=0;S.editId='';['fStore','fRegion','fLink','hint','manual'].forEach(function(i){$(i).value=''});$('fAt').value=nowLocal();S.checks=[false,false,false,false,false,false];S.main=-1;$('sug').textContent='';itemsDraw();kwDraw();pvRender()}
 function kstDay(iso){var d=new Date(new Date(iso).getTime()+9*3600*1000);return d.toISOString().slice(0,10)}
-function dayCount(list){var t=kstDay(new Date().toISOString());var n=(list||[]).filter(function(r){return r.savedAt&&kstDay(r.savedAt)===t}).length;var e=$('dayCnt');e.textContent='오늘 저장한 진단서 '+n+'곳 / 하루 10곳 (엔체커 한도 기준)'+(n>=10?' — 한도에 도달했어요. 내일 이어서 해 주세요.':'');e.style.color=n>=10?'#ff8f8f':''}
+function dayCount(list){var t=kstDay(new Date().toISOString());var n=(list||[]).filter(function(r){return r.savedAt&&kstDay(r.savedAt)===t}).length;var e=$('dayCnt');e.textContent='오늘 저장한 진단서 '+n+'곳 / 하루 10곳 (하루 10곳 기준)'+(n>=10?' — 한도에 도달했어요. 내일 이어서 해 주세요.':'');e.style.color=n>=10?'#ff8f8f':''}
 function hist(){call('list').then(function(j){S.recs=j.reports||[];dayCount(j.reports);var b=$('hist');b.textContent='';if(!j.reports.length){b.innerHTML='<div class="note">아직 저장한 진단서가 없어요.</div>';return}
   j.reports.forEach(function(r){var d=document.createElement('div');d.innerHTML='<span>'+esc(r.store)+' <span class="note">'+esc(fmtAt(r.checkedAt)||'')+'</span></span>';var w=document.createElement('span');
    var o=document.createElement('button');o.className='btn g s';o.textContent='열기';o.onclick=function(){S.editId=r.id;$('fStore').value=r.store;$('fRegion').value=r.region;$('fBiz').value=r.biz||'미용실';$('fAt').value=r.checkedAt;$('fContact').value=r.contact||'';S.kws=(r.keywords||[]).map(function(k){return {k:k.k,vol:k.vol,comp:k.comp,rank:k.rank,cap:k.cap||0,total:k.total==null?null:k.total}});S.rivals=r.rivals||[];S.intro=r.intro||0;$('fLink').value=r.placeLink||'';var ck=r.checks||[];if(ck.length<=3){var m=[2,3,1];S.checks=[false,false,false,false,false,false];ck.forEach(function(v,i){if(v)S.checks[m[i]]=true});S.main=-1}else{S.checks=[0,1,2,3,4,5].map(function(i){return !!ck[i]});S.main=(r.main==null?-1:r.main)}itemsDraw();kwDraw();pvRender();simpleShow();$('autoOut').style.color='#8ee59a';$('autoOut').textContent='저장된 \''+(r.store||'')+'\' 진단서를 불러왔어요. 아래에서 영업 멘트와 진단서를 다시 복사할 수 있어요.';window.scrollTo(0,0)};
@@ -383,7 +383,7 @@ $('autoRun').onclick=async function(){var o=$('autoOut'),btn=$('autoRun'),link=$
   if(!cand.length){$('autoKw').click();await sleepMs(500);for(var w=0;w<24&&$('autoKw').disabled;w++)await sleepMs(500);S.kws.forEach(function(k){candAdd(k.k,k.vol,k.comp)});S.kws=[]}
   if(!cand.length){o.textContent='키워드를 정하지 못했어요. 고급 설정에서 키워드를 추가한 뒤 다시 시도해 주세요.';btn.disabled=false;stepsShow(-1);return}
   var dbg=[];var aborted=false;var retryN=0;
-  function stopErr(r){if(r&&r.error==='login'){o.textContent='엔체커에 로그인이 안 되어 있어요. 엔체커 탭에서 로그인한 뒤 다시 눌러 주세요.';return true}if(r&&r.error==='limit'){o.textContent='엔체커 하루 한도에 도달한 것 같아요. 내일 이어서 해 주세요.';return true}return false}
+  function stopErr(r){if(r&&r.error==='login'){o.textContent='보조 순위 조회(엔체커)에 로그인이 안 되어 있어요. 엔체커 탭에서 로그인한 뒤 다시 눌러 주세요.';return true}if(r&&r.error==='limit'){o.textContent='엔체커 하루 한도에 도달한 것 같아요. 내일 이어서 해 주세요.';return true}return false}
   function okKw(k){return k.rank!=null&&!(k.total!=null&&k.total<30)}
   function maskN(n){n=String(n||'');return n.length<=1?'○':n.slice(0,1)+new Array(Math.min(n.length,6)).join('○')}
   async function psBatch(list){
@@ -400,13 +400,13 @@ $('autoRun').onclick=async function(){var o=$('autoOut'),btn=$('autoRun'),link=$
   for(var round=0;round<2&&cand.length&&!aborted&&S.kws.filter(okKw).length<3;round++){
    var batch=cand.splice(0,5).map(function(c){return {k:c.k,vol:c.vol,comp:c.comp,rank:null,total:null}});
    batch.forEach(function(k){S.kws.push(k)});kwDraw();
-   $('autoSteps').textContent='⏳ 엔체커 확인 중 (검색량 많은 키워드 '+batch.length+'개를 한 번에 조회)';
+   $('autoSteps').textContent='⏳ 순위 확인 중 (검색량 많은 키워드 '+batch.length+'개를 한 번에 조회)';
    var mr=await extCall('rankmulti',{link:link,kws:batch.map(function(k){return k.k})},150000);
    if(stopErr(mr)){aborted=true;break}
    var got={};((mr&&mr.results)||[]).forEach(function(x){got[x.k]=x});
    if(!(mr&&mr.results)||(mr&&mr.raw))dbg.push({step:'rankmulti',r:mr});
    for(var i=0;i<batch.length;i++){var k=batch[i],x=got[k.k];
-    if((!x||x.rank==null)&&(retryN++)<3){$('autoSteps').textContent='⏳ 엔체커 다시 확인 중 · '+k.k;var r2=await extCall('rank',{kw:k.k,link:link},60000);if(stopErr(r2)){aborted=true;break}x=(r2&&r2.rank!=null)?r2:null;if(!x)dbg.push({kw:k.k,r:r2})}
+    if((!x||x.rank==null)&&(retryN++)<3){$('autoSteps').textContent='⏳ 순위 다시 확인 중 · '+k.k;var r2=await extCall('rank',{kw:k.k,link:link},60000);if(stopErr(r2)){aborted=true;break}x=(r2&&r2.rank!=null)?r2:null;if(!x)dbg.push({kw:k.k,r:r2})}
     if(x&&x.rank!=null){k.rank=x.rank;k.total=x.total}}
    kwDraw();pvRender();
    if(S.kws.filter(okKw).length>=3)break;
@@ -423,7 +423,7 @@ $('autoRun').onclick=async function(){var o=$('autoOut'),btn=$('autoRun'),link=$
   var rep=data();var sv=await call('save',{id:'',report:rep});S.editId=sv.report.id;hist();simpleShow();stepsShow(3);
   var msg=[];if(fail){lastDbg=JSON.stringify(dbg,null,1);$('autoDbg').classList.remove('hid');msg.push('순위를 읽지 못한 키워드 '+fail+'개는 진단서에서 뺐어요')}
   if(unknown.length)msg.push('플레이스 항목은 일부만 확인했어요');if(volNote)msg.unshift(volNote);msg.push('점검 항목(메뉴·사진·리뷰·소식)은 자동 확인이 어려워 직접 체크가 필요하면 고급 설정에서 체크해 주세요');
-  if(noRank)msg.unshift('엔체커 순위를 읽지 못해 순위 없이 기본 진단서로 만들었어요. 나중에 순위를 확인하면 고급 설정 키워드 칸에 넣어 주세요');
+  if(noRank)msg.unshift('순위를 읽지 못해 순위 없이 기본 진단서로 만들었어요. 나중에 순위를 확인하면 고급 설정 키워드 칸에 넣어 주세요');
   o.style.color='#8ee59a';o.textContent='✅ 진단서와 영업 문구를 만들었어요. 아래 버튼으로 복사하세요.\n'+msg.join(' · ')
  }catch(e){o.style.color='';o.textContent=(e&&e.message)||'처리하지 못했어요.'}
  btn.disabled=false};
