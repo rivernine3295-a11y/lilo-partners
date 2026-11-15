@@ -4,14 +4,14 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>릴로 | 우리 동네 네이버 플레이스 마케팅</title>
-<meta name="description" content="미용실·병원·음식점 사장님을 위한 네이버 플레이스 최적화·콘텐츠 운영·데이터 기반 마케팅 파트너. 과장된 약속 대신 결과를 확인한 뒤에 비용을 받는 후불 방식입니다.">
+<meta name="description" content="미용실·네일샵·에스테틱 등 뷰티샵 사장님을 위한 네이버 플레이스 최적화·콘텐츠 운영·데이터 기반 마케팅 파트너. 과장된 약속 대신 결과를 확인한 뒤에 비용을 받는 후불 방식입니다.">
 <meta name="google-site-verification" content="FBzCgT9aTjpjfBqXOaIps3REpGAsw6Qsx0hbxhrmZ40" />
 <meta name="naver-site-verification" content="0a46df20918e83bdbe6179a25b62f583c70ccbd7" />
 <meta name="theme-color" content="#0b0a09">
 <link rel="canonical" href="https://lillo.kr/">
 <meta property="og:type" content="website">
 <meta property="og:title" content="릴로 | 우리 동네 네이버 플레이스 마케팅">
-<meta property="og:description" content="검색했을 때, 가장 먼저 보이게. 미용실·병원·음식점 전문 네이버 플레이스 마케팅 파트너 릴로.">
+<meta property="og:description" content="검색했을 때, 가장 먼저 보이게. 미용실·네일샵·에스테틱 뷰티샵 전문 네이버 플레이스 마케팅 파트너 릴로.">
 <meta property="og:url" content="https://lillo.kr/">
 <meta property="og:locale" content="ko_KR">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%23ff6a39'/%3E%3Cstop offset='1' stop-color='%23ffb703'/%3E%3C/linearGradient%3E%3C/defs%3E%3Ccircle cx='16' cy='16' r='14' fill='%230b0a09' stroke='url(%23g)' stroke-width='2.5'/%3E%3Ccircle cx='16' cy='16' r='4' fill='url(%23g)'/%3E%3C/svg%3E">
@@ -740,9 +740,9 @@
       <span class="line"><span class="word accent">가장</span> <span class="word accent">먼저</span> <span class="word">보이게.</span></span>
     </h1>
     <div class="target-chips">
-      <span>미용실</span><span>병원</span><span>음식점</span>
+      <span>미용실</span><span>네일샵</span><span>에스테틱</span>
     </div>
-    <p class="benefit">우리 동네 사장님들의 <b>네이버 플레이스</b>를<br>1페이지로 올립니다.</p>
+    <p class="benefit">우리 동네 뷰티샵 사장님들의 <b>네이버 플레이스</b>를<br>1페이지로 올립니다.</p>
     <p class="subcopy">과장된 약속 대신, 결과를 확인한 뒤에 비용을 받아요.</p>
     <div class="cta-row">
       <button class="btn btn-primary" data-goto="#diagnose">1분 자가진단 하기</button>
@@ -818,10 +818,9 @@
       <div class="dx-biz" role="group" aria-label="업종 선택">
         <p class="dx-biz-label">업종을 골라주세요</p>
         <button type="button" data-biz="미용실" aria-pressed="true">미용실</button>
-        <button type="button" data-biz="음식점" aria-pressed="false">음식점</button>
-        <button type="button" data-biz="병원" aria-pressed="false">병원</button>
+        <button type="button" data-biz="네일샵" aria-pressed="false">네일샵</button>
+        <button type="button" data-biz="에스테틱" aria-pressed="false">에스테틱</button>
       </div>
-      <p class="dx-med"><b>병원은 의료광고법을 함께 봐야 해요.</b> 소개글·소식에 '최고', '1위' 같은 표현이나 치료 경험담, 전후 사진을 쓰면 법 위반이 될 수 있어요. 아래 항목도 이 범위 안에서 점검해주세요.</p>
       <div id="dxGroups"></div>
       <div class="dx-distance">
         <h3>거리 <span style="color:var(--fg-muted);font-weight:500;font-size:13px">· 점수에 넣지 않아요</span></h3>
@@ -993,8 +992,8 @@
       <select id="cfBizType" name="bizType">
         <option value="" selected>업종 (선택)</option>
         <option>미용실</option>
-        <option>음식점</option>
-        <option>병원</option>
+        <option>네일샵</option>
+        <option>에스테틱</option>
         <option>기타</option>
       </select>
       <input type="text" id="cfPlaceLink" name="placeLink" placeholder="네이버 플레이스 링크 (선택)">
@@ -1462,8 +1461,8 @@
   /* 자가진단: 네이버 공개 4대 기준 중 사장님이 바꿀 수 있는 3개(유사도·정보 충실도·인기도)만 점수화 */
   var DX_TERMS={
     '미용실':{menu:'시술 메뉴', ex:'망원동 남자펌', menuEx:'"디자인컷" 대신 "남자 투블럭컷"처럼'},
-    '음식점':{menu:'메뉴', ex:'망원동 점심 국밥', menuEx:'"A세트" 대신 "돼지국밥 + 수육 세트"처럼'},
-    '병원':{menu:'진료 항목', ex:'망원동 정형외과', menuEx:'"도수 A" 대신 "도수치료 30분"처럼'}
+    '네일샵':{menu:'시술 메뉴', ex:'망원동 젤네일', menuEx:'"A케어" 대신 "젤 원컬러 + 케어"처럼'},
+    '에스테틱':{menu:'관리 프로그램', ex:'망원동 피부관리', menuEx:'"A코스" 대신 "여드름 진정 관리 60분"처럼'}
   };
   var DX_GROUPS=[
     {key:'sim', name:'유사도', desc:'손님이 검색한 단어와 우리 매장 정보가 얼마나 맞는지', items:[

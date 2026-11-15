@@ -226,7 +226,7 @@
       </div>
       <details style="margin-top:12px"><summary style="cursor:pointer;color:var(--mut);font-size:13px">상세 정보 (선택 · 모르면 비워 두세요)</summary>
       <div class="grid" style="margin-top:8px">
-        <div><label>업종</label><select class="field" id="aBiz"><option value="">선택</option><option>미용실</option><option>음식점</option><option>병원</option><option>기타</option></select></div>
+        <div><label>업종</label><select class="field" id="aBiz"><option value="">선택</option><option>미용실</option><option>네일샵</option><option>에스테틱</option><option>음식점</option><option>병원</option><option>기타</option></select></div>
         <div><label>지역</label><input class="field" id="aRegion" placeholder="예: 강남구 역삼동"></div>
         <div><label>디자이너 수</label><input class="field" id="aDes" type="number" min="0"></div>
         <div><label>플레이스 링크</label><input class="field" id="aLink"></div>
@@ -528,7 +528,7 @@
   }
   // 지역·업종으로 기본 검색어를 만들어요. 예: 강남구 역삼동 + 미용실 → 역삼미용실, 강남미용실
   function kwSeeds(l){
-    var biz={'미용실':'미용실','음식점':'맛집','병원':'병원'}[l.bizType]||'';
+    var biz={'미용실':'미용실','네일샵':'네일','에스테틱':'에스테틱','음식점':'맛집','병원':'병원'}[l.bizType]||'';
     var places=String(l.region||'').split(/\s+/).filter(Boolean).map(function(t){return t.replace(/(특별시|광역시|시|구|군|동|읍|면|가)$/,'')}).filter(function(t){return t.length>=2});
     var seeds=[];places.slice().reverse().forEach(function(p){seeds.push(p+biz)});
     return biz?seeds.slice(0,3):places.slice(0,3);
@@ -652,7 +652,7 @@
     var msum=el('summary',null,'상세 정보 (선택 · 필요할 때만 채워요)');msum.style.cssText='cursor:pointer;color:var(--mut);font-size:13px';mdet.appendChild(msum);
     mdet.addEventListener('toggle',function(){S.openMore=S.openMore||{};if(mdet.open)S.openMore[l.id]=1;else delete S.openMore[l.id]});
     g=el('div','grid');g.style.marginTop='8px';
-    g.appendChild(inp(l,'업종','bizType','select',['','미용실','음식점','병원','기타']));
+    g.appendChild(inp(l,'업종','bizType','select',['','미용실','네일샵','에스테틱','음식점','병원','기타']));
     g.appendChild(inp(l,'지역','region','text'));
     g.appendChild(inp(l,'디자이너 수','designerCount','number'));
     g.appendChild(inp(l,'결정권자','decisionMaker','text'));
