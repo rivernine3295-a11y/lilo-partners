@@ -17,7 +17,10 @@ input,select,textarea{width:100%;background:#0b0a09;border:1px solid var(--line)
 .sug{margin-top:10px;max-height:260px;overflow:auto}.sug div{display:flex;justify-content:space-between;gap:10px;padding:8px 4px;border-bottom:1px solid var(--line);font-size:14px}
 .grid2{display:grid;grid-template-columns:minmax(0,420px) 1fr;gap:18px}@media(max-width:900px){.grid2{grid-template-columns:1fr}}
 .pv{position:relative;background:#000;border-radius:14px;overflow:hidden;border:1px solid var(--line);width:100%;min-height:200px}.pv iframe{border:0;width:1080px;height:1600px;position:absolute;left:0;top:0;transform-origin:0 0}
-.hist div{display:flex;justify-content:space-between;gap:8px;padding:9px 0;border-bottom:1px solid var(--line);font-size:14px;align-items:center}
+.hist #hist{display:block}
+.hist #hist>div{display:flex;flex-direction:column;align-items:flex-start;gap:8px;padding:12px 0;border-bottom:1px solid var(--line);font-size:14px}
+.hist #hist>div>span:last-child{display:flex;flex-wrap:wrap;gap:6px}
+.hist #hist>div>span:last-child .btn{margin-left:0!important}
 .chk{display:flex;gap:8px;align-items:center;margin-top:8px;font-size:15px}.chk input{width:auto}
 </style></head><body><div class="wrap">
 <div id="login"><h1>진단서 만들기</h1><p class="sub">개인 전용 도구예요. 비밀번호를 입력해 주세요.</p>
