@@ -229,7 +229,7 @@ function pickKws(list){var base=regionBase(),b=bizK();var SH=/(펌|염색|컷|�
  var dong=dongFull();if(dong)b.terms.slice(1).forEach(function(t){add(dong+' '+t)});
  add(ok.filter(function(x){return local.indexOf(x)<0&&!SH.test(x)})[0]);
  local.concat(ok).forEach(add);return out}
-function relKw(it){var key=String(it.k||'').replace(/\s/g,'');var base=regionBase();if(base&&key.indexOf(base)<0)return false;var b=bizK();return b.re.test(key)&&!b.not.test(key)}
+var STN=[];function relKw(it){var key=String(it.k||'').replace(/\s/g,'');var base=regionBase();if(base&&key.indexOf(base)<0&&!STN.some(function(t){return key.indexOf(t)>=0}))return false;var b=bizK();return b.re.test(key)&&!b.not.test(key)}
 function addKw(k){if(S.kws.some(function(x){return x.k===k.k})||S.kws.length>=8)return;S.kws.push({k:k.k,vol:k.total||k.vol||0,comp:k.comp||'',rank:null,total:null});kwDraw();pvRender()}
 function reset(){S.kws=[];S.rivals=[];S.intro=0;S.editId='';['fStore','fRegion','fLink','hint','manual'].forEach(function(i){$(i).value=''});$('fAt').value=nowLocal();S.checks=[false,false,false,false,false,false];S.main=-1;$('sug').textContent='';itemsDraw();kwDraw();pvRender()}
 function kstDay(iso){var d=new Date(new Date(iso).getTime()+9*3600*1000);return d.toISOString().slice(0,10)}
@@ -373,7 +373,10 @@ $('autoRun').onclick=async function(){var o=$('autoOut'),btn=$('autoRun'),link=$
   var base2=regionBase();var cand=[];
   function candAdd(k,vol,comp){k=String(k||'').trim();if(!k)return;if(k.indexOf(' ')<0){var pf=[areaTok(),base2].filter(Boolean).filter(function(z){return k.indexOf(z)===0})[0];if(pf)k=pf+' '+k.slice(pf.length)}var key=k.replace(/\s/g,'');if(cand.some(function(c){return c.k.replace(/\s/g,'')===key}))return;cand.push({k:k,vol:vol||0,comp:comp||''})}
   try{var terms=bizK().terms.concat(['헤어']).filter(function(t,i,a){return a.indexOf(t)===i});var sg0=await call('suggest',{hints:terms.map(function(t){return base2+' '+t})});(sg0.items||[]).filter(relKw).sort(function(a,b){return (b.total||0)-(a.total||0)}).forEach(function(it){candAdd(it.k,it.total,it.comp)})}catch(e){}
+  try{STN=[];var stSrc=[$('fStore').value,$('fRegion').value].concat(rkAI.map(function(x){return typeof x==='string'?x:(x&&x.k)||''})).concat(cand.map(function(c){return c.k}));stSrc.forEach(function(t){(String(t||'').match(/[가-힣]{2,5}역/g)||[]).forEach(function(m){if(!/(지역|구역|영역|광역|번역|전역|대역|역시)$/.test(m)&&STN.indexOf(m)<0)STN.push(m)})});STN=STN.slice(0,3);
+   if(STN.length){var sh=[];STN.forEach(function(st){['미용실','헤어','펌','염색'].forEach(function(t){sh.push(st+' '+t)})});var sg1=await call('suggest',{hints:sh});(sg1.items||[]).filter(relKw).forEach(function(it){candAdd(it.k,it.total,it.comp)})}}catch(e){}
   pickKws(rkAI).forEach(function(x){var key=String(x).replace(/\s/g,'');if(!cand.some(function(c){return c.k.replace(/\s/g,'')===key}))candAdd(x,0,'')});
+  cand.sort(function(x,y){return (y.vol||0)-(x.vol||0)});
   if(!cand.length){$('autoKw').click();await sleepMs(500);for(var w=0;w<24&&$('autoKw').disabled;w++)await sleepMs(500);S.kws.forEach(function(k){candAdd(k.k,k.vol,k.comp)});S.kws=[]}
   if(!cand.length){o.textContent='키워드를 정하지 못했어요. 고급 설정에서 키워드를 추가한 뒤 다시 시도해 주세요.';btn.disabled=false;stepsShow(-1);return}
   var dbg=[];var aborted=false;var retryN=0;
