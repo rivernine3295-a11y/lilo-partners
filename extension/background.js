@@ -75,21 +75,25 @@ function ncRun(op, link, kws) {
   }
 
   // 결과 칸에서 "키워드 / 14 / 위 / … / 1,068개 업체 중" 순서로 읽기 (띄어쓰기 차이는 무시)
-  function readBlock(k, storeName) {
+  function readBlock(k, allKeys) {
     var root = document.querySelector('main') || document.body;
     var t = root.innerText || '';
     var i = t.indexOf('조회 결과');
     if (i < 0) return null;
     var lines = t.slice(i).split('\n').map(function (s) { return s.trim(); }).filter(Boolean);
     var key = String(k).replace(/\s/g, '');
+    var keys = (allKeys || []).map(function (x) { return String(x).replace(/\s/g, ''); });
     for (var j = 0; j < lines.length; j++) {
       if (lines[j].replace(/\s/g, '') !== key) continue;
-      var chunk = lines.slice(j + 1, j + 12);
+      var end = Math.min(lines.length, j + 14);
+      for (var q = j + 1; q < end; q++) { if (keys.indexOf(lines[q].replace(/\s/g, '')) >= 0) { end = q; break; } }
+      var chunk = lines.slice(j + 1, end);
       var joined = chunk.join('\n');
-      if (storeName && joined.indexOf(storeName) < 0) continue;
+      var head = chunk.slice(0, 4).join(' ');
       var tm = joined.match(/([\d,]+)\s*개\s*업체\s*중/);
-      var rm = /^[\d,]+$/.test(chunk[0] || '') && chunk[1] === '위' ? num(chunk[0]) : null;
-      if (rm == null && /밖|미노출|없음/.test(chunk.slice(0, 4).join(' '))) rm = 301;
+      var rm = null;
+      if (/밖|미노출|없음/.test(head)) rm = 301;
+      else { var m1 = head.match(/^([\d,]+)\s*위/); if (m1) rm = num(m1[1]); }
       if (rm == null && !tm) continue;
       return { rank: rm, total: tm ? num(tm[1]) : null };
     }
@@ -154,15 +158,17 @@ function ncRun(op, link, kws) {
       var t = txt();
       if (/한도|초과|제한/.test(t) && /(오늘|하루|일일)/.test(t) && !/조회 결과/.test(t)) return { error: 'limit', text: t.slice(0, 800) };
       var h = t.match(/조회 결과\s*(\d+)\s*\/\s*(\d+)/);
-      if (h && Number(h[1]) >= list.length && Number(h[2]) === list.length) {
-        res = list.map(function (k) { var r = readBlock(k, p.name); return r ? { k: k, rank: r.rank, total: r.total } : { k: k, rank: null, total: null }; });
+      if (h && Number(h[1]) >= Number(h[2]) && Number(h[2]) >= 1) {
+        res = list.map(function (k) { var r = readBlock(k, list); return r ? { k: k, rank: r.rank, total: r.total } : { k: k, rank: null, total: null }; });
         break;
       }
       await sleep(1000);
     }
     if (!res) return { error: 'noresult', text: txt().slice(0, 1200) };
-    if (op === 'rank') return { rank: res[0].rank, total: res[0].total, store: p.name };
-    return { results: res, store: p.name };
+    var raw = '';
+    if (res.some(function (x) { return x.rank == null; })) { var tt = txt(), ii = tt.indexOf('조회 결과'); raw = tt.slice(ii < 0 ? 0 : ii, (ii < 0 ? 0 : ii) + 1500); }
+    if (op === 'rank') return { rank: res[0].rank, total: res[0].total, store: p.name, raw: raw };
+    return { results: res, store: p.name, raw: raw };
   })();
 }
 
