@@ -212,10 +212,11 @@ function rkBulk(){var lines=$('rkTxt').value.split(/\n+/).map(function(x){return
   else{while(idx<S.kws.length&&S.kws[idx].rank!=null)idx++;k=S.kws[idx];if(!k){miss.push(ln);return}idx++}
   k.rank=o.rank;k.total=o.total;filled++});
  kwDraw();pvRender();$('rkOut').style.color=filled?'var(--ok,#7ee2a8)':'';$('rkOut').textContent=(filled?filled+'개 키워드에 순위를 채웠어요'+(added?' (새로 추가 '+added+'개 · 검색량은 비어 있어요)':'')+'.':'채워진 순위가 없어요.')+(miss.length?'\n읽지 못한 줄 '+miss.length+'개: '+miss.slice(0,3).join(' / '):'');}
-function regionBase(){var rg=$('fRegion').value.trim();if(!rg)return '';var toks=rg.split(/\s+/),dong=toks.filter(function(t){return /[동읍면리]$/.test(t)}).pop()||toks[toks.length-1];var base=dong.replace(/(동|읍|면|리)$/,'').replace(/[0-9]+가?$/,'');return base.length>=2?base:dong}
+function areaTok(){var rg=$('fRegion').value.trim();if(!rg)return '';var toks=rg.split(/\s+/),dong=toks.filter(function(t){return /[동읍면리]$/.test(t)}).pop();if(dong)return dong;var m=String($('fStore').value||'').match(/([가-힣]{2,6}역)/);if(m)return m[1];var gu=toks.filter(function(t){return /[구군시]$/.test(t)}).pop();return gu||toks[toks.length-1]}
+function regionBase(){var d=areaTok();if(!d)return '';if(/역$/.test(d)||/[구군시]$/.test(d))return d.replace(/[구군시]$/,'');var base=d.replace(/(동|읍|면|리)$/,'').replace(/[0-9]+가?$/,'');return base.length>=2?base:d}
 var BIZK={'미용실':{terms:['미용실','펌','염색'],re:/(미용|헤어|펌|염색|컷|커트|클리닉|탈색|두피|살롱|매직|볼륨|앞머리|레이어|염모|뿌리)/,not:/네일|피부|속눈썹|왁싱|마사지/},'네일샵':{terms:['네일','젤네일','네일아트'],re:/(네일|젤|아트|패디|손톱|발톱)/,not:/미용실|헤어|펌|염색|피부|속눈썹/},'에스테틱':{terms:['에스테틱','피부관리','관리'],re:/(에스테틱|피부|관리|경락|마사지|스킨|왁싱|바디|여드름|모공|속눈썹)/,not:/미용실|헤어|펌|염색|네일/}};
 function bizK(){return BIZK[$('fBiz').value]||BIZK['미용실']}
-function dongFull(){var rg=$('fRegion').value.trim(),t=rg.split(/\s+/).filter(Boolean),d=t.filter(function(x){return /[동읍면리]$/.test(x)}).pop();return d||regionBase()}
+function dongFull(){var d=areaTok();return /역$/.test(d)?d:(/[동읍면리]$/.test(d)?d:regionBase())}
 function pickKws(list){var base=regionBase(),b=bizK();var SH=/(펌|염색|컷|커트|클리닉|탈색|두피|매직|볼륨|앞머리|레이어|염모|뿌리|네일|젤|패디|아트|피부|관리|왁싱|속눈썹)/;
  var ok=(list||[]).filter(function(x){var k=String(x).replace(/\s/g,'');return !b.not.test(k)&&b.re.test(k)});
  var local=ok.filter(function(x){return base&&String(x).replace(/\s/g,'').indexOf(base)>=0});
@@ -371,8 +372,8 @@ $('autoRun').onclick=async function(){var o=$('autoOut'),btn=$('autoRun'),link=$
   if(stopErr(mr)){btn.disabled=false;stepsShow(-1);return}
   var got={};((mr&&mr.results)||[]).forEach(function(x){got[x.k]=x});
   if(!(mr&&mr.results))dbg.push({step:'rankmulti',r:mr});
-  for(var i=0;i<S.kws.length;i++){var k=S.kws[i],x=got[k.k];
-   if(!x||x.rank==null){$('autoSteps').textContent='⏳ 엔체커 다시 확인 중 · '+k.k;var r2=await extCall('rank',{kw:k.k,link:link},110000);if(stopErr(r2)){btn.disabled=false;stepsShow(-1);return}x=(r2&&r2.rank!=null)?r2:null;if(!x)dbg.push({kw:k.k,r:r2})}
+  var retryN=0;for(var i=0;i<S.kws.length;i++){var k=S.kws[i],x=got[k.k];
+   if((!x||x.rank==null)&&(retryN++)<2){$('autoSteps').textContent='⏳ 엔체커 다시 확인 중 · '+k.k;var r2=await extCall('rank',{kw:k.k,link:link},60000);if(stopErr(r2)){btn.disabled=false;stepsShow(-1);return}x=(r2&&r2.rank!=null)?r2:null;if(!x)dbg.push({kw:k.k,r:r2})}
    if(x&&x.rank!=null){k.rank=x.rank;k.total=x.total}}
   kwDraw();pvRender();
   var volNote='';
