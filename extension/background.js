@@ -34,7 +34,7 @@ async function getNcTab() {
     tab = await chrome.tabs.update(tab.id, { url: NC_RANK });
   }
   tab = await waitComplete(tab.id, 40);
-  await sleep(1200);
+  await sleep(2500);
   return tab;
 }
 
@@ -56,7 +56,9 @@ function ncRun(op, link, kws) {
   // 로그인 확인 → 플레이스 칸 입력 → "확인됨" 대기
   async function prepare() {
     if (/\/login/.test(location.pathname) || document.querySelector('input[type="password"]')) return { error: 'login' };
-    var inp = Array.prototype.slice.call(document.querySelectorAll('input')).filter(vis).filter(function (e) { return /플레이스/.test(e.placeholder || ''); })[0];
+    var findInp = function () { return Array.prototype.slice.call(document.querySelectorAll('input')).filter(vis).filter(function (e) { return /플레이스/.test(e.placeholder || ''); })[0]; };
+    var inp = findInp();
+    for (var w0 = 0; w0 < 40 && !inp; w0++) { await sleep(500); inp = findInp(); }
     if (!inp) return { error: 'noinput', text: txt().slice(0, 800) };
     if (!(inp.value === link && /확인됨/.test(txt()))) {
       setVal(inp, link);
@@ -132,7 +134,9 @@ function ncRun(op, link, kws) {
     // rank / rankmulti
     var list = (op === 'rank' ? [kws] : kws).map(function (x) { return String(x || '').trim(); }).filter(Boolean).slice(0, 5);
     if (!list.length) return { error: 'nokw' };
-    var ta = Array.prototype.slice.call(document.querySelectorAll('textarea')).filter(vis)[0];
+    var findTa = function () { return Array.prototype.slice.call(document.querySelectorAll('textarea')).filter(vis)[0]; };
+    var ta = findTa();
+    for (var w3 = 0; w3 < 20 && !ta; w3++) { await sleep(500); ta = findTa(); }
     if (!ta) return { error: 'noinput', text: txt().slice(0, 800) };
     setVal(ta, list.join('\n'));
     await sleep(500);
