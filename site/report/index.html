@@ -149,12 +149,14 @@ var tEdited=false;
 function jong(w,a,b){var c=String(w||'').trim().slice(-1).charCodeAt(0);if(c>=0xAC00&&c<=0xD7A3)return (c-0xAC00)%28?a:b;return b}
 function talk(r,type,ad,opt){
   var ks=usableKws(r),rk=ks.filter(function(k){return k.rank!=null&&k.vol}),k0=rk[0]||ks.filter(function(k){return k.vol})[0]||ks[0];
-  var when=fmtAt(r.checkedAt).replace(' 기준','');var who=($('fSender').value.trim()||'릴로');var st=r.store||'사장님 매장';
-  var sig=who.indexOf('릴로')===0?who:'릴로 '+who;sig=sig+jong(sig,'이에요','예요');
+  var when=fmtAt(r.checkedAt).replace(' 기준','');var who=($('fSender').value.trim()||'릴로');var st=r.store||'원장님 매장';
+  var OPEN='안녕하세요, 원장님! 네이버 플레이스 마케팅 전문 업체 릴로입니다 😊';
   var iss=issuesOf(r),main=iss.length?ITEMS[iss[0]]:null,n=iss.length;
   var rankLine='';
   if(k0&&k0.vol&&k0.rank!=null)rankLine='참고로 \''+k0.k+'\'은 한 달에 '+k0.vol.toLocaleString()+'번 검색되는데, '+(k0.total?k0.total.toLocaleString()+'곳 중 ':'')+'지금은 '+rankTxt(k0)+(k0.rank>=301?'으로':'로')+' 보여요.';
   else if(k0&&k0.vol)rankLine='참고로 \''+k0.k+'\'은 한 달에 '+k0.vol.toLocaleString()+'번 검색돼요.';
+  var wk=ks.filter(function(k){return k.rank!=null&&k!==k0}).sort(function(a,b){return b.rank-a.rank})[0];
+  var weakLine=(wk&&k0&&wk.rank>k0.rank)?'반면 \''+wk.k+'\'은 '+(wk.total?wk.total.toLocaleString()+'곳 중 ':'')+rankTxt(wk)+(wk.rank>=301?'으로':'로')+' 보여서 아쉬웠어요.':'';
   var ct=['홈페이지: https://lillo.kr',r.contact?'문의: '+r.contact:''].filter(Boolean).join('\n');
   var head=(ad?'(광고) ':'');
   var seen=when?'오늘('+when+') '+st+' 네이버 플레이스를 한번 쭉 둘러봤어요.':st+' 네이버 플레이스를 한번 쭉 둘러봤어요.';
@@ -164,22 +166,22 @@ function talk(r,type,ad,opt){
   var pay='비용은 결과를 확인하신 뒤에 받아요.';
   var L=[];
   if(type==='1'){
-    L=[head+'안녕하세요, 사장님! '+sig+' 😊',
+    L=[head+OPEN,'',
       main?'혹시 '+st+' 플레이스에서 "'+main.short+'" 부분, 한번 확인해 보신 적 있으세요?':'혹시 네이버에서 '+st+jong(st,'이','가')+' 몇 번째로 보이는지 확인해 보신 적 있으세요?',
       seen,'',
-      main?main.hook+'이 눈에 띄었어요. '+main.impact:rankLine,'',
-      main?main.fix:null,more,main?rankLine||null:null,'',why,'',ask,pay,ct];
+      main?main.hook+'이 눈에 띄었어요. '+main.impact:(rankLine+(weakLine?'\n'+weakLine:'')),'',
+      main?main.fix:null,more,main?rankLine||null:null,weakLine||null,'',why,'',ask,pay,ct];
   }else if(type==='2'){
-    L=[head+'안녕하세요, '+st+' 사장님! '+sig+' 😊',
+    L=[head+OPEN,'',
       main?'오늘 플레이스를 둘러보다가 '+main.hook+'이 눈에 띄어서 연락드렸어요.':(rankLine||'오늘 네이버 플레이스를 한번 둘러봤어요.'),
-      main?main.fix:null,
+      weakLine||null,main?main.fix:null,
       why,
       '진단서를 함께 보내드려요 📄 확인해 보시고 상위 노출 상담 어떠세요?',ct];
   }else{
-    L=[head+'안녕하세요, 사장님! '+sig+' 😊',seen,'',
-      main?'제일 먼저 눈에 들어온 건 '+main.hook+'이었어요.':rankLine,
+    L=[head+OPEN,'',seen,'',
+      main?'제일 먼저 눈에 들어온 건 '+main.hook+'이었어요.':(rankLine+(weakLine?'\n'+weakLine:'')),
       main?main.impact:null,'',
-      main?main.fix:null,more,main?rankLine||null:null,'',why,'',ask,pay,ct];
+      main?main.fix:null,more,main?rankLine||null:null,weakLine||null,'',why,'',ask,pay,ct];
   }
   var out=L.filter(function(x){return x!==null&&x!==false&&x!==undefined}).join('\n').replace(/\n{3,}/g,'\n\n').trim();
   return out;
