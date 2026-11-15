@@ -25,10 +25,17 @@ input,select,textarea{width:100%;background:#0b0a09;border:1px solid var(--line)
 <div id="app" class="hid">
  <div class="row" style="justify-content:space-between;margin-bottom:6px"><div><h1>진단서 만들기</h1><p class="sub" style="margin:0">매장 정보와 확인한 순위를 넣으면 진단서 이미지가 만들어져요.</p></div><button class="btn g s nf" id="out">나가기</button></div>
  <div class="grid2"><div>
-  <div class="card" id="auto"><b>⚡ 영업할 매장 자동 진단</b><div class="note" style="margin:6px 0 8px">아래 <b>1. 매장</b>의 지역·업종을 넣고, 여기에 <b>플레이스 링크</b>를 넣은 뒤 실행하면 <b>엔체커에서 키워드 순위를 자동으로 조회</b>해 아래 키워드 칸에 채워요. (엔체커에 로그인된 Chrome + 확장 프로그램 필요 · 하루 10곳)</div>
+  <div class="card" id="auto"><b>⚡ 플레이스 진단하기</b><div class="note" style="margin:6px 0 8px">영업할 매장의 <b>네이버 플레이스 링크</b>를 넣고 [진단하기]를 누르세요. 엔체커에서 순위를 확인해 <b>진단서와 영업 문구를 자동으로</b> 만들어요.</div>
    <textarea id="autoLink" rows="2" placeholder="플레이스 링크를 붙여넣으세요"></textarea>
-   <div class="row" style="margin-top:8px"><button class="btn nf" id="autoRun" type="button">▶ 실행 (엔체커 자동 조회)</button><a class="btn g s nf" href="/report/lilo-extension.zip" download style="text-decoration:none">확장 프로그램 받기</a><button class="btn g s nf" id="autoCopy" type="button">코워크용 작업 문구 복사</button><button class="btn g s nf hid" id="autoDbg" type="button">화면 정보 복사</button></div><div class="err" id="autoOut" style="white-space:pre-line"></div>
-   <details style="margin-top:8px"><summary class="note" style="cursor:pointer">확장 프로그램 설치 방법 (처음 한 번)</summary><div class="note" style="margin-top:6px">1) 위 "확장 프로그램 받기"로 zip을 받아 <b>압축을 풀어요</b>.<br>2) Chrome 주소창에 <b>chrome://extensions</b> 입력 → 오른쪽 위 <b>개발자 모드</b> 켜기.<br>3) <b>압축해제된 확장 프로그램을 로드합니다</b> → 풀어 둔 폴더 선택.<br>4) 새 탭에서 <b>엔체커에 로그인</b>해 둔 뒤, 이 페이지를 새로고침하고 실행을 눌러요.</div></details></div>
+   <div class="row" style="margin-top:8px"><button class="btn nf" id="autoRun" type="button">진단하기</button></div>
+   <div class="note" id="dayCnt" style="margin:8px 0 0"></div>
+   <div class="note" id="autoSteps" style="margin-top:6px"></div><div class="err" id="autoOut" style="white-space:pre-line"></div>
+   <div id="autoRes" class="hid" style="margin-top:12px"><label>영업 문구 (톡톡에 붙여넣기)</label><textarea id="simpleTxt" rows="8"></textarea>
+    <div class="row" style="margin-top:10px"><button class="btn nf" id="sCopyTalk" type="button">영업 문구 복사</button><button class="btn g nf" id="sCopyRep" type="button">진단서 글 복사</button><button class="btn g nf" id="sImg" type="button">진단서 이미지 저장</button></div>
+    <div class="note" style="margin-top:8px">미리보기와 점검 항목 수정은 아래 <b>고급 설정</b>에서 할 수 있어요.</div></div>
+   <details style="margin-top:10px"><summary class="note" style="cursor:pointer">처음 한 번만: 확장 프로그램 설치 · 다른 방법</summary><div class="note" style="margin-top:6px">1) <a href="/report/lilo-extension.zip" download style="color:#b58cff">확장 프로그램 받기</a> → zip 압축 풀기<br>2) Chrome 주소창에 <b>chrome://extensions</b> → 오른쪽 위 <b>개발자 모드</b> 켜기<br>3) <b>압축해제된 확장 프로그램을 로드합니다</b> → 풀어 둔 폴더 선택<br>4) 엔체커에 로그인해 두고 이 페이지를 새로고침<br>(바뀐 확장 프로그램을 받았다면 chrome://extensions에서 새로고침 아이콘을 눌러 주세요)</div>
+    <div class="row" style="margin-top:8px"><button class="btn g s nf" id="autoCopy" type="button">코워크용 작업 문구 복사</button><button class="btn g s nf hid" id="autoDbg" type="button">화면 정보 복사</button></div></details></div>
+  <details id="adv" class="card"><summary style="cursor:pointer;font-weight:700">고급 설정 · 직접 입력·수정</summary><div style="margin-top:10px">
   <details class="card" id="bulk"><summary style="cursor:pointer;font-weight:700">⚡ 여러 매장 한 번에 가져오기 (일괄)</summary>
    <div class="note" style="margin:8px 0">다른 창(브라우저를 조작할 수 있는 쪽)에 <b>매장 플레이스 주소 목록</b>과 <b>작업 문구</b>를 주면, 순위와 점검 결과가 JSON으로 나와요. 그 결과를 아래에 붙여넣으면 <b>매장 수만큼 진단서가 저장</b>돼요. 월 검색량은 여기서 자동으로 채워요.</div>
    <textarea id="reqAddr" class="hid"></textarea><button class="hid" id="reqCopy" type="button"></button>
@@ -41,7 +48,6 @@ input,select,textarea{width:100%;background:#0b0a09;border:1px solid var(--line)
    <label>보내는 사람 이름 (선택, 톡톡 문구에 들어가요)</label><input id="fSender" placeholder="예: 강현구">
    <label>보내는 사람 문의 방법 (선택, 진단서 맨 아래와 톡톡 문구에 들어가요)</label><input id="fContact" placeholder="예: 010-0000-0000 · 카카오톡 ID"></div>
   <div class="card"><b>2. 키워드</b><div class="note" style="margin:6px 0 8px">검색어를 넣으면 월 검색량과 경쟁도를 가져와요. 순위는 직접 확인한 숫자를 넣어 주세요(안 넣으면 "미확인"으로 나와요).</div>
-   <div class="note" id="dayCnt" style="margin:0 0 8px"></div>
    <div class="row"><button class="btn nf" id="autoKw" type="button">⚡ 지역·업종으로 자동 채우기</button><span class="note" style="flex:1 1 200px">위 1번의 지역을 보고 동네+시술 키워드 3개를 자동으로 넣어요</span></div>
    <div class="row" style="margin-top:8px"><button class="btn g s nf" id="ncOpen" type="button">엔체커 열기</button><span class="note" style="flex:1 1 220px">엔체커에서 순위를 조회한 뒤 결과(<b>226개 업체 중 18위</b>)를 아래 키워드 칸에 그대로 붙여넣으세요. 하루 10곳, 같은 장소는 하루 1번이라 진단서도 하루 10곳까지가 좋아요.</span></div>
    <div class="row" style="margin-top:8px"><input id="hint" placeholder="직접 검색: 예) 역삼미용실, 강남헤어"><button class="btn g s nf" id="sBtn">검색량 가져오기</button></div><div class="err" id="serr"></div><div class="sug" id="sug"></div>
@@ -59,6 +65,7 @@ input,select,textarea{width:100%;background:#0b0a09;border:1px solid var(--line)
    <textarea id="tTxt" rows="11" style="margin-top:10px"></textarea>
    <div class="row" style="margin-top:10px"><button class="btn nf" id="tCopy">문구 복사</button><button class="btn g nf" id="tNew">문구 새로 만들기</button></div><div class="err" id="terr"></div></div>
   <div class="row"><button class="btn nf" id="prep" type="button">📤 발송 준비 (저장 + 이미지 + 문구 복사)</button><button class="btn g nf" id="dl">이미지로 저장</button><button class="btn g nf" id="save">기록에 저장</button><button class="btn g nf" id="reset">새로 쓰기</button></div><div class="err" id="gerr"></div>
+  </div></details>
  </div><div><div class="note" style="margin-bottom:8px">미리보기</div><div class="pv" id="pvBox"><iframe id="pv" title="미리보기"></iframe></div><div class="card hist" style="margin-top:16px"><b>저장한 진단서</b><div id="hist"></div></div></div></div>
 </div>
 <script>
@@ -302,21 +309,53 @@ function extCall(type,extra,tmo){return new Promise(function(res){var id=type+Da
 var lastDbg='';
 $('autoDbg').onclick=function(){copyTxt(lastDbg,function(){$('autoOut').textContent='화면 정보를 복사했어요. 대화에 붙여넣어 주세요.'})};
 $('autoCopy').onclick=function(){var v=$('autoLink').value.trim();if(!v){$('autoOut').textContent='플레이스 링크를 먼저 넣어 주세요.';return}$('reqAddr').value=v;$('reqCopy').click();$('autoOut').style.color='#8ee59a';$('autoOut').textContent='작업 문구를 복사했어요. 코워크(또는 브라우저 조작이 되는 Claude 대화)에 붙여넣고 엔체커에 로그인한 뒤 진행하세요. 돌아온 JSON은 아래 일괄 가져오기에 붙여넣어요.'};
-$('autoRun').onclick=async function(){var o=$('autoOut'),btn=$('autoRun'),link=$('autoLink').value.trim().split(/\n/)[0].trim();o.style.color='';$('autoDbg').classList.add('hid');
+function regionFromAddr(a){var t=String(a||'').trim().split(/\s+/);if(t.length<2)return String(a||'').trim();var k=-1;for(var i=0;i<t.length;i++){if(/[동읍면리]$/.test(t[i])){k=i;break}}return t.slice(0,k>=0?k+1:Math.min(3,t.length)).join(' ')}
+function reportText(r){var ks=usableKws(r),L=['[네이버 플레이스 진단서]',(r.store||'매장')+(r.region?' · '+r.region:''),'확인 시각: '+(fmtAt(r.checkedAt)||''),''];
+ if(ks.length){L.push('■ 키워드 순위');ks.forEach(function(k){L.push('- '+k.k+': '+(k.rank==null?'확인 못 함':rankFull(k))+(k.vol?' (월 검색량 '+k.vol.toLocaleString()+'회)':''))});L.push('')}
+ var iss=issuesOf(r);if(iss.length){L.push('■ 점검에서 확인된 개선 가능 항목');iss.slice(0,3).forEach(function(i,n){L.push((n+1)+'. '+ITEMS[i].fact+' — '+ITEMS[i].impact)});L.push('')}
+ L.push('※ 순위와 검색량은 확인한 시점의 값이며, 특정 순위를 보장하지 않아요.');L.push('lillo.kr'+(r.contact?' · '+r.contact:''));return L.join('\n')}
+function sleepMs(ms){return new Promise(function(r){setTimeout(r,ms)})}
+function stepsShow(n){var T=['엔체커 확인 중','플레이스 확인 중','진단서 작성 중'];$('autoSteps').textContent=T.map(function(t,i){return (i<n?'✔ ':(i===n?'⏳ ':'· '))+t}).join('   ')}
+function todayCount(){var t=kstDay(new Date().toISOString());return (S.recs||[]).filter(function(r){return r.savedAt&&kstDay(r.savedAt)===t}).length}
+function simpleShow(){tRender(true);$('simpleTxt').value=$('tTxt').value;$('autoRes').classList.remove('hid')}
+$('simpleTxt').addEventListener('input',function(){$('tTxt').value=$('simpleTxt').value;tEdited=true});
+$('sCopyTalk').onclick=function(){copyTxt($('simpleTxt').value,function(){$('autoOut').style.color='#8ee59a';$('autoOut').textContent='영업 문구를 복사했어요. 톡톡에 붙여넣으세요.'})};
+$('sCopyRep').onclick=function(){copyTxt(reportText(data()),function(){$('autoOut').style.color='#8ee59a';$('autoOut').textContent='진단서 글을 복사했어요.'})};
+$('sImg').onclick=function(){$('dl').click()};
+$('autoRun').onclick=async function(){var o=$('autoOut'),btn=$('autoRun'),link=$('autoLink').value.trim().split(/\n/)[0].trim();o.style.color='';$('autoDbg').classList.add('hid');$('autoSteps').textContent='';
  if(!link){o.textContent='플레이스 링크를 먼저 넣어 주세요.';return}
- var ping=await extCall('ping',{},900);if(!ping){o.textContent='확장 프로그램이 연결되지 않았어요. "확장 프로그램 설치 방법"을 따라 설치한 뒤 이 페이지를 새로고침해 주세요.';return}
- btn.disabled=true;$('fLink').value=link;
- if(!S.kws.length){$('autoKw').click();await new Promise(function(r){setTimeout(r,2000)})}
- if(!S.kws.length){o.textContent='키워드가 없어요. 1번의 지역·업종을 넣거나 키워드를 직접 추가해 주세요.';btn.disabled=false;return}
- var ok=0,fail=[];
- for(var i=0;i<S.kws.length;i++){var k=S.kws[i];o.textContent='엔체커에서 조회 중… ('+(i+1)+'/'+S.kws.length+') '+k.k;
-  var r=await extCall('rank',{kw:k.k,link:link},70000);
-  if(r&&r.error==='login'){o.textContent='엔체커에 로그인이 안 되어 있어요. 엔체커 탭에서 로그인한 뒤 다시 실행해 주세요.';btn.disabled=false;return}
-  if(r&&r.error==='limit'){o.textContent='엔체커 하루 한도에 도달한 것 같아요. 내일 이어서 해 주세요.';btn.disabled=false;return}
-  if(r&&r.rank!=null){k.rank=r.rank;k.total=r.total;ok++;kwDraw();pvRender()}else{fail.push({kw:k.k,r:r})}}
- btn.disabled=false;
- if(fail.length){lastDbg=JSON.stringify(fail,null,1);$('autoDbg').classList.remove('hid')}
- o.style.color=ok?'#8ee59a':'';o.textContent=(ok?ok+'개 키워드의 순위를 채웠어요. ':'')+(fail.length?fail.length+'개는 읽지 못했어요 — "화면 정보 복사"를 눌러 대화에 붙여넣어 주세요.':'아래에서 점검 항목을 확인하고 "발송 준비"를 눌러 주세요.')};
+ var pid=placeIdOf(link),today=kstDay(new Date().toISOString());
+ var same=(S.recs||[]).map(function(r,i){return {r:r,i:i}}).filter(function(x){return x.r.savedAt&&kstDay(x.r.savedAt)===today&&pid&&placeIdOf(x.r.placeLink)===pid})[0];
+ if(same){var row=$('hist').children[same.i];if(row){var ob=row.querySelector('button');if(ob)ob.click()}await sleepMs(300);simpleShow();o.style.color='#8ee59a';o.textContent='오늘 이미 조회한 매장이라 저장된 결과를 보여 드려요. (같은 주소는 하루 1번만 조회해요)';return}
+ if(todayCount()>=10){o.textContent='오늘 10곳을 모두 사용했어요. 내일 이어서 해 주세요.';return}
+ var ping=await extCall('ping',{},900);if(!ping){o.textContent='확장 프로그램이 연결되지 않았어요. 아래 "처음 한 번만" 설치 방법을 따라 설치한 뒤 이 페이지를 새로고침해 주세요.';return}
+ btn.disabled=true;$('autoRes').classList.add('hid');
+ try{
+  stepsShow(1);var pl=await extCall('place',{link:link},60000);
+  var unknown=[];var store='',region='',biz='미용실',booking=false;
+  if(pl&&!pl.error&&pl.loaded){store=pl.name||'';region=regionFromAddr(pl.addr);biz=pl.biz||'미용실';booking=!!pl.booking}else{unknown.push('플레이스 화면')}
+  if(!store){store=prompt('플레이스에서 매장명을 읽지 못했어요. 매장명을 입력해 주세요.')||'';if(!store){o.textContent='매장명이 없어 중단했어요.';btn.disabled=false;stepsShow(-1);return}}
+  if(!region){region=prompt('지역(동)을 읽지 못했어요. 예: 서울 강동구 천호동')||'';if(!region){o.textContent='지역이 없어 중단했어요.';btn.disabled=false;stepsShow(-1);return}}
+  reset();$('fStore').value=store;$('fRegion').value=region;$('fBiz').value=biz;$('fLink').value=link;$('fAt').value=nowLocal();
+  S.checks=[false,false,false,false,false,false];S.checks[1]=booking;itemsDraw();
+  stepsShow(0);var base=regionBase();var rec=await extCall('recommend',{link:link,region:base},60000);
+  if(rec&&rec.error==='login'){o.textContent='엔체커에 로그인이 안 되어 있어요. 엔체커 탭에서 로그인한 뒤 다시 눌러 주세요.';btn.disabled=false;stepsShow(-1);return}
+  var rk=((rec&&rec.keywords)||[]).filter(function(x){return relKw({k:x})}).slice(0,3);
+  if(rk.length){rk.forEach(function(x){addKw({k:x})})}else{$('autoKw').click();await sleepMs(500);for(var w=0;w<24&&$('autoKw').disabled;w++)await sleepMs(500)}
+  if(!S.kws.length){o.textContent='키워드를 정하지 못했어요. 고급 설정에서 키워드를 추가한 뒤 다시 시도해 주세요.';btn.disabled=false;stepsShow(-1);return}
+  var fail=0,dbg=[];
+  for(var i=0;i<S.kws.length;i++){var k=S.kws[i];$('autoSteps').textContent='⏳ 엔체커 확인 중 ('+(i+1)+'/'+S.kws.length+') '+k.k;
+   var r=await extCall('rank',{kw:k.k,link:link},70000);
+   if(r&&r.error==='login'){o.textContent='엔체커에 로그인이 안 되어 있어요. 엔체커 탭에서 로그인한 뒤 다시 눌러 주세요.';btn.disabled=false;stepsShow(-1);return}
+   if(r&&r.error==='limit'){o.textContent='엔체커 하루 한도에 도달한 것 같아요. 내일 이어서 해 주세요.';btn.disabled=false;stepsShow(-1);return}
+   if(r&&r.rank!=null){k.rank=r.rank;k.total=r.total;kwDraw();pvRender()}else{fail++;dbg.push({kw:k.k,r:r})}}
+  stepsShow(2);S.kws=S.kws.filter(function(k){return !(k.total!=null&&k.total<30)});kwDraw();pvRender();
+  var rep=data();var sv=await call('save',{id:'',report:rep});S.editId=sv.report.id;hist();simpleShow();stepsShow(3);
+  var msg=[];if(fail){lastDbg=JSON.stringify(dbg,null,1);$('autoDbg').classList.remove('hid');msg.push('순위 '+fail+'개는 확인 못 함으로 표시했어요')}
+  if(unknown.length)msg.push('플레이스 항목은 일부만 확인했어요');msg.push('점검 항목(메뉴·사진·리뷰·소식)은 자동 확인이 어려워 직접 체크가 필요하면 고급 설정에서 체크해 주세요');
+  o.style.color='#8ee59a';o.textContent='✅ 진단서와 영업 문구를 만들었어요. 아래 버튼으로 복사하세요.\n'+msg.join(' · ')
+ }catch(e){o.style.color='';o.textContent=(e&&e.message)||'처리하지 못했어요.'}
+ btn.disabled=false};
 $('rkGo').addEventListener('click',rkBulk);
 ['tType','tAd'].forEach(function(i){$(i).addEventListener('change',function(){tRender(true)})});
 $('tNew').onclick=function(){var t=$('tType');t.value=String((Number(t.value)+1)%3);tRender(true)};
