@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "릴로 진단서 도우미 (엔체커 자동 조회)",
-  "version": "0.2.3",
+  "version": "0.3.0",
   "description": "릴로 진단서 도구의 실행 버튼을 누르면, 로그인된 엔체커에서 키워드 순위를 대신 조회해 진단서에 채워 줍니다.",
   "permissions": [
     "tabs",
@@ -12,7 +12,9 @@
     "https://nchecker.kr/*",
     "https://m.place.naver.com/*",
     "https://map.naver.com/*",
-    "https://naver.me/*"
+    "https://naver.me/*",
+    "https://www.postsyncapp.com/*",
+    "https://postsyncapp.com/*"
   ],
   "background": {
     "service_worker": "background.js"

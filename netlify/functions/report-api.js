@@ -22,14 +22,15 @@ function sanitize(r) {
   const keywords = (Array.isArray(r.keywords) ? r.keywords : []).slice(0, 8).map((k) => ({
     k: clean(k.k, 40), vol: Math.max(0, Math.round(Number(k.vol) || 0)), comp: clean(k.comp, 10),
     rank: k.rank === '' || k.rank == null || !Number.isFinite(Number(k.rank)) ? null : Math.max(1, Math.round(Number(k.rank))),
-    total: k.total === '' || k.total == null || !Number.isFinite(Number(k.total)) ? null : Math.max(0, Math.round(Number(k.total))),
+    cap: k.cap ? 20 : 0, total: k.total === '' || k.total == null || !Number.isFinite(Number(k.total)) ? null : Math.max(0, Math.round(Number(k.total))),
   })).filter((k) => k.k);
+  const rivals = (Array.isArray(r.rivals) ? r.rivals : []).slice(0, 6).map((v) => ({ rank: Math.max(1, Math.round(Number(v.rank) || 1)), name: clean(v.name, 12), mine: !!v.mine, vr: Number.isFinite(Number(v.vr)) && v.vr != null ? Math.round(Number(v.vr)) : null, br: Number.isFinite(Number(v.br)) && v.br != null ? Math.round(Number(v.br)) : null, bk: !!v.bk }));
   const checks = (Array.isArray(r.checks) ? r.checks : []).slice(0, 6).map((c) => !!c);
   while (checks.length < 6) checks.push(false);
   const mainN = Number(r.main); const main = Number.isInteger(mainN) && mainN >= 0 && mainN < 6 ? mainN : -1;
   return {
     store: clean(r.store, 60), region: clean(r.region, 60), biz: clean(r.biz, 20), checkedAt: clean(r.checkedAt, 40),
-    keywords, checks, main, placeLink: clean(r.placeLink, 300), status: STATUSES.includes(r.status) ? r.status : '', contact: clean(r.contact, 80),
+    keywords, rivals, intro: Math.max(0, Math.min(99999, Math.round(Number(r.intro) || 0))), checks, main, placeLink: clean(r.placeLink, 300), status: STATUSES.includes(r.status) ? r.status : '', contact: clean(r.contact, 80),
   };
 }
 

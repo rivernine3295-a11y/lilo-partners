@@ -239,6 +239,50 @@ async function dumpPlace(link) {
   return out;
 }
 
+
+// ───────── PostSync(무료) 순위 읽기 ─────────
+function psRun(store) {
+  function num(t) { var m = String(t || '').replace(/,/g, '').match(/\d+/); return m ? parseInt(m[0], 10) : null; }
+  function nk(t) { return String(t || '').replace(/\s|[()\[\]·\-_.]/g, '').toLowerCase(); }
+  var rows = [];
+  Array.prototype.slice.call(document.querySelectorAll('table tr')).forEach(function (tr) {
+    var c = Array.prototype.slice.call(tr.querySelectorAll('td')).map(function (x) { return (x.innerText || '').replace(/\s+/g, ' ').trim(); });
+    if (c.length < 4 || !/^\d{1,2}$/.test(c[0])) return;
+    var raw = c[1] || '';
+    rows.push({ rank: parseInt(c[0], 10), name: raw.split(/\s*스마트플레이스/)[0].replace(/\s*내 매장$/, '').trim(), mine: /내 매장\s*$/.test(raw), vr: num(c[2]), br: num(c[3]), bk: c[4] ? !/미연동/.test(c[4]) && /연동/.test(c[4]) : false });
+  });
+  var txt = document.body ? document.body.innerText : '';
+  var ready = rows.length >= 1 && /검색량|경쟁도/.test(txt) && /현재 전체|20위 밖|순위권/.test(txt) || (rows.length >= 10 && /경쟁도/.test(txt));
+  if (rows.length && store && !rows.some(function (r) { return r.mine; })) {
+    var s = nk(store);
+    rows.forEach(function (r) { var n = nk(r.name); if (!r.mine && n && s && (n.indexOf(s) >= 0 || s.indexOf(n) >= 0)) r.mine = true; });
+    var f = rows.filter(function (r) { return r.mine; })[0]; if (f) rows.forEach(function (r) { r.mine = (r === f); });
+  }
+  var mine = rows.filter(function (r) { return r.mine; })[0];
+  var v = txt.match(/찾은 잠재 고객\s*([\d,]+)\s*회/), cp = txt.match(/경쟁도\s*[:：]\s*(\S+)/), it = txt.match(/현재\s*([\d,]+)\s*자/);
+  var ov = txt.match(/현재 전체\s*(\d+)\s*위/);
+  return { ready: ready, rows: rows.slice(0, 20), mine: mine ? mine.rank : (ov ? parseInt(ov[1], 10) : 0), vol: v ? parseInt(v[1].replace(/,/g, ''), 10) : 0, comp: cp ? cp[1] : '', intro: it ? parseInt(it[1].replace(/,/g, ''), 10) : 0 };
+}
+async function psOne(kw, store) {
+  var tab = null;
+  try {
+    tab = await chrome.tabs.create({ url: 'https://www.postsyncapp.com/place?q=' + encodeURIComponent(kw) + '&target=' + encodeURIComponent(store), active: false });
+    var last = null;
+    for (var i = 0; i < 28; i++) {
+      await sleep(1500);
+      try {
+        var r = await chrome.scripting.executeScript({ target: { tabId: tab.id }, func: psRun, args: [store] });
+        last = r && r[0] && r[0].result;
+        if (last && last.ready) break;
+      } catch (e) {}
+    }
+    if (!last || !last.rows || !last.rows.length) return { k: kw, error: 'norows' };
+    last.k = kw;
+    return last;
+  } catch (e) { return { k: kw, error: String(e && e.message || e) }; }
+  finally { try { if (tab) chrome.tabs.remove(tab.id); } catch (e2) {} }
+}
+
 // ───────── 페이지(진단서)에서 온 요청 처리 ─────────
 chrome.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
   if (!msg) return;
@@ -252,6 +296,10 @@ chrome.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
       } catch (e) { sendResponse({ error: 'ext', detail: String(e && e.message || e) }); }
       try { if (tab) chrome.tabs.remove(tab.id); } catch (e2) {}
     })();
+    return true;
+  }
+  if (msg.type === 'psmulti') {
+    Promise.all((msg.kws || []).slice(0, 8).map(function (k) { return psOne(k, msg.store || ''); })).then(function (r) { sendResponse({ results: r }); }, function (e) { sendResponse({ error: 'ext', detail: String(e && e.message || e) }); });
     return true;
   }
   if (msg.type === 'placedump') {
