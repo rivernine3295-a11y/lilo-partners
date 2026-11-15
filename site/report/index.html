@@ -43,7 +43,7 @@ input,select,textarea{width:100%;background:#0b0a09;border:1px solid var(--line)
    <div class="row" style="margin-top:8px"><input id="hint" placeholder="직접 검색: 예) 역삼미용실, 강남헤어"><button class="btn g s nf" id="sBtn">검색량 가져오기</button></div><div class="err" id="serr"></div><div class="sug" id="sug"></div>
    <div id="kws"></div>
    <div class="row" style="margin-top:10px"><input id="manual" placeholder="직접 키워드 추가"><button class="btn g s nf" id="mBtn">추가</button></div></div>
-  <div class="card"><b>3. 점검에서 확인한 개선 가능 항목 (미용실)</b><div class="note" style="margin:6px 0 4px">플레이스 화면을 보고 <b>문제가 실제로 확인된 것만 체크</b>하세요. 체크한 것만 진단서와 톡톡 문구에 나와요. <b>★</b>를 누르면 그 항목이 "가장 부실한 부분"으로 먼저 나가요(안 누르면 위에서부터 자동).</div>
+  <div class="card"><b>3. 점검에서 확인한 개선 가능 항목 (미용실)</b><div class="note" style="margin:6px 0 4px">플레이스 화면을 보고 <b>문제가 실제로 확인된 것만 체크</b>하세요. 체크한 것만 진단서와 톡톡 문구에 나와요. <b>★</b>를 누르면 그 항목이 "가장 부실한 부분"으로 먼저 나가요(안 누르면 위에서부터 자동). 메뉴·가격과 예약 연결은 대부분 되어 있어서 아래쪽에 있어요.</div>
    <div id="items"></div></div>
   <div class="card"><b>4. 네이버 톡톡 문구</b><div class="note" style="margin:6px 0 8px">위에 넣은 내용으로 붙여넣을 문구를 만들어요. 입력하지 않은 숫자는 문구에 넣지 않아요.</div>
    <div class="row"><select id="tType"><option value="0">흐름형: 부실한 점 → 해결 → 다정하게 (기본)</option><option value="1">질문으로 시작 (같은 흐름)</option><option value="2">짧게</option></select></div>
@@ -79,10 +79,11 @@ function parseNchecker(t){var o={rank:null,total:null};t=String(t||'');if(!t.tri
 function rankTxt(k){return k.rank>=301?'300위 밖':k.rank+'위'}
 function rankFull(k){return (k.total?k.total.toLocaleString()+'개 업체 중 ':'')+rankTxt(k)}
 function usableKws(r){return (r.keywords||[]).filter(function(k){return !(k.total!=null&&k.total<30)})}
-function issuesOf(r){var on=[];(r.checks||[]).forEach(function(v,i){if(v&&ITEMS[i])on.push(i)});var m=r.main;if(m!=null&&m>=0&&on.indexOf(m)>-1){on.splice(on.indexOf(m),1);on.unshift(m)}return on}
-function itemsDraw(){var box=$('items');box.textContent='';ITEMS.forEach(function(it,i){var d=document.createElement('div');d.className='chk';d.style.justifyContent='space-between';
+var ORDER=[2,4,5,3,0,1];/* 화면 순서·자동 우선순위: 검색어 반영 → 리뷰·답글 → 소식 → 사진 → 메뉴·가격 → 예약 (메뉴·가격과 예약은 대부분 이미 돼 있어요) */
+function issuesOf(r){var on=[];var ck=r.checks||[];ORDER.forEach(function(i){if(ck[i]&&ITEMS[i])on.push(i)});var m=r.main;if(m!=null&&m>=0&&on.indexOf(m)>-1){on.splice(on.indexOf(m),1);on.unshift(m)}return on}
+function itemsDraw(){var box=$('items');box.textContent='';ORDER.forEach(function(i,pos){var it=ITEMS[i];var d=document.createElement('div');d.className='chk';d.style.justifyContent='space-between';
   var l=document.createElement('label');l.style.cssText='margin:0;color:var(--fg);display:flex;gap:8px;align-items:center;flex:1;cursor:pointer';var c=document.createElement('input');c.type='checkbox';c.id='c'+i;c.checked=!!S.checks[i];c.onchange=function(){S.checks[i]=c.checked;if(!c.checked&&S.main===i)S.main=-1;itemsDraw();pvRender()};
-  l.appendChild(c);l.appendChild(document.createTextNode((i+1)+'. '+it.label));d.appendChild(l);
+  l.appendChild(c);l.appendChild(document.createTextNode((pos+1)+'. '+it.label));d.appendChild(l);
   var st=document.createElement('button');st.type='button';st.className='btn g s nf';var isMain=(issuesOf({checks:S.checks,main:S.main})[0]===i);st.textContent=isMain?'★ 가장 부실':'☆';st.title='가장 부실한 부분으로 지정';
   if(isMain){st.style.borderColor='#ffcf6b';st.style.color='#ffcf6b'}
   st.onclick=function(){S.checks[i]=true;S.main=i;itemsDraw();pvRender()};d.appendChild(st);box.appendChild(d)})}
@@ -134,7 +135,8 @@ var tEdited=false;
 function jong(w,a,b){var c=String(w||'').trim().slice(-1).charCodeAt(0);if(c>=0xAC00&&c<=0xD7A3)return (c-0xAC00)%28?a:b;return b}
 function talk(r,type,ad,opt){
   var ks=usableKws(r),rk=ks.filter(function(k){return k.rank!=null&&k.vol}),k0=rk[0]||ks.filter(function(k){return k.vol})[0]||ks[0];
-  var when=fmtAt(r.checkedAt).replace(' 기준','');var who=($('fSender').value.trim()||'담당자');var st=r.store||'사장님 매장';
+  var when=fmtAt(r.checkedAt).replace(' 기준','');var who=($('fSender').value.trim()||'릴로');var st=r.store||'사장님 매장';
+  var sig=who.indexOf('릴로')===0?who:'릴로 '+who;sig=sig+jong(sig,'이에요','예요');
   var iss=issuesOf(r),main=iss.length?ITEMS[iss[0]]:null,n=iss.length;
   var rankLine='';
   if(k0&&k0.vol&&k0.rank!=null)rankLine='참고로 \''+k0.k+'\'은 한 달에 '+k0.vol.toLocaleString()+'번 검색되는데, '+(k0.total?k0.total.toLocaleString()+'곳 중 ':'')+'지금은 '+rankTxt(k0)+(k0.rank>=301?'으로':'로')+' 보여요.';
@@ -143,26 +145,26 @@ function talk(r,type,ad,opt){
   var head=(ad?'(광고) ':'');
   var rej=opt?'\n원치 않으시면 "수신 거부"라고 답장 주세요. 바로 중단할게요.':'';
   var seen=when?'오늘('+when+') '+st+' 네이버 플레이스를 한번 쭉 둘러봤어요.':st+' 네이버 플레이스를 한번 쭉 둘러봤어요.';
-  var more=n>1?'그 외에도 '+(n-1)+'가지를 더 살펴봤어요.':(n===1?'진단서로 깔끔하게 정리해 뒀어요.':'');
-  var warm='혹시 괜찮으시면 정리해 둔 진단서를 보내드려도 될까요?\n바쁘실 땐 천천히 답 주셔도 괜찮아요.';
+  var more=n>1?'그 외 '+(n-1)+'가지도 진단서에 정리해서 함께 보내드려요 📄':'정리한 진단서를 함께 보내드려요 📄';
+  var ask='진단서 한번 살펴봐 주시고, 우리 매장이 더 위에 보일 수 있는 방법을 같이 상담해 보면 어떨까요?\n바쁘실 땐 천천히 답 주셔도 괜찮아요.';
   var pay='비용은 결과를 확인하신 뒤에 받아요.';
   var L=[];
   if(type==='1'){
-    L=[head+'안녕하세요, 사장님! 릴로 '+who+jong(who,'이에요','예요')+'.',
+    L=[head+'안녕하세요, 사장님! '+sig+' 😊',
       main?'혹시 '+st+' 플레이스에서 "'+main.short+'" 부분, 한번 확인해 보신 적 있으세요?':'혹시 네이버에서 '+st+jong(st,'이','가')+' 몇 번째로 보이는지 확인해 보신 적 있으세요?',
       seen,'',
       main?main.hook+'이 눈에 띄었어요. '+main.impact:rankLine,'',
-      main?main.fix:null,more||null,main?rankLine||null:null,'',warm,pay,ct];
+      main?main.fix:null,more,main?rankLine||null:null,'',ask,pay,ct];
   }else if(type==='2'){
-    L=[head+'안녕하세요, '+st+' 사장님! 릴로 '+who+jong(who,'이에요','예요')+'.',
+    L=[head+'안녕하세요, '+st+' 사장님! '+sig+' 😊',
       main?'오늘 플레이스를 둘러보다가 '+main.hook+'이 눈에 띄어서 연락드렸어요.':(rankLine||'오늘 네이버 플레이스를 한번 둘러봤어요.'),
       main?main.fix:null,
-      '진단서 보내드려도 될까요? 편하실 때 답 주세요.',ct];
+      '진단서를 함께 보내드려요 📄 확인해 보시고 상위 노출 상담 어떠세요?',ct];
   }else{
-    L=[head+'안녕하세요, 사장님! 릴로 '+who+jong(who,'이에요','예요')+'.',seen,'',
+    L=[head+'안녕하세요, 사장님! '+sig+' 😊',seen,'',
       main?'제일 먼저 눈에 들어온 건 '+main.hook+'이었어요.':rankLine,
       main?main.impact:null,'',
-      main?main.fix:null,more||null,main?rankLine||null:null,'',warm,pay,ct];
+      main?main.fix:null,more,main?rankLine||null:null,'',ask,pay,ct];
   }
   var out=L.filter(function(x){return x!==null&&x!==false&&x!==undefined}).join('\n').replace(/\n{3,}/g,'\n\n').trim();
   return out+rej;
@@ -185,6 +187,9 @@ function kwDraw(){
    var d=document.createElement('button');d.className='btn g s';d.textContent='삭제';d.onclick=function(){S.kws.splice(i,1);kwDraw();pvRender()};
    var c=document.createElement('div');c.appendChild(inp);c.appendChild(hint);row.appendChild(c);row.appendChild(d);box.appendChild(row)});
 }
+function regionBase(){var rg=$('fRegion').value.trim();if(!rg)return '';var toks=rg.split(/\s+/),dong=toks.filter(function(t){return /[동읍면리]$/.test(t)}).pop()||toks[toks.length-1];var base=dong.replace(/(동|읍|면|리)$/,'').replace(/[0-9]+가?$/,'');return base.length>=2?base:dong}
+var KW_RE=/(미용|헤어|펌|염색|컷|커트|클리닉|탈색|두피|살롱|매직|볼륨|앞머리|레이어|염모|뿌리)/;
+function relKw(it){var key=String(it.k||'').replace(/\s/g,'');var base=regionBase();if(base&&key.indexOf(base)<0)return false;return KW_RE.test(key)&&!/네일|피부|속눈썹|왁싱|마사지/.test(key)}
 function addKw(k){if(S.kws.some(function(x){return x.k===k.k})||S.kws.length>=8)return;S.kws.push({k:k.k,vol:k.total||k.vol||0,comp:k.comp||'',rank:null,total:null});kwDraw();pvRender()}
 function reset(){S.kws=[];S.editId='';['fStore','fRegion','fLink','hint','manual'].forEach(function(i){$(i).value=''});$('fAt').value=nowLocal();S.checks=[false,false,false,false,false,false];S.main=-1;$('sug').textContent='';itemsDraw();kwDraw();pvRender()}
 function kstDay(iso){var d=new Date(new Date(iso).getTime()+9*3600*1000);return d.toISOString().slice(0,10)}
@@ -197,7 +202,7 @@ function hist(){call('list').then(function(j){S.recs=j.reports||[];dayCount(j.re
    var sel=document.createElement('select');sel.style.cssText='width:auto;display:inline-block;margin-left:6px;padding:5px 8px;font-size:13px;border-radius:999px';['작성','발송','답장','계약·완료','제외'].forEach(function(t){var op=document.createElement('option');op.value=t;op.textContent=t;sel.appendChild(op)});sel.value=r.status||'작성';sel.onchange=function(){call('setStatus',{id:r.id,status:sel.value}).then(function(){r.status=sel.value}).catch(function(e){note(e.message)})};
    w.appendChild(o);w.appendChild(cp);w.appendChild(im);w.appendChild(sel);w.appendChild(x);d.appendChild(w);b.appendChild(d)})}).catch(function(){});
 }
-var REQ=['[릴로 진단서 자료 수집 요청]','아래 네이버 플레이스 주소 목록의 매장마다 자료를 모아서, 맨 아래 JSON 형식으로만 답해 주세요. (하루 10곳까지, 같은 주소는 하루 1번)','','■ 매장마다 할 일','1) 플레이스 화면에서 매장명, 주소(지역 동), 업종을 읽어요.','2) 아래 6가지를 화면에서 보이는 대로만 판단해요. "문제 있음"이면 true, 문제가 없거나 확신이 없으면 false예요. 추측하지 마세요.','   - menu: 시술 메뉴·가격이 거의 없거나 가격이 비어 있음','   - booking: 네이버 예약 버튼/연결이 없음','   - keyword: 소개글과 메뉴명에 동네명과 시술명(펌, 염색, 커트)이 거의 없음','   - photo: 최근 3개월 사진이 없거나 시술 사례 사진이 5장 미만','   - review: 최근 리뷰 10개 중 사장님 답글이 3개 미만','   - news: 소식에 최근 90일 안에 올라온 글이 없음','3) 엔체커(nchecker.kr)에서 이 주소로 "AI 추천 키워드"를 받고, 동네+미용실/펌/염색 위주로 키워드 3개를 골라 "순위 조회"를 해요.','   - 결과 "N개 업체 중 n위"에서 rank=n, total=N 으로 적어요. 300위 밖이면 rank=301, 순위를 못 읽으면 rank=null이에요.','   - 업체 수(total)가 30개 미만인 키워드는 쓰지 말고 다른 키워드로 바꿔요.','4) 엔체커 하루 한도(10곳)를 넘으면 멈추고 어디까지 했는지 알려 주세요.','','■ 지킬 것','- 화면에서 읽은 숫자를 그대로 쓰고, 확인하지 못한 값은 null로 두세요.','- 사장님 이름, 전화번호 같은 개인정보는 모으지 마세요.','- 설명 없이 JSON만 출력하세요.','','■ 출력 형식','{"reports":[{"store":"매장명","region":"서울 강남구 역삼동","biz":"미용실","placeLink":"플레이스 주소","keywords":[{"k":"역삼 미용실","rank":14,"total":226},{"k":"역삼 펌","rank":25,"total":171}],"checks":{"menu":true,"booking":true,"keyword":false,"photo":true,"review":true,"news":false},"main":"booking"}]}','(main은 가장 부실하다고 보는 항목 하나예요. 모르겠으면 빼도 돼요.)'].join('\n');
+var REQ=['[릴로 진단서 자료 수집 요청]','아래 네이버 플레이스 주소 목록의 매장마다 자료를 모아서, 맨 아래 JSON 형식으로만 답해 주세요. (하루 10곳까지, 같은 주소는 하루 1번)','','■ 매장마다 할 일','1) 플레이스 화면에서 매장명, 주소(지역 동), 업종을 읽어요.','2) 아래 6가지를 화면에서 보이는 대로만 판단해요. "문제 있음"이면 true, 문제가 없거나 확신이 없으면 false예요. 추측하지 마세요.','   - menu: 시술 메뉴·가격이 거의 없거나 가격이 비어 있음 (대부분 등록돼 있으니 확실할 때만 true)','   - booking: 네이버 예약 버튼/연결이 없음 (대부분 연결돼 있으니 확실할 때만 true)','   - keyword: 소개글과 메뉴명에 동네명과 시술명(펌, 염색, 커트)이 거의 없음','   - photo: 최근 3개월 사진이 없거나 시술 사례 사진이 5장 미만','   - review: 최근 리뷰 10개 중 사장님 답글이 3개 미만','   - news: 소식에 최근 90일 안에 올라온 글이 없음','3) 엔체커(nchecker.kr)에서 이 주소로 "AI 추천 키워드"를 받고, 동네+미용실/펌/염색 위주로 키워드 3개를 골라 "순위 조회"를 해요.','   - 결과 "N개 업체 중 n위"에서 rank=n, total=N 으로 적어요. 300위 밖이면 rank=301, 순위를 못 읽으면 rank=null이에요.','   - 업체 수(total)가 30개 미만인 키워드는 쓰지 말고 다른 키워드로 바꿔요.','4) 엔체커 하루 한도(10곳)를 넘으면 멈추고 어디까지 했는지 알려 주세요.','','■ 지킬 것','- 화면에서 읽은 숫자를 그대로 쓰고, 확인하지 못한 값은 null로 두세요.','- 사장님 이름, 전화번호 같은 개인정보는 모으지 마세요.','- 설명 없이 JSON만 출력하세요.','','■ 출력 형식','{"reports":[{"store":"매장명","region":"서울 강남구 역삼동","biz":"미용실","placeLink":"플레이스 주소","keywords":[{"k":"역삼 미용실","rank":14,"total":226},{"k":"역삼 펌","rank":25,"total":171}],"checks":{"menu":true,"booking":true,"keyword":false,"photo":true,"review":true,"news":false},"main":"booking"}]}','(main은 가장 부실하다고 보는 항목 하나예요. 모르겠으면 빼도 돼요.)'].join('\n');
 function copyTxt(t,okf,failf){function ok(){okf&&okf()}function bad(){failf&&failf()}
  if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(t).then(ok).catch(function(){var a=document.createElement('textarea');a.value=t;document.body.appendChild(a);a.select();try{document.execCommand('copy');ok()}catch(e){bad()}a.remove()})}
  else{var a=document.createElement('textarea');a.value=t;document.body.appendChild(a);a.select();try{document.execCommand('copy');ok()}catch(e){bad()}a.remove()}}
@@ -220,14 +225,14 @@ function toPng(r){
   var xml='<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="'+h+'"><foreignObject width="1080" height="'+h+'"><div xmlns="http://www.w3.org/1999/xhtml" style="background:#0b0a09"><style>'+CSS+'</style>'+body+'</div></foreignObject></svg>';
   return new Promise(function(res,rej){var img=new Image();img.onload=function(){var c=document.createElement('canvas');c.width=1080*2;c.height=h*2;var x=c.getContext('2d');x.scale(2,2);x.drawImage(img,0,0);try{c.toBlob(function(b){b?res(b):rej(new Error('이미지를 만들지 못했어요.'))},'image/png')}catch(e){rej(e)}};img.onerror=function(){rej(new Error('이미지를 만들지 못했어요.'))};img.src='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(xml)});
 }
-function boot(){try{$('fSender').value=localStorage.getItem('lilo_rep_sender')||'';$('fContact').value=localStorage.getItem('lilo_rep_contact')||''}catch(e){}
+function boot(){$('fSender').value='릴로';$('fContact').value='010-9000-5600';try{$('fSender').value=localStorage.getItem('lilo_rep_sender')||'릴로';$('fContact').value=localStorage.getItem('lilo_rep_contact')||'010-9000-5600'}catch(e){}
   $('login').classList.add('hid');$('app').classList.remove('hid');$('fAt').value=nowLocal();itemsDraw();kwDraw();pvRender();hist()}
 $('lbtn').onclick=function(){S.pw=$('pw').value;$('lerr').textContent='';call('ping').then(function(){try{sessionStorage.setItem(PK,S.pw)}catch(e){}boot()}).catch(function(e){$('lerr').textContent=e.message})};
 $('pw').addEventListener('keydown',function(e){if(e.key==='Enter')$('lbtn').click()});
 $('out').onclick=function(){try{sessionStorage.removeItem(PK)}catch(e){}location.reload()};
 $('sBtn').onclick=function(){
   $('serr').textContent='';var hints=$('hint').value.split(/[,\n]/).map(function(x){return x.trim()}).filter(Boolean);if(!hints.length){$('serr').textContent='검색어를 적어주세요.';return}
-  var b=$('sBtn');b.disabled=true;call('suggest',{hints:hints}).then(function(j){var box=$('sug');box.textContent='';(j.items||[]).slice(0,15).forEach(function(it){var d=document.createElement('div');d.innerHTML='<span><b>'+esc(it.k)+'</b> <span class="note">월 '+it.total.toLocaleString()+'회 · 경쟁 '+esc(it.comp||'-')+'</span></span>';var a=document.createElement('button');a.className='btn g s';a.textContent='추가';a.onclick=function(){addKw(it)};d.appendChild(a);box.appendChild(d)});if(!(j.items||[]).length)box.innerHTML='<div class="note">찾지 못했어요. 검색어를 바꿔 보세요.</div>'}).catch(function(e){$('serr').textContent=e.message}).then(function(){b.disabled=false});
+  var b=$('sBtn');b.disabled=true;call('suggest',{hints:hints}).then(function(j){var box=$('sug');box.textContent='';var all=(j.items||[]);var rel=all.filter(relKw).sort(function(a,b){return (b.total||0)-(a.total||0)});(rel).slice(0,12).forEach(function(it){var d=document.createElement('div');d.innerHTML='<span><b>'+esc(it.k)+'</b> <span class="note">월 '+it.total.toLocaleString()+'회 · 경쟁 '+esc(it.comp||'-')+'</span></span>';var a=document.createElement('button');a.className='btn g s';a.textContent='추가';a.onclick=function(){addKw(it)};d.appendChild(a);box.appendChild(d)});if(!rel.length)box.innerHTML='<div class="note">'+(all.length?'이 지역·업종과 맞는 연관 키워드가 없어요. 검색어를 바꿔 보세요. (위 1번 지역에 맞는 키워드만 보여 줘요)':'찾지 못했어요. 검색어를 바꿔 보세요.')+'</div>'}).catch(function(e){$('serr').textContent=e.message}).then(function(){b.disabled=false});
 };
 $('mBtn').onclick=function(){var v=$('manual').value.trim();if(v){addKw({k:v,total:0,comp:''});$('manual').value=''}};
 ['fStore','fRegion','fBiz','fAt','fContact','fSender','fLink'].forEach(function(i){$(i).addEventListener('input',pvRender);$(i).addEventListener('change',pvRender)});
@@ -237,14 +242,13 @@ $('save').onclick=function(){$('gerr').textContent='';var dd=S.editId?null:findD
 $('ncOpen').onclick=function(){window.open('https://www.nchecker.kr/','_blank','noopener')};
 $('lOpen').onclick=function(){var v=$('fLink').value.trim();if(!v)return;if(!/^https?:\/\//i.test(v))v='https://'+v;window.open(v,'_blank','noopener')};
 $('autoKw').onclick=function(){
-  $('serr').textContent='';var rg=$('fRegion').value.trim();if(!rg){$('serr').textContent='위 1번의 지역(예: 서울 강남구 역삼동)을 먼저 적어주세요.';return}
-  var toks=rg.split(/\s+/),dong=toks.filter(function(t){return /[동읍면리]$/.test(t)}).pop()||toks[toks.length-1];dong=dong.replace(/[0-9]+가?$/,'')||dong;
-  var base=dong.replace(/(동|읍|면|리)$/,'');if(base.length<2)base=dong;dong=base;var hints=[dong+' 미용실',dong+' 펌',dong+' 염색'];$('hint').value=hints.join(', ');
-  var b=$('autoKw');b.disabled=true;call('suggest',{hints:hints}).then(function(j){var items=(j.items||[]).filter(function(it){return it.k.replace(/\s/g,'').indexOf(dong)>-1}).sort(function(a,b){return (b.total||0)-(a.total||0)});
-    var pick=[];hints.forEach(function(h){var key=h.replace(/\s/g,'');var m=(j.items||[]).filter(function(it){return it.k.replace(/\s/g,'')===key})[0];if(m)pick.push(m)});
-    items.forEach(function(it){if(pick.length<3&&pick.indexOf(it)<0)pick.push(it)});
-    if(!pick.length){$('serr').textContent='자동으로 찾지 못했어요. 아래에서 검색어를 직접 바꿔 보세요.';return}
-    pick.slice(0,3).forEach(addKw);var f=document.querySelector('#kws input[type=number]');if(f)f.focus()}).catch(function(e){$('serr').textContent=e.message}).then(function(){b.disabled=false});
+  $('serr').textContent='';var rg=$('fRegion').value.trim();if(!rg){$('serr').textContent='위 1번의 지역(예: 서울 강동구 천호동)을 먼저 적어주세요.';return}
+  var dong=regionBase();var hints=[dong+' 미용실',dong+' 펌',dong+' 염색'];$('hint').value=hints.join(', ');
+  var b=$('autoKw');b.disabled=true;call('suggest',{hints:hints}).then(function(j){var all=j.items||[];
+    var pick=[];hints.forEach(function(h){var key=h.replace(/\s/g,'');var m=all.filter(function(it){return String(it.k||'').replace(/\s/g,'')===key})[0];if(m)pick.push(m)});
+    all.filter(relKw).sort(function(a,b){return (b.total||0)-(a.total||0)}).forEach(function(it){if(pick.length<3&&pick.indexOf(it)<0)pick.push(it)});
+    if(!pick.length){$('serr').textContent='이 지역과 맞는 키워드를 찾지 못했어요. 아래에서 검색어를 직접 바꿔 보세요.';return}
+    pick.slice(0,3).forEach(addKw);var f=document.querySelector('#kws input[type=text]');if(f)f.focus()}).catch(function(e){$('serr').textContent=e.message}).then(function(){b.disabled=false});
 };
 
 ['fSender','fContact'].forEach(function(i){$(i).addEventListener('input',function(){try{localStorage.setItem(i==='fSender'?'lilo_rep_sender':'lilo_rep_contact',$(i).value)}catch(e){}})});
