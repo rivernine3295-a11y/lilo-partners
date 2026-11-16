@@ -184,9 +184,9 @@ function readPlace() {
   var biz = /네일|젤|패디/.test(name + t.slice(0, 600)) ? '네일샵' : (/에스테틱|피부관리|왁싱|속눈썹|마사지/.test(name + t.slice(0, 600)) ? '에스테틱' : '미용실');
   var booking = t.indexOf('예약') >= 0 ? false : true;
   var st = '';
-  var sm = t.match(/([가-힣]{2,6}역)\s*(?:\d{1,2}호선|\d+번\s*출구|\d+\s*(?:m|km)|에서)/) || t.match(/([가-힣]{2,6}역)/);
+  var sm = t.match(/([가-힣]{2,6}역)\s*(?:\d{1,2}호선|\d+번\s*출구|\d+\s*(?:m|km)|에서)/);
   if (sm && !/(지역|구역|영역|광역|번역|전역|대역)$/.test(sm[1])) st = sm[1];
-  return { name: name, addr: addr, biz: biz, booking: booking, station: st, loaded: t.length > 200, url: location.href };
+  return { name: name, addr: addr.split(/\s+/).filter(function (x) { return x.length <= 8 || /^\(|\)$/.test(x); }).join(' '), biz: biz, booking: booking, station: st, loaded: t.length > 200, url: location.href };
 }
 
 async function openTab(url) {
