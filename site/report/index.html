@@ -249,6 +249,7 @@ function dashDraw(){var L=S.recs||[],d=$('dash');if(!d)return;var days={},tot={}
  h+=row('전체',tot,true)+'</table>';
  d.innerHTML=ks.length?'<div class="note" style="margin-bottom:6px">일자별 진행 현황 (상태를 바꾸면 바로 반영돼요)</div>'+h:'';
  Object.keys(HG).forEach(function(k){var o=days[k];if(!o)return;var parts=STS.filter(function(t){return o[t]}).map(function(t){return t+' '+o[t]});HG[k].sm.textContent=dayLabel(k)+(k===kstDay(new Date().toISOString())?' (오늘)':'')+' · '+HG[k].n+'곳'+(parts.length?' ('+parts.join(' · ')+')':'')})}
+function saveRetry(body){var n=0;function go(){return call('save',body).catch(function(e){if(++n>=3)throw e;return sleepMs(1200*n).then(go)})}return go()}
 function hist(ens){return call('list').then(function(j){j.reports=j.reports||[];if(ens&&ens.id&&!j.reports.some(function(x){return x.id===ens.id}))j.reports.unshift(ens);S.recs=j.reports||[];dayCount(j.reports);var b=$('hist');b.textContent='';if(!j.reports.length){b.innerHTML='<div class="note">아직 저장한 진단서가 없어요.</div>';return}
   var G=HG={};var TD=kstDay(new Date().toISOString());function grp(r){var k=r.savedAt?kstDay(r.savedAt):(r.checkedAt?kstDay(r.checkedAt):'날짜 없음');if(!G[k]){var dt=document.createElement('details');if(k===TD)dt.open=true;var sm=document.createElement('summary');sm.style.cssText='cursor:pointer;font-weight:700;padding:10px 0;border-bottom:1px solid var(--line)';dt.appendChild(sm);b.appendChild(dt);G[k]={dt:dt,sm:sm,n:0}}G[k].n++;var p=k.split('-');G[k].sm.textContent=(p.length===3?Number(p[1])+'월 '+Number(p[2])+'일':k)+(k===TD?' (오늘)':'')+' · '+G[k].n+'곳';return G[k].dt}
   j.reports.forEach(function(r){var d=document.createElement('div');d.innerHTML='<span>'+esc(r.store)+' <span class="note">'+esc(fmtAt(r.checkedAt)||'')+'</span></span>';var w=document.createElement('span');
@@ -333,7 +334,7 @@ $('prep').onclick=function(){
   var b=$('prep');b.disabled=true;
   copyTxt($('tTxt').value,null,null);
   note('저장하고 이미지를 만드는 중…',true,6000);
-  call('save',{id:S.editId,report:r}).then(function(j){S.editId=j.report.id;hist();return toPng(r)}).then(function(bl){
+  saveRetry({id:S.editId,report:r}).then(function(j){S.editId=j.report.id;hist(j.report);return toPng(r)}).then(function(bl){
     dlBlob(bl,'진단서_'+(String(r.store).replace(/[^\w가-힣]/g,'_'))+'.png');
     note('✅ 기록 저장 · 톡톡 문구 복사 · 이미지 저장을 마쳤어요. 톡톡에 문구를 붙여넣고 저장된 이미지를 첨부해 보내세요.',true,9000)
   }).catch(function(e){note((e.message||'처리하지 못했어요.')+' 이미지는 미리보기를 캡처해 쓰셔도 돼요.')}).then(function(){b.disabled=false});
@@ -447,7 +448,7 @@ $('autoRun').onclick=async function(){var o=$('autoOut'),btn=$('autoRun'),link=$
   var okAll=S.kws.filter(function(k){return k.rank!=null&&!(k.total!=null&&k.total<30)});var ck2=CORE.map(function(c){return c.k.replace(/\s/g,'')});var coreK=okAll.filter(function(k){return ck2.indexOf(k.k.replace(/\s/g,''))>=0}).slice(0,2);var restK=okAll.filter(function(k){return coreK.indexOf(k)<0}).sort(function(a,b){return (b.vol||0)-(a.vol||0)});S.kws=coreK.concat(restK).slice(0,3).sort(function(a,b){return (b.vol||0)-(a.vol||0)});
   var noRank=!S.kws.length;if(noRank){lastDbg=JSON.stringify(dbg,null,1);$('autoDbg').classList.remove('hid')}
   stepsShow(2);S.kws=S.kws.filter(function(k){return !(k.total!=null&&k.total<30)});kwDraw();pvRender();
-  var rep=data();var sv=await call('save',{id:'',report:rep});S.editId=sv.report.id;hist(sv.report);simpleShow();stepsShow(3);
+  var rep=data();var sv=await saveRetry({id:'',report:rep});S.editId=sv.report.id;hist(sv.report);simpleShow();stepsShow(3);
   var msg=[];if(fail){lastDbg=JSON.stringify(dbg,null,1);$('autoDbg').classList.remove('hid');msg.push('순위를 읽지 못한 키워드 '+fail+'개는 진단서에서 뺐어요')}
   if(unknown.length)msg.push('플레이스 항목은 일부만 확인했어요');if(volNote)msg.unshift(volNote);msg.push('점검 항목(메뉴·사진·리뷰·소식)은 자동 확인이 어려워 직접 체크가 필요하면 고급 설정에서 체크해 주세요');
   if(noRank)msg.unshift('순위를 읽지 못해 순위 없이 기본 진단서로 만들었어요. 나중에 순위를 확인하면 고급 설정 키워드 칸에 넣어 주세요');
