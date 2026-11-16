@@ -39,7 +39,10 @@ exports.handler = async (event) => {
   if (!process.env.REPORT_PASSWORD) return json(503, { error: '서버에 진단서 비밀번호(REPORT_PASSWORD)가 아직 설정되지 않았어요.' });
   if (event.httpMethod !== 'POST') return json(405, { error: 'method not allowed' });
   if (!authorized(event)) return json(401, { error: '비밀번호가 맞지 않아요.' });
-  const store = getStore('lilo-reports');
+  // 방금 저장한 기록이 목록에 바로 보이도록 강한 일관성으로 먼저 시도하고, 안 되는 환경이면 기본 방식으로 다시 시도
+  const mk = (strong) => getStore(strong ? { name: 'lilo-reports', consistency: 'strong' } : { name: 'lilo-reports' });
+  const store = {};
+  ['list', 'get', 'setJSON', 'delete'].forEach((m) => { store[m] = async (...a) => { try { return await mk(true)[m](...a); } catch (e) { return await mk(false)[m](...a); } }; });
   let req;
   try { req = JSON.parse(event.body || '{}'); } catch (e) { return json(400, { error: '요청 형식이 올바르지 않아요.' }); }
   try {
@@ -50,7 +53,7 @@ exports.handler = async (event) => {
     if (req.action === 'list') {
       const { blobs } = await store.list({ prefix: 'r:' });
       const all = (await Promise.all(blobs.map((b) => store.get(b.key, { type: 'json' })))).filter(Boolean);
-      return json(200, { reports: all.sort((a, b) => (a.savedAt < b.savedAt ? 1 : -1)).slice(0, 100) });
+      return json(200, { reports: all.sort((a, b) => (a.savedAt < b.savedAt ? 1 : -1)).slice(0, 500) });
     }
     if (req.action === 'save') {
       const r = sanitize(req.report || {});
