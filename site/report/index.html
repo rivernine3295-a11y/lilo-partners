@@ -377,6 +377,8 @@ $('autoRun').onclick=async function(){var o=$('autoOut'),btn=$('autoRun'),link=$
   if(pl&&!pl.error&&pl.loaded){store=pl.name||'';region=regionFromAddr(pl.addr);if(pl.dong&&!/[가-힣0-9]{1,6}[동읍면리](\s|$)/.test(region.split(/\s+/).slice(1).join(' ')+' '))region=(region+' '+pl.dong).trim();biz=pl.biz||'미용실';booking=!!pl.booking}else{unknown.push('플레이스 화면')}
   if(!store){store=prompt('플레이스에서 매장명을 읽지 못했어요. 매장명을 입력해 주세요.')||'';if(!store){o.textContent='매장명이 없어 중단했어요.';btn.disabled=false;stepsShow(-1);return}}
   if(!region){region=prompt('지역(동)을 읽지 못했어요. 예: 서울 강동구 천호동')||'';if(!region){o.textContent='지역이 없어 중단했어요.';btn.disabled=false;stepsShow(-1);return}}
+  function hasDong(rg){return rg.split(/\s+/).some(function(t){return /^[가-힣0-9]{1,6}[동읍면리]$/.test(t)&&!/거리$/.test(t)})}
+  if(!hasDong(region)&&pl&&pl.addr){try{var dj=await call('dong',{addr:pl.addr});if(dj&&dj.dong&&/[동읍면리]$/.test(dj.dong)){var rt0=region.split(/\s+/).filter(Boolean);region=[rt0[0]&&!/[구군시]$/.test(rt0[0])?rt0[0]:(dj.si||''),dj.gu||rt0.filter(function(x){return /[구군시]$/.test(x)})[0]||'',dj.dong].filter(Boolean).join(' ')}}catch(e){}}
   if(!region.split(/\s+/).some(function(t){return /^[가-힣0-9]{1,6}[동읍면리]$/.test(t)&&!/거리$/.test(t)})){var dp=(prompt('도로명 주소만 읽혀서 행정동을 알아내지 못했어요. 이 매장의 행정동을 입력해 주세요. 예: 성내동 (모르면 비워 두고 확인)')||'').trim();if(dp){if(!/[동읍면리]$/.test(dp))dp+='동';region=(region+' '+dp).trim()}}
   var nk0=nameKey({store:store,region:region}),dup2=(S.recs||[]).filter(function(x){return nameKey(x)===nk0})[0];
   if(dup2){o.style.color='#ffcf7a';o.textContent='⚠ '+store+' — '+dupMsg;btn.disabled=false;stepsShow(-1);alert(store+'\n'+dupMsg);return}

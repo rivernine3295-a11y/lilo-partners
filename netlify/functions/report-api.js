@@ -50,6 +50,18 @@ exports.handler = async (event) => {
     if (req.action === 'suggest') {
       try { return json(200, { items: await KW.suggest(req.hints) }); } catch (e) { return json(e.notReady ? 503 : 400, { error: e.message }); }
     }
+    if (req.action === 'dong') {
+      const key = process.env.JUSO_KEY;
+      const kw = clean(req.addr, 120).replace(/\([^)]*\)/g, ' ').replace(/\s+/g, ' ').trim();
+      if (!key || !kw) return json(200, { dong: '', reason: key ? 'noaddr' : 'nokey' });
+      try {
+        const u = 'https://business.juso.go.kr/addrlink/addrLinkApi.do?confmKey=' + encodeURIComponent(key) + '&currentPage=1&countPerPage=3&resultType=json&keyword=' + encodeURIComponent(kw);
+        const rs = await fetch(u); const j = await rs.json();
+        const it = j && j.results && j.results.juso && j.results.juso[0];
+        if (!it) return json(200, { dong: '', reason: 'notfound' });
+        return json(200, { dong: clean(it.emdNm, 20), gu: clean(it.sggNm, 20), si: clean(it.siNm, 20), jibun: clean(it.jibunAddr, 120) });
+      } catch (e) { return json(200, { dong: '', reason: 'error' }); }
+    }
     if (req.action === 'list') {
       const { blobs } = await store.list({ prefix: 'r:' });
       const all = (await Promise.all(blobs.map((b) => store.get(b.key, { type: 'json' })))).filter(Boolean);
