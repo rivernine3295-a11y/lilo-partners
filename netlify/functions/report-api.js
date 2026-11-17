@@ -67,6 +67,26 @@ exports.handler = async (event) => {
       const all = (await Promise.all(blobs.map((b) => store.get(b.key, { type: 'json' })))).filter(Boolean);
       return json(200, { reports: all.sort((a, b) => (a.savedAt < b.savedAt ? 1 : -1)).slice(0, 500) });
     }
+    // 발송 장부: 진단서 본 기록 저장이 실패해도 "발송 준비/발송 처리를 했다"는 사실과 건수는 따로 남긴다
+    if (req.action === 'tally') {
+      const kind = req.kind === 'sent' ? 'sent' : 'prep';
+      const now = new Date().toISOString();
+      const day = new Date(Date.now() + 9 * 3600 * 1000).toISOString().slice(0, 10);
+      const ck = 'c:' + day;
+      const cur = (await store.get(ck, { type: 'json' })) || { prep: 0, sent: 0 };
+      cur[kind] = (Number(cur[kind]) || 0) + 1;
+      await store.setJSON(ck, cur);
+      await store.setJSON('l:' + now.replace(/[^0-9]/g, '') + '-' + Math.random().toString(36).slice(2, 6), { at: now, day, kind, store: clean(req.store, 60), link: clean(req.link, 300), recId: clean(req.recId, 40) });
+      return json(200, { day, counts: cur });
+    }
+    if (req.action === 'tallies') {
+      const { blobs } = await store.list({ prefix: 'c:' });
+      const days = {};
+      await Promise.all(blobs.map(async (b) => { days[b.key.slice(2)] = await store.get(b.key, { type: 'json' }); }));
+      const lg = await store.list({ prefix: 'l:' });
+      const ledger = (await Promise.all(lg.blobs.map((b) => store.get(b.key, { type: 'json' })))).filter(Boolean).sort((x, y) => (x.at < y.at ? 1 : -1)).slice(0, 400);
+      return json(200, { days, ledger });
+    }
     if (req.action === 'save') {
       const r = sanitize(req.report || {});
       if (!r.store) return json(400, { error: '매장명을 적어주세요.' });
